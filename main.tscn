@@ -1,0 +1,279 @@
+[gd_scene format=3 uid="uid://cuv3db0jrp6kg"]
+
+[ext_resource type="Script" uid="uid://5yknw1nu5h6e" path="res://main.gd" id="1_main"]
+[ext_resource type="Texture2D" uid="uid://dc87pop2slxt4" path="res://assets/black_bag.png" id="2_black_bag"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape_ground"]
+size = Vector2(1920, 24)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_panel"]
+bg_color = Color(0.121569, 0.168627, 0.27451, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.157647, 0.219608, 0.356863, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.22)
+shadow_size = 8
+
+[sub_resource type="StyleBoxEmpty" id="StyleBox_dispenser_empty"]
+
+[node name="Main" type="Control" unique_id=503343085]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_main")
+
+[node name="Background" type="ColorRect" parent="." unique_id=361840082]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.066667, 0.094118, 0.152941, 1)
+
+[node name="Glow" type="ColorRect" parent="." unique_id=494170205]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -520.0
+offset_top = -360.0
+offset_right = 520.0
+offset_bottom = 360.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.090196, 0.137255, 0.231373, 1)
+
+[node name="Ground" type="StaticBody2D" parent="." unique_id=1998247530]
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground" unique_id=1704901418]
+shape = SubResource("RectangleShape_ground")
+
+[node name="GroundVisual" type="ColorRect" parent="." unique_id=232264427]
+layout_mode = 0
+offset_top = 992.0
+offset_right = 1920.0
+offset_bottom = 1016.0
+mouse_filter = 2
+color = Color(0.152941, 0.211765, 0.341176, 1)
+
+[node name="DroppedBoxes" type="Node2D" parent="." unique_id=509663176]
+
+[node name="CollectionPanel" type="Panel" parent="." unique_id=504007131]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 234.0
+offset_bottom = 244.0
+theme_override_styles/panel = SubResource("StyleBox_panel")
+
+[node name="Title" type="Label" parent="CollectionPanel" unique_id=2136156304]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 17.0
+offset_right = 190.0
+offset_bottom = 40.0
+theme_override_colors/font_color = Color(0.623529, 0.717647, 0.862745, 1)
+theme_override_font_sizes/font_size = 14
+text = "COLLECTION"
+
+[node name="Count" type="Label" parent="CollectionPanel" unique_id=676914400]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 38.0
+offset_right = 190.0
+offset_bottom = 105.0
+theme_override_colors/font_color = Color(0.972549, 0.980392, 0.988235, 1)
+theme_override_font_sizes/font_size = 58
+text = "0"
+
+[node name="Subtitle" type="Label" parent="CollectionPanel" unique_id=1039935973]
+layout_mode = 0
+offset_left = 22.0
+offset_top = 112.0
+offset_right = 190.0
+offset_bottom = 140.0
+theme_override_colors/font_color = Color(0.623529, 0.717647, 0.862745, 1)
+theme_override_font_sizes/font_size = 14
+text = "boxes collected"
+
+[node name="JunkCount" type="Label" parent="CollectionPanel" unique_id=1492487310]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 22.0
+offset_top = 148.0
+offset_right = 190.0
+offset_bottom = 168.0
+theme_override_colors/font_color = Color(0.839216, 0.611765, 0.403922, 1)
+theme_override_font_sizes/font_size = 14
+text = "Junk: 0"
+
+[node name="PlasticCount" type="Label" parent="CollectionPanel" unique_id=1492487311]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 22.0
+offset_top = 174.0
+offset_right = 190.0
+offset_bottom = 194.0
+theme_override_colors/font_color = Color(0.392157, 0.709804, 0.94902, 1)
+theme_override_font_sizes/font_size = 14
+text = "Plastic: 0"
+
+[node name="GoldPanel" type="Panel" parent="." unique_id=1492487312]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -234.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = 132.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBox_panel")
+
+[node name="Title" type="Label" parent="GoldPanel" unique_id=1492487313]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 17.0
+offset_right = 190.0
+offset_bottom = 40.0
+theme_override_colors/font_color = Color(0.623529, 0.717647, 0.862745, 1)
+theme_override_font_sizes/font_size = 14
+text = "GOLD"
+
+[node name="Gold" type="Label" parent="GoldPanel" unique_id=1492487314]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 36.0
+offset_right = 190.0
+offset_bottom = 96.0
+theme_override_colors/font_color = Color(1, 0.835294, 0.309804, 1)
+theme_override_font_sizes/font_size = 48
+text = "0"
+
+[node name="Dispenser" type="Button" parent="." unique_id=98186751]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -145.0
+offset_right = 160.0
+offset_bottom = 145.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(1.25, 1.25)
+pivot_offset = Vector2(160, 145)
+tooltip_text = "Click to release a random box"
+theme_override_colors/font_color = Color(1, 0.968627, 0.901961, 1)
+theme_override_font_sizes/font_size = 23
+theme_override_styles/normal = SubResource("StyleBox_dispenser_empty")
+theme_override_styles/pressed = SubResource("StyleBox_dispenser_empty")
+theme_override_styles/hover = SubResource("StyleBox_dispenser_empty")
+icon = ExtResource("2_black_bag")
+icon_alignment = 1
+expand_icon = true
+
+[node name="UpgradePanel" type="Panel" parent="." unique_id=1492487315]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 276.0
+offset_right = 354.0
+offset_bottom = 606.0
+theme_override_styles/panel = SubResource("StyleBox_panel")
+
+[node name="Title" type="Label" parent="UpgradePanel" unique_id=1492487316]
+layout_mode = 0
+offset_left = 18.0
+offset_top = 14.0
+offset_right = 300.0
+offset_bottom = 37.0
+theme_override_colors/font_color = Color(0.623529, 0.717647, 0.862745, 1)
+text = "RECYCLING BUSINESS"
+
+[node name="Subtitle" type="Label" parent="UpgradePanel" unique_id=1492487317]
+layout_mode = 0
+offset_left = 18.0
+offset_top = 38.0
+offset_right = 310.0
+offset_bottom = 57.0
+theme_override_colors/font_color = Color(0.443137, 0.521569, 0.658824, 1)
+theme_override_font_sizes/font_size = 12
+text = "Spend resources to improve the operation."
+
+[node name="PowerUpgrade" type="Button" parent="UpgradePanel" unique_id=1492487318]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 74.0
+offset_right = 312.0
+offset_bottom = 116.0
+alignment = 0
+
+[node name="DropsUpgrade" type="Button" parent="UpgradePanel" unique_id=1492487319]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 126.0
+offset_right = 312.0
+offset_bottom = 168.0
+alignment = 0
+
+[node name="GoldUpgrade" type="Button" parent="UpgradePanel" unique_id=1492487320]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 178.0
+offset_right = 312.0
+offset_bottom = 220.0
+alignment = 0
+
+[node name="AutoUpgrade" type="Button" parent="UpgradePanel" unique_id=1492487321]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 230.0
+offset_right = 312.0
+offset_bottom = 272.0
+alignment = 0
+
+[node name="BlueUpgrade" type="Button" parent="UpgradePanel" unique_id=1492487322]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 282.0
+offset_right = 312.0
+offset_bottom = 324.0
+alignment = 0
+
+[node name="UpgradeStatus" type="Label" parent="." unique_id=1492487323]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 380.0
+offset_top = 290.0
+offset_right = 880.0
+offset_bottom = 320.0
+theme_override_colors/font_color = Color(0.623529, 0.717647, 0.862745, 1)
+
+[connection signal="pressed" from="Dispenser" to="." method="_drop_box"]

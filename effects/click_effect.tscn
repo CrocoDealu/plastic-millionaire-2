@@ -1,0 +1,181 @@
+[gd_scene format=3 uid="uid://pi2vdlfrp7ep"]
+
+[ext_resource type="Texture2D" uid="uid://c1sbn0exjm8gu" path="res://assets/shockwave_earth.png" id="1_shockwave"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_0"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(0, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_1"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(192, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_2"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(384, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_3"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(576, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_4"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(768, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_5"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(960, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_6"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(1152, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_7"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(1344, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_8"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(1536, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_9"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(1728, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_10"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(1920, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_11"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(2112, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_12"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(2304, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_13"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(2496, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_14"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(2688, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_15"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(2880, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_16"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(3072, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_17"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(3264, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_18"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(3456, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_19"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(3648, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_20"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(3840, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_21"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(4032, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_22"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(4224, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_23"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(4416, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_24"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(4608, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_25"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(4800, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_26"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(4992, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_27"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(5184, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_28"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(5376, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_29"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(5568, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_30"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(5760, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame_31"]
+atlas = ExtResource("1_shockwave")
+region = Rect2(5952, 0, 192, 192)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_click"]
+animations = [{
+"frames": [
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_frame_0")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_frame_1")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_frame_2")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_frame_3")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_frame_4")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_frame_5")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_frame_6")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_frame_7")
+}
+],
+"loop": 0,
+"name": &"click",
+"speed": 5.0
+}]
+
+[node name="ClickEffect" type="AnimatedSprite2D" unique_id=1309111220]
+z_index = 2
+scale = Vector2(1.5, 1.5)
+sprite_frames = SubResource("SpriteFrames_click")
+animation = &"click"
+frame = 0
+frame_progress = 0.0
+speed_scale = 10.0
