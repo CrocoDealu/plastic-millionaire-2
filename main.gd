@@ -1,242 +1,206 @@
 extends Control
 
+const GAME_SCRIPT := preload("res://recycler_game.gd")
 const DROP_BOX_SCRIPT := preload("res://drop_box.gd")
 const CLICK_EFFECT_SCENE := preload("res://effects/click_effect.tscn")
 const BAG_BURST_SCENE := preload("res://effects/bag_burst.tscn")
-const BLACK_BAG_TEXTURE := preload("res://assets/black_bag.png")
-const GREEN_BAG_TEXTURE := preload("res://assets/green_bag.png")
-const BLACK_BAG_BREAK_HITS := 5
-const GREEN_BAG_BREAK_HITS := 10
-const BLACK_BAG_BOX_REWARD := 3
-const GREEN_BAG_BOX_REWARD := 5
+
 const DROP_PICKUP_DELAY := 0.5
-const BASE_GOLD_SPAWN_CHANCE := 0.15
-const BLUE_BAG_TEXTURE := preload("res://assets/green_bag.png")
-const BOX_COLORS := [
-	Color("#ff8a65"),
-	Color("#64b5f6"),
-	Color("#81c784"),
-	Color("#ba68c8"),
-	Color("#ffd54f"),
-]
-const BOX_SIZES := [
-	Vector2(34.0, 34.0),
-	Vector2(42.0, 42.0),
-	Vector2(50.0, 50.0),
-]
-const BOX_CATEGORIES := [
-	DropBox.Category.JUNK,
-	DropBox.Category.PLASTIC,
-]
+const BOX_COLORS := [Color("#ff8a65"), Color("#64b5f6"), Color("#81c784"), Color("#ba68c8"), Color("#ffd54f")]
+const BOX_SIZES := [Vector2(34.0, 34.0), Vector2(42.0, 42.0), Vector2(50.0, 50.0)]
 const GOLD_COLOR := Color("#d9a441")
 
-@onready var dispenser_button: Button = %Dispenser
-@onready var count_label: Label = %Count
-@onready var junk_count_label: Label = %JunkCount
-@onready var plastic_count_label: Label = %PlasticCount
-@onready var gold_label: Label = %Gold
+var game = GAME_SCRIPT.new()
+
+@onready var resource_labels: Dictionary[StringName, Label] = {
+	&"plastic": %Plastic,
+	&"flakes": %Flakes,
+	&"pellets": %Pellets,
+	&"fabric": %Fabric,
+	&"money": %Money,
+}
+@onready var bag_button: Button = %BagButton
+@onready var message_label: Label = %Message
+@onready var workshop_rows: Dictionary[StringName, Dictionary] = {
+	&"g1_sorter": {"title": %G1Title, "recipe": %G1Recipe, "output": %G1Output, "progress": %G1Progress, "buy": %G1Buy, "run": %G1Run, "collect": %G1Collect, "speed": %G1Speed, "multiplier": %G1Multiplier, "auto_in": %G1AutoIn, "auto_out": %G1AutoOut},
+	&"g2_pelletizer": {"title": %G2Title, "recipe": %G2Recipe, "output": %G2Output, "progress": %G2Progress, "buy": %G2Buy, "run": %G2Run, "collect": %G2Collect, "speed": %G2Speed, "multiplier": %G2Multiplier, "auto_in": %G2AutoIn, "auto_out": %G2AutoOut},
+	&"g3_loom": {"title": %G3Title, "recipe": %G3Recipe, "output": %G3Output, "progress": %G3Progress, "buy": %G3Buy, "run": %G3Run, "collect": %G3Collect, "speed": %G3Speed, "multiplier": %G3Multiplier, "auto_in": %G3AutoIn, "auto_out": %G3AutoOut},
+}
+@onready var shop_buttons: Dictionary[StringName, Button] = {
+	&"shop_u_bag_dmg": %ShopBagDamage,
+	&"shop_u_bag_gold": %ShopGoldChance,
+	&"shop_u_collector_base": %ShopCollector,
+	&"shop_u_collector_speed": %ShopCollectorSpeed,
+}
+@onready var achievement_labels: Dictionary[StringName, Label] = {
+	&"first_bag": %AchievementFirstBag,
+	&"first_machine": %AchievementFirstMachine,
+	&"first_pellets": %AchievementFirstPellets,
+	&"first_fabric": %AchievementFirstFabric,
+	&"industrialist": %AchievementIndustrialist,
+}
 @onready var box_layer: Node2D = $DroppedBoxes
 @onready var ground: StaticBody2D = $Ground
 @onready var ground_visual: ColorRect = $GroundVisual
-@onready var upgrade_status_label: Label = %UpgradeStatus
-@onready var power_upgrade_button: Button = %PowerUpgrade
-@onready var drops_upgrade_button: Button = %DropsUpgrade
-@onready var gold_upgrade_button: Button = %GoldUpgrade
-@onready var auto_upgrade_button: Button = %AutoUpgrade
-@onready var blue_upgrade_button: Button = %BlueUpgrade
 
-var dropped_count := 0
-var collected_count := 0
-var junk_count := 0
-var plastic_count := 0
-var gold := 0
 var rng := RandomNumberGenerator.new()
-var ground_y := 0.0
+var dropped_count := 0
 var dragging_pickup := false
-var dispenser_tween: Tween
-var last_dispenser_click_position := Vector2.ZERO
-var bag_hit_count := 0
 var bag_is_breaking := false
-var click_power := 1
-var bonus_drops := 0
-var gold_chance_bonus := 0.0
-var auto_break_level := 0
-var auto_break_elapsed := 0.0
-var blue_bag_unlocked := false
-var upgrade_buttons: Dictionary[StringName, Button] = {}
+var bag_hit_count := 0
+var bag_tween: Tween
+var last_bag_hit_position := Vector2.ZERO
 
 func _ready() -> void:
 	rng.randomize()
-	dispenser_button.gui_input.connect(_on_dispenser_gui_input)
-	ground_y = get_viewport_rect().size.y - 88.0
+	bag_button.gui_input.connect(_on_bag_gui_input)
+	add_child(game)
+	bag_button.pressed.connect(_on_bag_click)
+	%CollectDrops.pressed.connect(_collect_all_drops)
+	%SellMaterials.pressed.connect(_sell_refined)
+	for generator_id in workshop_rows:
+		var row: Dictionary = workshop_rows[generator_id]
+		row["buy"].pressed.connect(game.buy_generator.bind(generator_id))
+		row["run"].pressed.connect(game.run_generator.bind(generator_id))
+		row["collect"].pressed.connect(game.collect_generator_output.bind(generator_id))
+		for upgrade_id in [&"speed", &"multiplier", &"auto_in", &"auto_out"]:
+			row[upgrade_id].pressed.connect(game.buy_generator_upgrade.bind(generator_id, upgrade_id))
+	for upgrade_id in shop_buttons:
+		shop_buttons[upgrade_id].pressed.connect(game.buy_shop_upgrade.bind(upgrade_id))
+	game.inventory_changed.connect(_refresh)
+	game.bag_changed.connect(_refresh_bag)
+	game.generator_changed.connect(_refresh_generator)
+	game.message_changed.connect(_show_message)
+	game.achievements_changed.connect(_refresh_achievements)
+	game.drops_spawned.connect(_spawn_drops)
 	_update_ground()
-	_update_resource_display()
-	upgrade_buttons = {
-		&"power": power_upgrade_button,
-		&"drops": drops_upgrade_button,
-		&"gold": gold_upgrade_button,
-		&"auto": auto_upgrade_button,
-		&"blue": blue_upgrade_button,
-	}
-	power_upgrade_button.pressed.connect(_buy_upgrade.bind(&"power"))
-	drops_upgrade_button.pressed.connect(_buy_upgrade.bind(&"drops"))
-	gold_upgrade_button.pressed.connect(_buy_upgrade.bind(&"gold"))
-	auto_upgrade_button.pressed.connect(_buy_upgrade.bind(&"auto"))
-	blue_upgrade_button.pressed.connect(_buy_upgrade.bind(&"blue"))
-	_update_upgrade_panel()
-
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_RESIZED and is_inside_tree() and is_node_ready():
-		ground_y = get_viewport_rect().size.y - 88.0
-		_update_ground()
+	_refresh()
 
 func _process(_delta: float) -> void:
 	if dragging_pickup and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_collect_under_mouse(get_global_mouse_position())
 	elif dragging_pickup:
 		dragging_pickup = false
-	if auto_break_level > 0 and not bag_is_breaking:
-		auto_break_elapsed += _delta
-		var auto_break_interval := maxf(1.8 - auto_break_level * 0.25, 0.55)
-		if auto_break_elapsed >= auto_break_interval:
-			auto_break_elapsed = 0.0
-			last_dispenser_click_position = dispenser_button.global_position + dispenser_button.size * 0.5
-			_drop_box()
 
-func _unhandled_input(event: InputEvent) -> void:
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED and is_inside_tree() and is_node_ready():
+		_update_ground()
+
+func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		dragging_pickup = event.pressed
 		if event.pressed:
-			dragging_pickup = true
 			_collect_under_mouse(event.position)
-		else:
-			dragging_pickup = false
 
-func _drop_box() -> void:
+func _on_bag_click() -> void:
 	if bag_is_breaking:
 		return
-	var effect_position := last_dispenser_click_position
-	if effect_position == Vector2.ZERO:
-		effect_position = get_viewport().get_mouse_position()
-	if effect_position == Vector2.ZERO:
-		effect_position = dispenser_button.global_position + dispenser_button.size * 0.5
-	last_dispenser_click_position = Vector2.ZERO
-	_play_click_effect(effect_position)
-	bag_hit_count += click_power
-	var break_hits := GREEN_BAG_BREAK_HITS if blue_bag_unlocked else BLACK_BAG_BREAK_HITS
-	if bag_hit_count >= break_hits:
-		_break_bag()
+	var center := bag_button.get_global_rect().get_center()
+	var hit_position := last_bag_hit_position if last_bag_hit_position != Vector2.ZERO else center
+	last_bag_hit_position = Vector2.ZERO
+	_play_click_effect(hit_position)
+	bag_hit_count += game.bag.click_damage
+	_update_bag_alpha()
+	_animate_bag_hit()
+	if bag_hit_count >= game.bag.CLICKS_TO_BURST:
+		_break_bag(center)
 
-	if dispenser_tween != null and dispenser_tween.is_valid():
-		dispenser_tween.kill()
-	dispenser_button.scale = Vector2.ONE
-	dispenser_tween = create_tween()
-	dispenser_tween.tween_property(
-		dispenser_button,
-		"scale",
-		Vector2(0.9, 0.9),
-		0.09
-	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	dispenser_tween.tween_property(
-		dispenser_button,
-		"scale",
-		Vector2(1.06, 1.06),
-		0.16
-	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	dispenser_tween.tween_property(
-		dispenser_button,
-		"scale",
-		Vector2.ONE,
-		0.2
-	).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+func _animate_bag_hit() -> void:
+	if bag_tween != null and bag_tween.is_valid():
+		bag_tween.kill()
+	bag_button.scale = Vector2.ONE
+	bag_tween = create_tween()
+	bag_tween.tween_property(bag_button, "scale", Vector2(0.92, 0.92), 0.07)
+	bag_tween.tween_property(bag_button, "scale", Vector2(1.04, 1.04), 0.12)
+	bag_tween.tween_property(bag_button, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_ELASTIC)
+	game.click_bag()
 
-func _break_bag() -> void:
+func _break_bag(center: Vector2) -> void:
 	bag_is_breaking = true
-	dispenser_button.disabled = true
-	dispenser_button.visible = false
-	var bag_center := dispenser_button.get_global_transform() * (dispenser_button.size * 0.5)
+	bag_button.disabled = true
+	bag_button.visible = false
 	var burst := BAG_BURST_SCENE.instantiate() as AnimatedSprite2D
-	burst.global_position = bag_center
-	burst.animation_finished.connect(_finish_bag_break.bind(burst))
+	burst.global_position = center
 	add_child(burst)
+	burst.animation_finished.connect(_finish_bag_break.bind(burst))
 	burst.play(&"burst")
-	var reward_count := GREEN_BAG_BOX_REWARD if blue_bag_unlocked else BLACK_BAG_BOX_REWARD
-	reward_count += bonus_drops
-	if blue_bag_unlocked:
-		reward_count += 2
-	for _i in reward_count:
-		_spawn_box(bag_center)
+
+func _play_click_effect(effect_position: Vector2) -> void:
+	var effect := CLICK_EFFECT_SCENE.instantiate() as AnimatedSprite2D
+	effect.global_position = effect_position
+	effect.scale = Vector2(0.85, 0.85)
+	add_child(effect)
+	effect.animation_finished.connect(effect.queue_free)
+	effect.play(&"click")
 
 func _finish_bag_break(burst: AnimatedSprite2D) -> void:
 	if is_instance_valid(burst):
 		burst.queue_free()
 	bag_hit_count = 0
 	bag_is_breaking = false
-	dispenser_button.disabled = false
-	dispenser_button.visible = true
-	_update_dispenser_bag()
+	bag_button.disabled = false
+	bag_button.visible = true
+	bag_button.scale = Vector2.ONE
+	bag_button.modulate.a = 1.0
 
-func _spawn_box(origin: Vector2) -> void:
+func _on_bag_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		last_bag_hit_position = bag_button.global_position + event.position
+	elif event is InputEventScreenTouch and event.pressed:
+		last_bag_hit_position = event.position
+
+func _update_bag_alpha() -> void:
+	var remaining: int = game.bag.CLICKS_TO_BURST - bag_hit_count
+	var alpha := 1.0
+	if remaining <= 3:
+		alpha = 0.3
+	elif remaining <= 7:
+		alpha = 0.65
+	bag_button.modulate.a = alpha
+
+func _spawn_drops(drops: Dictionary) -> void:
+	var origin := bag_button.global_position + bag_button.size * 0.5
+	for resource_id in drops:
+		for _i in int(drops[resource_id]):
+			_spawn_drop(origin, StringName(resource_id))
+	if game.is_collector_enabled():
+		get_tree().create_timer(DROP_PICKUP_DELAY + 0.25).timeout.connect(_auto_collect_drops)
+
+func _spawn_drop(origin: Vector2, resource_id: StringName) -> void:
 	dropped_count += 1
-	var box := DROP_BOX_SCRIPT.new() as DropBox
-	box.name = "DroppedBox_%d" % dropped_count
-	var category := _roll_drop_category()
+	var box := DROP_BOX_SCRIPT.new()
+	box.name = "DroppedItem_%d" % dropped_count
+	var category := _category_for_resource(resource_id)
 	var color: Color = GOLD_COLOR if category == DropBox.Category.GOLD else BOX_COLORS[rng.randi_range(0, BOX_COLORS.size() - 1)]
-	box.configure(
-		BOX_SIZES[rng.randi_range(0, BOX_SIZES.size() - 1)],
-		color,
-		category
-	)
+	box.configure(BOX_SIZES[rng.randi_range(0, BOX_SIZES.size() - 1)], color, category)
 	box.global_position = origin
 	box.rotation = rng.randf_range(-0.18, 0.18)
 	box_layer.add_child(box)
 	box.collision_layer = 0
-	get_tree().create_timer(DROP_PICKUP_DELAY).timeout.connect(_enable_box_pickup.bind(box))
-	box.apply_central_impulse(Vector2(rng.randf_range(-140.0, 140.0), rng.randf_range(-180.0, -80.0)))
+	get_tree().create_timer(DROP_PICKUP_DELAY).timeout.connect(_enable_drop_pickup.bind(box))
+	box.apply_central_impulse(Vector2(rng.randf_range(-180.0, 180.0), rng.randf_range(-220.0, -100.0)))
 
-func _roll_drop_category() -> DropBox.Category:
-	if rng.randf() < BASE_GOLD_SPAWN_CHANCE + gold_chance_bonus:
+func _category_for_resource(resource_id: StringName) -> int:
+	if resource_id == &"gold":
 		return DropBox.Category.GOLD
-	return BOX_CATEGORIES[rng.randi_range(0, BOX_CATEGORIES.size() - 1)]
+	if resource_id == &"junk":
+		return DropBox.Category.JUNK
+	return DropBox.Category.PLASTIC
 
-func _enable_box_pickup(box: DropBox) -> void:
+func _enable_drop_pickup(box: DropBox) -> void:
 	if is_instance_valid(box) and not box.is_collected:
 		box.collision_layer = 2
 
-func _update_dispenser_bag() -> void:
-	if blue_bag_unlocked:
-		dispenser_button.icon = BLUE_BAG_TEXTURE
-	else:
-		dispenser_button.icon = BLACK_BAG_TEXTURE
-
-func _on_dispenser_gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed:
-		last_dispenser_click_position = dispenser_button.get_global_mouse_position()
-	elif event is InputEventScreenTouch and event.pressed:
-		last_dispenser_click_position = get_global_mouse_position()
-
-func _play_click_effect(effect_position: Vector2) -> void:
-	var effect := CLICK_EFFECT_SCENE.instantiate() as AnimatedSprite2D
-	effect.global_position = effect_position
-	effect.animation_finished.connect(effect.queue_free)
-	add_child(effect)
-	effect.play(&"click")
-
-func _update_ground() -> void:
-	ground.position = Vector2(get_viewport_rect().size.x * 0.5, ground_y + 12.0)
-	ground_visual.position = Vector2(0.0, ground_y)
-	ground_visual.size = Vector2(get_viewport_rect().size.x, 24.0)
-
 func _collect_under_mouse(mouse_position: Vector2) -> void:
-	var space_state := get_world_2d().direct_space_state
 	var query := PhysicsPointQueryParameters2D.new()
 	query.position = mouse_position
 	query.collide_with_bodies = true
 	query.collision_mask = 2
-	var hits := space_state.intersect_point(query, 32)
-	for hit in hits:
-		var body := hit.get("collider") as DropBox
-		if body != null and is_instance_valid(body):
-			_collect_box(body)
+	query.exclude = [ground.get_rid()]
+	for hit in get_world_2d().direct_space_state.intersect_point(query, 32):
+		var box := hit.get("collider") as DropBox
+		if box != null:
+			_collect_box(box)
 
 func _collect_box(box: DropBox) -> void:
 	if box.is_collected:
@@ -244,101 +208,129 @@ func _collect_box(box: DropBox) -> void:
 	box.is_collected = true
 	box.freeze = true
 	box.collision_layer = 0
-	if box.category == DropBox.Category.GOLD:
-		gold += 1
-	else:
-		collected_count += 1
-	if box.category == DropBox.Category.PLASTIC:
-		plastic_count += 1
-	elif box.category == DropBox.Category.JUNK:
-		junk_count += 1
-	_update_resource_display()
-	var target := Vector2(120.0, 90.0)
-	if box.category == DropBox.Category.GOLD:
-		target = Vector2(get_viewport_rect().size.x - 120.0, 90.0)
+	game.collect_drop(box.resource_id)
+	var target := Vector2(100.0, 50.0)
 	var tween := create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(box, "global_position", target, 0.22).set_trans(Tween.TRANS_QUAD)
-	tween.tween_property(box, "scale", Vector2(0.1, 0.1), 0.22).set_trans(Tween.TRANS_BACK)
-	tween.tween_property(box, "modulate:a", 0.0, 0.2)
+	tween.tween_property(box, "global_position", target, 0.28).set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(box, "scale", Vector2(0.1, 0.1), 0.28).set_trans(Tween.TRANS_BACK)
+	tween.tween_property(box, "modulate:a", 0.0, 0.24)
 	tween.chain().tween_callback(box.queue_free)
 
-func _update_resource_display() -> void:
-	count_label.text = str(collected_count)
-	junk_count_label.text = "Junk: %d" % junk_count
-	plastic_count_label.text = "Plastic: %d" % plastic_count
-	gold_label.text = str(gold)
-
-func _buy_upgrade(upgrade: StringName) -> void:
-	match upgrade:
-		&"power":
-			var cost := _power_cost()
-			if junk_count < cost:
-				_show_upgrade_status("Need %d junk for Stronger Fingers." % cost)
-				return
-			junk_count -= cost
-			click_power += 1
-			_show_upgrade_status("Stronger Fingers upgraded to level %d." % click_power)
-		&"drops":
-			var cost := _drops_cost()
-			if plastic_count < cost:
-				_show_upgrade_status("Need %d plastic for Bigger Bags." % cost)
-				return
-			plastic_count -= cost
-			bonus_drops += 1
-			_show_upgrade_status("Bigger Bags upgraded to level %d." % (bonus_drops + 1))
-		&"gold":
-			var cost := _gold_detector_cost()
-			if gold < cost:
-				_show_upgrade_status("Need %d gold for the Gold Detector." % cost)
-				return
-			gold -= cost
-			gold_chance_bonus += 0.05
-			_show_upgrade_status("Gold chance increased to %d%%." % roundi((BASE_GOLD_SPAWN_CHANCE + gold_chance_bonus) * 100.0))
-		&"auto":
-			var cost := _auto_cost()
-			if gold < cost:
-				_show_upgrade_status("Need %d gold to hire a collector." % cost)
-				return
-			gold -= cost
-			auto_break_level += 1
-			_show_upgrade_status("Collector level %d hired." % auto_break_level)
-		&"blue":
-			if blue_bag_unlocked:
-				_show_upgrade_status("Blue Bags are already unlocked.")
-				return
-			if plastic_count < 50:
-				_show_upgrade_status("Need 50 plastic to unlock Blue Bags.")
-				return
-			plastic_count -= 50
-			blue_bag_unlocked = true
-			_show_upgrade_status("Blue Bags unlocked: +2 boxes per break.")
-			_update_dispenser_bag()
-	_update_resource_display()
-	_update_upgrade_panel()
-
-func _power_cost() -> int:
-	return 15 * click_power
-
-func _drops_cost() -> int:
-	return 10 * (bonus_drops + 1)
-
-func _gold_detector_cost() -> int:
-	return 4 + roundi(gold_chance_bonus * 100.0) * 2
-
-func _auto_cost() -> int:
-	return 8 * (auto_break_level + 1)
-
-func _update_upgrade_panel() -> void:
-	if upgrade_buttons.is_empty():
+func _collect_all_drops() -> void:
+	var boxes := box_layer.get_children()
+	if boxes.is_empty():
+		game.collect_loose_drops()
 		return
-	upgrade_buttons[&"power"].text = "Stronger Fingers  |  %d junk" % _power_cost()
-	upgrade_buttons[&"drops"].text = "Bigger Bags  |  %d plastic" % _drops_cost()
-	upgrade_buttons[&"gold"].text = "Gold Detector  |  %d gold" % _gold_detector_cost()
-	upgrade_buttons[&"auto"].text = "Hire Collector  |  %d gold" % _auto_cost()
-	upgrade_buttons[&"blue"].text = "Blue Bags  |  %s" % ("UNLOCKED" if blue_bag_unlocked else "50 plastic")
-	upgrade_buttons[&"blue"].disabled = blue_bag_unlocked
+	for child in boxes:
+		var box := child as DropBox
+		if box != null:
+			_collect_box(box)
 
-func _show_upgrade_status(message: String) -> void:
-	if upgrade_status_label != null:
-		upgrade_status_label.text = message
+func _auto_collect_drops() -> void:
+	for child in box_layer.get_children():
+		var box := child as DropBox
+		if box != null:
+			_collect_box(box)
+
+func _update_ground() -> void:
+	var y := get_viewport_rect().size.y - 92.0
+	ground.position = Vector2(get_viewport_rect().size.x * 0.5, y + 12.0)
+	ground_visual.position = Vector2(0.0, y)
+	ground_visual.size = Vector2(get_viewport_rect().size.x, 24.0)
+
+func _refresh() -> void:
+	for resource_id in resource_labels:
+		resource_labels[resource_id].text = "%s: %s" % [String(resource_id).capitalize(), _abbreviate(game.inventory.get_amount(resource_id))]
+	for generator_id in workshop_rows:
+		_refresh_generator(game.generators[generator_id])
+	for upgrade_id in shop_buttons:
+		var upgrade: Dictionary = game.SHOP_DATA[upgrade_id]
+		shop_buttons[upgrade_id].text = "%s | %s" % [upgrade["name"], _cost_text(upgrade["cost"])]
+		shop_buttons[upgrade_id].disabled = game.shop_purchases.get(upgrade_id, false)
+		shop_buttons[upgrade_id].tooltip_text = _shop_upgrade_tooltip(upgrade_id, upgrade)
+	_refresh_bag()
+	_refresh_achievements()
+
+func _refresh_generator(generator) -> void:
+	if not workshop_rows.has(generator.id):
+		return
+	var row: Dictionary = workshop_rows[generator.id]
+	row["title"].text = "%s | Owned: %d" % [generator.display_name, generator.owned]
+	row["recipe"].text = "Recipe: %s" % _cost_text(generator.recipe)
+	row["output"].text = "Stored output: %s" % _output_text(generator.pending_output)
+	row["progress"].value = generator.cycle_progress * 100.0
+	row["buy"].text = "Buy | %s" % _cost_text(generator.purchase_cost)
+	row["collect"].disabled = generator.pending_output.is_empty()
+	row["run"].disabled = generator.running or generator.owned == 0
+	row["speed"].text = "Speed $%d" % (100 + generator.speed_level * 150)
+	row["multiplier"].text = "Yield $%d" % (250 + generator.multiplier_level * 350)
+	row["auto_in"].text = _automation_text("Auto-In", generator.auto_in_unlocked, generator.auto_in)
+	row["auto_out"].text = _automation_text("Auto-Out", generator.auto_out_unlocked, generator.auto_out)
+	row["speed"].tooltip_text = "Speed upgrade\nCurrent level: %d\nReduces cycle time by 20%% per level.\nNext level cycle time: %.2fs." % [
+		generator.speed_level,
+		generator.cycle_time(game.global_speed) * 0.8,
+	]
+	row["multiplier"].tooltip_text = "Yield multiplier\nCurrent level: %d\nDoubles output per level.\nNext level output: %dx." % [
+		generator.multiplier_level,
+		generator.output_multiplier() * 2,
+	]
+	row["auto_in"].tooltip_text = _automation_tooltip("Auto-In", generator.auto_in_unlocked, generator.auto_in, "Automatically starts a cycle when recipe resources are available.")
+	row["auto_out"].tooltip_text = _automation_tooltip("Auto-Out", generator.auto_out_unlocked, generator.auto_out, "Automatically transfers completed output into inventory.")
+
+func _automation_text(label: String, unlocked: bool, enabled: bool) -> String:
+	if not unlocked:
+		return "%s $500" % label
+	return "%s: ON" % label if enabled else "%s: OFF" % label
+
+func _automation_tooltip(label: String, unlocked: bool, enabled: bool, description: String) -> String:
+	if not unlocked:
+		return "%s\n%s\nCurrent state: Locked\nNext purchase: unlocks this feature for $500 and turns it ON." % [label, description]
+	var state := "ON" if enabled else "OFF"
+	var next_state := "OFF" if enabled else "ON"
+	return "%s\n%s\nCurrent state: %s\nNext click: turns it %s for free." % [label, description, state, next_state]
+
+func _refresh_bag() -> void:
+	_update_bag_alpha()
+
+func _refresh_achievements() -> void:
+	for achievement_id in achievement_labels:
+		var unlocked: bool = game.achievements[achievement_id]
+		achievement_labels[achievement_id].text = ("✓ " if unlocked else "○ ") + String(achievement_id).replace("_", " ").capitalize()
+
+func _sell_refined() -> void:
+	for resource_id in [&"flakes", &"pellets", &"fabric", &"gold"]:
+		game.sell_resource(resource_id)
+
+func _show_message(text: String) -> void:
+	message_label.text = text
+
+func _cost_text(cost: Dictionary) -> String:
+	var parts: Array[String] = []
+	for resource_id in cost:
+		parts.append("%d %s" % [cost[resource_id], String(resource_id)])
+	return ", ".join(parts)
+
+func _output_text(output: Dictionary) -> String:
+	if output.is_empty():
+		return "None"
+	return _cost_text(output)
+
+func _shop_upgrade_tooltip(upgrade_id: StringName, upgrade: Dictionary) -> String:
+	var descriptions := {
+		&"shop_u_bag_dmg": "Increases bag damage by +1 click per press.",
+		&"shop_u_bag_gold": "Increases bag gold-drop chance by +5 percentage points.",
+		&"shop_u_collector_base": "Unlocks the Collector Box, which automatically collects newly dropped items.",
+		&"shop_u_collector_speed": "Improves Collector Box speed by 1.5x and increases global processing speed.",
+	}
+	var description: String = descriptions.get(upgrade_id, "Improves the recycling operation.")
+	if game.shop_purchases.get(upgrade_id, false):
+		return "%s\nPurchased and active.\nNo further level." % description
+	return "%s\nNext purchase: %s." % [description, _cost_text(upgrade["cost"])]
+
+func _abbreviate(value: int) -> String:
+	if value >= 1000000:
+		return "%.1fm" % (float(value) / 1000000.0)
+	if value >= 1000:
+		return "%.1fk" % (float(value) / 1000.0)
+	return str(value)
