@@ -45,6 +45,11 @@ func is_speed_saturated(global_speed: float) -> bool:
 func is_multiplier_maxed() -> bool:
 	return multiplier_level >= max_multiplier_level
 
+func upgrade_cost(upgrade_id: StringName) -> int:
+	var upgrade: Dictionary = upgrade_data.get(upgrade_id, {})
+	var level := speed_level if upgrade_id == &"speed" else multiplier_level if upgrade_id == &"multiplier" else 0
+	return int(upgrade.get("cost", 0)) + int(upgrade.get("cost_increment", 0)) * level
+
 func output_multiplier() -> int:
 	return 1 << multiplier_level
 
