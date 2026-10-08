@@ -1,0 +1,118 @@
+{
+  "resources": {
+    "plastic": { "sell_value": 1 },
+    "flakes": { "sell_value": 5 },
+    "pellets": { "sell_value": 15 },
+    "fabric": { "sell_value": 50 },
+    "gold": { "sell_value": 100 }
+  },
+  "bag": {
+    "clicks_to_burst": 10,
+    "click_damage": 1,
+    "gold_chance": 0.05,
+    "plastic_min": 4,
+    "plastic_max": 7,
+    "junk_min": 1,
+    "junk_max": 3,
+    "texture": "res://assets/black_bag.png",
+    "alpha_stage_1_remaining": 7,
+    "alpha_stage_1": 1.0,
+    "alpha_stage_2_remaining": 3,
+    "alpha_stage_2": 0.65,
+    "alpha_stage_3": 0.3
+  },
+  "shop_upgrades": {
+    "shop_u_bag_dmg": {
+      "name": "Heavy Duty Cutters",
+      "cost": { "money": 50 },
+      "description": "Increases bag damage by +1 click per press.",
+      "effect": { "click_damage": 1 }
+    },
+    "shop_u_bag_gold": {
+      "name": "Lucky Seams",
+      "cost": { "money": 200 },
+      "description": "Increases bag gold-drop chance by +5 percentage points.",
+      "effect": { "gold_chance": 0.05 }
+    },
+    "shop_u_bag_upgrade": {
+      "name": "Reinforced Green Bag",
+      "cost": { "money": 500 },
+      "description": "Replaces the dispenser bag with a reinforced green bag and adds +1 click damage.",
+      "effect": { "click_damage": 1, "bag_texture": "res://assets/green_bag.png" }
+    },
+    "shop_u_collector_base": {
+      "name": "Basic Collector Box",
+      "cost": { "money": 150 },
+      "description": "Unlocks the Collector Box, which collects a limited number of newly dropped items.",
+      "effect": { "collector_enabled": true, "collector_capacity": 3, "collector_check_interval": 0.75 }
+    },
+    "shop_u_collector_speed": {
+      "name": "Box Motor Upgrade",
+      "cost": { "money": 400 },
+      "description": "Increases Collector Box capacity by 3 items and global processing speed by 1.5x.",
+      "effect": { "global_speed_multiplier": 1.5, "collector_capacity_add": 3 }
+    }
+  },
+  "generators": [
+    {
+      "id": "g1_sorter",
+      "name": "Manual Sorting Table",
+      "cost": { "plastic": 20 },
+      "cycle_time": 3.5,
+      "recipe": { "plastic": 5 },
+      "output": { "flakes": 2 },
+      "upgrades": {
+        "speed": { "cost": 100, "cost_increment": 150 },
+        "multiplier": { "cost": 250, "cost_increment": 350 },
+        "auto_in": { "cost": 500 },
+        "auto_out": { "cost": 500 }
+      }
+    },
+    {
+      "id": "g2_pelletizer",
+      "name": "Melt Pelletizer",
+      "cost": { "flakes": 60, "plastic": 50 },
+      "cycle_time": 6.0,
+      "recipe": { "flakes": 4, "plastic": 3 },
+      "output": { "pellets": 2 },
+      "upgrades": {
+        "speed": { "cost": 300, "cost_increment": 150 },
+        "multiplier": { "cost": 600, "cost_increment": 350 },
+        "auto_in": { "cost": 1200 },
+        "auto_out": { "cost": 1200 }
+      }
+    },
+    {
+      "id": "g3_loom",
+      "name": "Weaving Loom",
+      "cost": { "pellets": 100, "plastic": 120 },
+      "cycle_time": 10.0,
+      "recipe": { "pellets": 5, "plastic": 6 },
+      "output": { "fabric": 1 },
+      "upgrades": {
+        "speed": { "cost": 800, "cost_increment": 150 },
+        "multiplier": { "cost": 1500, "cost_increment": 350 },
+        "auto_in": { "cost": 3000 },
+        "auto_out": { "cost": 3000 }
+      }
+    }
+  ],
+  "event": {
+    "initial_timer": 240.0,
+    "duration": 20.0,
+    "bonus_resources": {
+      "plastic": 10,
+      "flakes": 10,
+      "pellets": 10
+    }
+  },
+  "starting_inventory": {
+    "plastic": 1000000,
+    "money": 1000000
+  },
+  "achievement_speed_bonus": 1.05,
+  "generator_limits": {
+    "speed_saturation_threshold": 0.5,
+    "max_multiplier_level": 4
+  }
+}

@@ -4,11 +4,14 @@ const GAME_SCRIPT := preload("res://recycler_game.gd")
 const DROP_BOX_SCRIPT := preload("res://drop_box.gd")
 const CLICK_EFFECT_SCENE := preload("res://effects/click_effect.tscn")
 const BAG_BURST_SCENE := preload("res://effects/bag_burst.tscn")
+const CONSTANT_PROGRESS_SHADER := preload("res://effects/constant_progress.gdshader")
 
 const DROP_PICKUP_DELAY := 0.5
 const BOX_COLORS := [Color("#ff8a65"), Color("#64b5f6"), Color("#81c784"), Color("#ba68c8"), Color("#ffd54f")]
 const BOX_SIZES := [Vector2(34.0, 34.0), Vector2(42.0, 42.0), Vector2(50.0, 50.0)]
 const GOLD_COLOR := Color("#d9a441")
+const ACHIEVEMENT_LOCKED_COLOR := Color("#587286")
+const ACHIEVEMENT_UNLOCKED_COLOR := Color("#b9f58a")
 
 var game = GAME_SCRIPT.new()
 
@@ -20,15 +23,17 @@ var game = GAME_SCRIPT.new()
 	&"money": %Money,
 }
 @onready var bag_button: Button = %BagButton
+@onready var bag_texture: TextureRect = %BagTexture
 @onready var message_label: Label = %Message
 @onready var workshop_rows: Dictionary[StringName, Dictionary] = {
-	&"g1_sorter": {"title": %G1Title, "recipe": %G1Recipe, "output": %G1Output, "progress": %G1Progress, "buy": %G1Buy, "run": %G1Run, "collect": %G1Collect, "speed": %G1Speed, "multiplier": %G1Multiplier, "auto_in": %G1AutoIn, "auto_out": %G1AutoOut},
-	&"g2_pelletizer": {"title": %G2Title, "recipe": %G2Recipe, "output": %G2Output, "progress": %G2Progress, "buy": %G2Buy, "run": %G2Run, "collect": %G2Collect, "speed": %G2Speed, "multiplier": %G2Multiplier, "auto_in": %G2AutoIn, "auto_out": %G2AutoOut},
-	&"g3_loom": {"title": %G3Title, "recipe": %G3Recipe, "output": %G3Output, "progress": %G3Progress, "buy": %G3Buy, "run": %G3Run, "collect": %G3Collect, "speed": %G3Speed, "multiplier": %G3Multiplier, "auto_in": %G3AutoIn, "auto_out": %G3AutoOut},
+	&"g1_sorter": {"title": %G1Title, "recipe": %G1Recipe, "output": %G1Output, "rate": %G1Rate, "progress": %G1Progress, "buy": %G1Buy, "run": %G1Run, "collect": %G1Collect, "speed": %G1Speed, "multiplier": %G1Multiplier, "auto_in": %G1AutoIn, "auto_out": %G1AutoOut},
+	&"g2_pelletizer": {"title": %G2Title, "recipe": %G2Recipe, "output": %G2Output, "rate": %G2Rate, "progress": %G2Progress, "buy": %G2Buy, "run": %G2Run, "collect": %G2Collect, "speed": %G2Speed, "multiplier": %G2Multiplier, "auto_in": %G2AutoIn, "auto_out": %G2AutoOut},
+	&"g3_loom": {"title": %G3Title, "recipe": %G3Recipe, "output": %G3Output, "rate": %G3Rate, "progress": %G3Progress, "buy": %G3Buy, "run": %G3Run, "collect": %G3Collect, "speed": %G3Speed, "multiplier": %G3Multiplier, "auto_in": %G3AutoIn, "auto_out": %G3AutoOut},
 }
 @onready var shop_buttons: Dictionary[StringName, Button] = {
 	&"shop_u_bag_dmg": %ShopBagDamage,
 	&"shop_u_bag_gold": %ShopGoldChance,
+	&"shop_u_bag_upgrade": %ShopBagUpgrade,
 	&"shop_u_collector_base": %ShopCollector,
 	&"shop_u_collector_speed": %ShopCollectorSpeed,
 }
@@ -50,13 +55,17 @@ var bag_is_breaking := false
 var bag_hit_count := 0
 var bag_tween: Tween
 var last_bag_hit_position := Vector2.ZERO
+var constant_progress_material: ShaderMaterial
+var collector_check_timer := 0.0
 
 func _ready() -> void:
 	rng.randomize()
+	constant_progress_material = ShaderMaterial.new()
+	constant_progress_material.shader = CONSTANT_PROGRESS_SHADER
+	_center_bag_button_pivot()
 	bag_button.gui_input.connect(_on_bag_gui_input)
 	add_child(game)
 	bag_button.pressed.connect(_on_bag_click)
-	%CollectDrops.pressed.connect(_collect_all_drops)
 	%SellMaterials.pressed.connect(_sell_refined)
 	for generator_id in workshop_rows:
 		var row: Dictionary = workshop_rows[generator_id]
@@ -81,10 +90,16 @@ func _process(_delta: float) -> void:
 		_collect_under_mouse(get_global_mouse_position())
 	elif dragging_pickup:
 		dragging_pickup = false
+	if game.is_collector_enabled():
+		collector_check_timer -= _delta
+		if collector_check_timer <= 0.0:
+			collector_check_timer = game.collector_check_interval
+			_auto_collect_drops()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED and is_inside_tree() and is_node_ready():
 		_update_ground()
+		_center_bag_button_pivot()
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
@@ -102,7 +117,7 @@ func _on_bag_click() -> void:
 	bag_hit_count += game.bag.click_damage
 	_update_bag_alpha()
 	_animate_bag_hit()
-	if bag_hit_count >= game.bag.CLICKS_TO_BURST:
+	if bag_hit_count >= game.bag.clicks_to_burst:
 		_break_bag(center)
 
 func _animate_bag_hit() -> void:
@@ -114,6 +129,9 @@ func _animate_bag_hit() -> void:
 	bag_tween.tween_property(bag_button, "scale", Vector2(1.04, 1.04), 0.12)
 	bag_tween.tween_property(bag_button, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_ELASTIC)
 	game.click_bag()
+
+func _center_bag_button_pivot() -> void:
+	bag_button.pivot_offset = bag_button.size * 0.5
 
 func _break_bag(center: Vector2) -> void:
 	bag_is_breaking = true
@@ -145,17 +163,17 @@ func _finish_bag_break(burst: AnimatedSprite2D) -> void:
 
 func _on_bag_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
-		last_bag_hit_position = bag_button.global_position + event.position
+		last_bag_hit_position = bag_button.get_global_transform_with_canvas() * event.position
 	elif event is InputEventScreenTouch and event.pressed:
 		last_bag_hit_position = event.position
 
 func _update_bag_alpha() -> void:
-	var remaining: int = game.bag.CLICKS_TO_BURST - bag_hit_count
-	var alpha := 1.0
-	if remaining <= 3:
-		alpha = 0.3
-	elif remaining <= 7:
-		alpha = 0.65
+	var remaining: int = game.bag.clicks_to_burst - bag_hit_count
+	var alpha: float = game.bag.alpha_stage_1
+	if remaining <= game.bag.alpha_stage_2_remaining:
+		alpha = game.bag.alpha_stage_3
+	elif remaining <= game.bag.alpha_stage_1_remaining:
+		alpha = game.bag.alpha_stage_2
 	bag_button.modulate.a = alpha
 
 func _spawn_drops(drops: Dictionary) -> void:
@@ -163,9 +181,6 @@ func _spawn_drops(drops: Dictionary) -> void:
 	for resource_id in drops:
 		for _i in int(drops[resource_id]):
 			_spawn_drop(origin, StringName(resource_id))
-	if game.is_collector_enabled():
-		get_tree().create_timer(DROP_PICKUP_DELAY + 0.25).timeout.connect(_auto_collect_drops)
-
 func _spawn_drop(origin: Vector2, resource_id: StringName) -> void:
 	dropped_count += 1
 	var box := DROP_BOX_SCRIPT.new()
@@ -177,7 +192,8 @@ func _spawn_drop(origin: Vector2, resource_id: StringName) -> void:
 	box.rotation = rng.randf_range(-0.18, 0.18)
 	box_layer.add_child(box)
 	box.collision_layer = 0
-	get_tree().create_timer(DROP_PICKUP_DELAY).timeout.connect(_enable_drop_pickup.bind(box))
+	var pickup_timer := get_tree().create_timer(DROP_PICKUP_DELAY)
+	pickup_timer.timeout.connect(_enable_drop_pickup.bind(box.get_instance_id()))
 	box.apply_central_impulse(Vector2(rng.randf_range(-180.0, 180.0), rng.randf_range(-220.0, -100.0)))
 
 func _category_for_resource(resource_id: StringName) -> int:
@@ -187,7 +203,8 @@ func _category_for_resource(resource_id: StringName) -> int:
 		return DropBox.Category.JUNK
 	return DropBox.Category.PLASTIC
 
-func _enable_drop_pickup(box: DropBox) -> void:
+func _enable_drop_pickup(instance_id: int) -> void:
+	var box := instance_from_id(instance_id) as DropBox
 	if is_instance_valid(box) and not box.is_collected:
 		box.collision_layer = 2
 
@@ -217,21 +234,15 @@ func _collect_box(box: DropBox) -> void:
 	tween.tween_property(box, "modulate:a", 0.0, 0.24)
 	tween.chain().tween_callback(box.queue_free)
 
-func _collect_all_drops() -> void:
-	var boxes := box_layer.get_children()
-	if boxes.is_empty():
-		game.collect_loose_drops()
-		return
-	for child in boxes:
-		var box := child as DropBox
-		if box != null:
-			_collect_box(box)
-
 func _auto_collect_drops() -> void:
+	var collected := 0
 	for child in box_layer.get_children():
+		if collected >= game.get_collector_capacity():
+			break
 		var box := child as DropBox
-		if box != null:
+		if box != null and not box.is_collected:
 			_collect_box(box)
+			collected += 1
 
 func _update_ground() -> void:
 	var y := get_viewport_rect().size.y - 92.0
@@ -245,9 +256,10 @@ func _refresh() -> void:
 	for generator_id in workshop_rows:
 		_refresh_generator(game.generators[generator_id])
 	for upgrade_id in shop_buttons:
-		var upgrade: Dictionary = game.SHOP_DATA[upgrade_id]
-		shop_buttons[upgrade_id].text = "%s | %s" % [upgrade["name"], _cost_text(upgrade["cost"])]
-		shop_buttons[upgrade_id].disabled = game.shop_purchases.get(upgrade_id, false)
+		var upgrade: Dictionary = game.shop_data[upgrade_id]
+		var purchased: bool = game.shop_purchases.get(upgrade_id, false)
+		shop_buttons[upgrade_id].text = "%s | Purchased" % upgrade["name"] if purchased else "%s | %s" % [upgrade["name"], _cost_text(upgrade["cost"])]
+		shop_buttons[upgrade_id].disabled = purchased
 		shop_buttons[upgrade_id].tooltip_text = _shop_upgrade_tooltip(upgrade_id, upgrade)
 	_refresh_bag()
 	_refresh_achievements()
@@ -259,12 +271,19 @@ func _refresh_generator(generator) -> void:
 	row["title"].text = "%s | Owned: %d" % [generator.display_name, generator.owned]
 	row["recipe"].text = "Recipe: %s" % _cost_text(generator.recipe)
 	row["output"].text = "Stored output: %s" % _output_text(generator.pending_output)
+	row["rate"].text = _production_rate_text(generator)
 	row["progress"].value = generator.cycle_progress * 100.0
 	row["buy"].text = "Buy | %s" % _cost_text(generator.purchase_cost)
-	row["collect"].disabled = generator.pending_output.is_empty()
-	row["run"].disabled = generator.running or generator.owned == 0
-	row["speed"].text = "Speed $%d" % (100 + generator.speed_level * 150)
-	row["multiplier"].text = "Yield $%d" % (250 + generator.multiplier_level * 350)
+	var speed_saturated: bool = generator.is_speed_saturated(game.global_speed)
+	row["progress"].material = constant_progress_material if speed_saturated else null
+	if speed_saturated:
+		row["progress"].value = 100.0
+	row["collect"].disabled = generator.pending_output.is_empty() or (speed_saturated and generator.auto_out)
+	row["run"].disabled = generator.running or generator.owned == 0 or (speed_saturated and generator.auto_in)
+	row["speed"].visible = not speed_saturated
+	row["multiplier"].visible = not generator.is_multiplier_maxed()
+	row["speed"].text = "Speed $%d" % _generator_upgrade_cost(generator, &"speed")
+	row["multiplier"].text = "Yield $%d" % _generator_upgrade_cost(generator, &"multiplier")
 	row["auto_in"].text = _automation_text("Auto-In", generator.auto_in_unlocked, generator.auto_in)
 	row["auto_out"].text = _automation_text("Auto-Out", generator.auto_out_unlocked, generator.auto_out)
 	row["speed"].tooltip_text = "Speed upgrade\nCurrent level: %d\nReduces cycle time by 20%% per level.\nNext level cycle time: %.2fs." % [
@@ -278,10 +297,30 @@ func _refresh_generator(generator) -> void:
 	row["auto_in"].tooltip_text = _automation_tooltip("Auto-In", generator.auto_in_unlocked, generator.auto_in, "Automatically starts a cycle when recipe resources are available.")
 	row["auto_out"].tooltip_text = _automation_tooltip("Auto-Out", generator.auto_out_unlocked, generator.auto_out, "Automatically transfers completed output into inventory.")
 
+func _generator_upgrade_cost(generator, upgrade_id: StringName) -> int:
+	var upgrade: Dictionary = generator.upgrade_data.get(upgrade_id, {})
+	var level: int = generator.speed_level if upgrade_id == &"speed" else generator.multiplier_level
+	return int(upgrade.get("cost", 0)) + int(upgrade.get("cost_increment", 0)) * level
+
 func _automation_text(label: String, unlocked: bool, enabled: bool) -> String:
 	if not unlocked:
 		return "%s $500" % label
 	return "%s: ON" % label if enabled else "%s: OFF" % label
+
+func _production_rate_text(generator) -> String:
+	var cycle_time: float = generator.cycle_time(game.global_speed)
+	var speed_saturated: bool = generator.is_speed_saturated(game.global_speed)
+	var unit := "s" if speed_saturated else "cycle"
+	if generator.owned <= 0 or cycle_time <= 0.0:
+		var empty_resource_id: StringName = StringName(generator.output.keys()[0])
+		return "Production: 0 %s/%s" % [String(empty_resource_id).capitalize(), unit]
+	var rate_parts: Array[String] = []
+	for resource_id in generator.output:
+		var cycle_output: int = int(generator.output[resource_id]) * generator.owned * generator.output_multiplier()
+		var amount: float = float(cycle_output) / cycle_time if speed_saturated else float(cycle_output)
+		var precision: String = "%.2f" if speed_saturated else "%.0f"
+		rate_parts.append("%s %s/%s" % [precision % amount, String(resource_id).capitalize(), unit])
+	return "Production: %s" % ", ".join(rate_parts)
 
 func _automation_tooltip(label: String, unlocked: bool, enabled: bool, description: String) -> String:
 	if not unlocked:
@@ -292,11 +331,14 @@ func _automation_tooltip(label: String, unlocked: bool, enabled: bool, descripti
 
 func _refresh_bag() -> void:
 	_update_bag_alpha()
+	bag_texture.texture = load(game.bag_texture_path)
 
 func _refresh_achievements() -> void:
 	for achievement_id in achievement_labels:
 		var unlocked: bool = game.achievements[achievement_id]
-		achievement_labels[achievement_id].text = ("✓ " if unlocked else "○ ") + String(achievement_id).replace("_", " ").capitalize()
+		var label: Label = achievement_labels[achievement_id]
+		label.text = ("✓ " if unlocked else "○ ") + String(achievement_id).replace("_", " ").capitalize()
+		label.add_theme_color_override("font_color", ACHIEVEMENT_UNLOCKED_COLOR if unlocked else ACHIEVEMENT_LOCKED_COLOR)
 
 func _sell_refined() -> void:
 	for resource_id in [&"flakes", &"pellets", &"fabric", &"gold"]:
@@ -314,16 +356,13 @@ func _cost_text(cost: Dictionary) -> String:
 func _output_text(output: Dictionary) -> String:
 	if output.is_empty():
 		return "None"
-	return _cost_text(output)
+	var parts: Array[String] = []
+	for resource_id in output:
+		parts.append("%s %s" % [_abbreviate(int(output[resource_id])), String(resource_id)])
+	return ", ".join(parts)
 
 func _shop_upgrade_tooltip(upgrade_id: StringName, upgrade: Dictionary) -> String:
-	var descriptions := {
-		&"shop_u_bag_dmg": "Increases bag damage by +1 click per press.",
-		&"shop_u_bag_gold": "Increases bag gold-drop chance by +5 percentage points.",
-		&"shop_u_collector_base": "Unlocks the Collector Box, which automatically collects newly dropped items.",
-		&"shop_u_collector_speed": "Improves Collector Box speed by 1.5x and increases global processing speed.",
-	}
-	var description: String = descriptions.get(upgrade_id, "Improves the recycling operation.")
+	var description: String = String(upgrade.get("description", "Improves the recycling operation."))
 	if game.shop_purchases.get(upgrade_id, false):
 		return "%s\nPurchased and active.\nNo further level." % description
 	return "%s\nNext purchase: %s." % [description, _cost_text(upgrade["cost"])]

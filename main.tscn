@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://5yknw1nu5h6e" path="res://main.gd" id="1_main"]
 [ext_resource type="Texture2D" uid="uid://dc87pop2slxt4" path="res://assets/black_bag.png" id="2_bag"]
+[ext_resource type="Theme" path="res://ui_theme.tres" id="3_theme"]
+[ext_resource type="Texture2D" path="res://assets/ui/arcade/BackgroundGrid.png" id="4_grid"]
 
 [sub_resource type="RectangleShape2D" id="GroundShape"]
 size = Vector2(1920, 24)
@@ -28,6 +30,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme = ExtResource("3_theme")
 script = ExtResource("1_main")
 
 [node name="Background" type="ColorRect" parent="." unique_id=1082525454]
@@ -39,6 +42,20 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0.0627451, 0.0941176, 0.168627, 1)
+
+[node name="BackgroundGrid" type="TextureRect" parent="." unique_id=3000000012]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+modulate = Color(0.34, 0.48, 0.62, 0.16)
+texture = ExtResource("4_grid")
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 2
 
 [node name="Ground" type="StaticBody2D" parent="." unique_id=242547887]
 collision_mask = 2
@@ -69,79 +86,78 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 16
 
-[node name="Inventory" type="HBoxContainer" parent="Layout" unique_id=488254203]
+[node name="Inventory" type="PanelContainer" parent="Layout" unique_id=488254203]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 72)
+
+[node name="InventoryContent" type="HBoxContainer" parent="Layout/Inventory" unique_id=3000000013]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="Plastic" type="Label" parent="Layout/Inventory" unique_id=1614999828]
+[node name="Plastic" type="Label" parent="Layout/Inventory/InventoryContent" unique_id=1614999828]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
 text = "Plastic: 0"
 
-[node name="Flakes" type="Label" parent="Layout/Inventory" unique_id=624237166]
+[node name="Flakes" type="Label" parent="Layout/Inventory/InventoryContent" unique_id=624237166]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 text = "Flakes: 0"
 
-[node name="Pellets" type="Label" parent="Layout/Inventory" unique_id=1210116012]
+[node name="Pellets" type="Label" parent="Layout/Inventory/InventoryContent" unique_id=1210116012]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 text = "Pellets: 0"
 
-[node name="Fabric" type="Label" parent="Layout/Inventory" unique_id=1260617584]
+[node name="Fabric" type="Label" parent="Layout/Inventory/InventoryContent" unique_id=1260617584]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 text = "Fabric: 0"
 
-[node name="Money" type="Label" parent="Layout/Inventory" unique_id=1936068020]
+[node name="Money" type="Label" parent="Layout/Inventory/InventoryContent" unique_id=1936068020]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 text = "Money: 0"
+theme_override_colors/font_color = Color(1, 0.82, 0.38, 1)
 
-[node name="Body" type="Control" parent="Layout" unique_id=1029862002]
+[node name="Body" type="HBoxContainer" parent="Layout" unique_id=1029862002]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/separation = 24
 
-[node name="Actions" type="VBoxContainer" parent="Layout/Body" unique_id=498072251]
-layout_mode = 1
-offset_right = 250.0
-offset_bottom = 220.0
+[node name="Actions" type="PanelContainer" parent="Layout/Body" unique_id=498072251]
+custom_minimum_size = Vector2(280, 220)
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="Content" type="VBoxContainer" parent="Layout/Body/Actions" unique_id=3000000014]
+layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="CollectDrops" type="Button" parent="Layout/Body/Actions" unique_id=1394041059]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Collect loose drops"
-
-[node name="SellMaterials" type="Button" parent="Layout/Body/Actions" unique_id=1849059127]
+[node name="SellMaterials" type="Button" parent="Layout/Body/Actions/Content" unique_id=1849059127]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Sell refined materials"
+custom_minimum_size = Vector2(250, 46)
 
-[node name="Message" type="Label" parent="Layout/Body/Actions" unique_id=1099376847]
+[node name="Message" type="Label" parent="Layout/Body/Actions/Content" unique_id=1099376847]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 autowrap_mode = 2
+theme_override_colors/font_color = Color(0.68, 0.82, 0.9, 1)
+theme_override_constants/outline_size = 4
 
 [node name="BagArea" type="VBoxContainer" parent="Layout/Body" unique_id=693197257]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -160.0
-offset_top = -145.0
-offset_right = 160.0
-offset_bottom = 175.0
-grow_horizontal = 2
-grow_vertical = 2
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/separation = 10
 alignment = 1
 
@@ -149,26 +165,37 @@ alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 260)
 layout_mode = 2
-size_flags_vertical = 3
+size_flags_horizontal = 4
+size_flags_vertical = 4
 focus_mode = 0
 theme_override_styles/normal = SubResource("BagButtonEmpty")
 theme_override_styles/pressed = SubResource("BagButtonEmpty")
 theme_override_styles/hover = SubResource("BagButtonEmpty")
 theme_override_styles/focus = SubResource("BagButtonEmpty")
-icon = ExtResource("2_bag")
 flat = true
-icon_alignment = 1
-expand_icon = true
+pivot_offset = Vector2(160, 130)
+
+[node name="BagTexture" type="TextureRect" parent="Layout/Body/BagArea/BagButton" unique_id=3000000007]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_bag")
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Tabs" type="TabContainer" parent="Layout/Body" unique_id=898077877]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -704.0
-offset_bottom = 520.0
-grow_horizontal = 0
+custom_minimum_size = Vector2(700, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 current_tab = 0
+theme_override_constants/side_margin = 12
 
 [node name="Workshop" type="ScrollContainer" parent="Layout/Body/Tabs" unique_id=1056622948]
 layout_mode = 2
@@ -185,30 +212,38 @@ theme_override_styles/panel = SubResource("Panel")
 
 [node name="Content" type="VBoxContainer" parent="Layout/Body/Tabs/Workshop/Rows/G1" unique_id=1080119262]
 layout_mode = 2
+theme_override_constants/separation = 6
 
 [node name="G1Title" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content" unique_id=1587905016]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Manual Sorting Table"
 
-[node name="G1Recipe" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content" unique_id=3000000001]
+[node name="G1Recipe" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content" unique_id=-1294967295]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Recipe: plastic"
 
-[node name="G1Output" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content" unique_id=3000000002]
+[node name="G1Output" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content" unique_id=-1294967294]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Stored output: None"
+
+[node name="G1Rate" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content" unique_id=3000000009]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Production: 0 items/s"
 
 [node name="G1Progress" type="ProgressBar" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content" unique_id=2014522989]
 unique_name_in_owner = true
 layout_mode = 2
 show_percentage = false
 
-[node name="Buttons" type="HBoxContainer" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content" unique_id=1055151840]
+[node name="Buttons" type="GridContainer" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content" unique_id=1055151840]
 layout_mode = 2
-theme_override_constants/separation = 4
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+columns = 2
 
 [node name="G1Buy" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content/Buttons" unique_id=1163171990]
 unique_name_in_owner = true
@@ -251,27 +286,38 @@ theme_override_styles/panel = SubResource("Panel")
 
 [node name="Content" type="VBoxContainer" parent="Layout/Body/Tabs/Workshop/Rows/G2" unique_id=1483992698]
 layout_mode = 2
+theme_override_constants/separation = 6
 
 [node name="G2Title" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content" unique_id=476694219]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Melt Pelletizer"
-[node name="G2Recipe" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content" unique_id=3000000003]
+
+[node name="G2Recipe" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content" unique_id=-1294967293]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Recipe: flakes"
-[node name="G2Output" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content" unique_id=3000000004]
+
+[node name="G2Output" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content" unique_id=-1294967292]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Stored output: None"
+
+[node name="G2Rate" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content" unique_id=3000000010]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Production: 0 items/s"
+
 [node name="G2Progress" type="ProgressBar" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content" unique_id=1253871488]
 unique_name_in_owner = true
 layout_mode = 2
 show_percentage = false
 
-[node name="Buttons" type="HBoxContainer" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content" unique_id=1713216079]
+[node name="Buttons" type="GridContainer" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content" unique_id=1713216079]
 layout_mode = 2
-theme_override_constants/separation = 4
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+columns = 2
 
 [node name="G2Buy" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content/Buttons" unique_id=859260925]
 unique_name_in_owner = true
@@ -314,27 +360,38 @@ theme_override_styles/panel = SubResource("Panel")
 
 [node name="Content" type="VBoxContainer" parent="Layout/Body/Tabs/Workshop/Rows/G3" unique_id=2093200027]
 layout_mode = 2
+theme_override_constants/separation = 6
 
 [node name="G3Title" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content" unique_id=2137115691]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Weaving Loom"
-[node name="G3Recipe" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content" unique_id=3000000005]
+
+[node name="G3Recipe" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content" unique_id=-1294967291]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Recipe: pellets"
-[node name="G3Output" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content" unique_id=3000000006]
+
+[node name="G3Output" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content" unique_id=-1294967290]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Stored output: None"
+
+[node name="G3Rate" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content" unique_id=3000000011]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Production: 0 items/s"
+
 [node name="G3Progress" type="ProgressBar" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content" unique_id=1645559447]
 unique_name_in_owner = true
 layout_mode = 2
 show_percentage = false
 
-[node name="Buttons" type="HBoxContainer" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content" unique_id=715678341]
+[node name="Buttons" type="GridContainer" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content" unique_id=715678341]
 layout_mode = 2
-theme_override_constants/separation = 4
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+columns = 2
 
 [node name="G3Buy" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content/Buttons" unique_id=568038491]
 unique_name_in_owner = true
@@ -391,6 +448,11 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Lucky Seams"
 
+[node name="ShopBagUpgrade" type="Button" parent="Layout/Body/Tabs/Shop/Items" unique_id=3000000008]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Reinforced Green Bag"
+
 [node name="ShopCollector" type="Button" parent="Layout/Body/Tabs/Shop/Items" unique_id=1620173303]
 unique_name_in_owner = true
 layout_mode = 2
@@ -404,6 +466,10 @@ text = "Box Motor Upgrade"
 [node name="AchievementsTitle" type="Label" parent="Layout" unique_id=1012655301]
 layout_mode = 2
 text = "ACHIEVEMENTS (+5% global cycle speed each)"
+theme_override_colors/font_color = Color(0.72, 1, 0.66, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.07, 0.11, 0.9)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
 
 [node name="Achievements" type="HBoxContainer" parent="Layout" unique_id=1385310010]
 layout_mode = 2

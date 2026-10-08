@@ -2,7 +2,6 @@ class_name GeneratorModel
 extends RefCounted
 
 const INVENTORY_SCRIPT := preload("res://resource_inventory.gd")
-
 signal changed
 signal output_ready(amounts: Dictionary)
 
@@ -12,6 +11,9 @@ var purchase_cost: Dictionary
 var recipe: Dictionary
 var output: Dictionary
 var base_cycle_time: float
+var upgrade_data: Dictionary = {}
+var speed_saturation_threshold := 0.5
+var max_multiplier_level := 4
 var owned := 0
 var speed_level := 0
 var multiplier_level := 0
@@ -30,9 +32,18 @@ func configure(data: Dictionary) -> void:
 	recipe = data["recipe"].duplicate()
 	output = data["output"].duplicate()
 	base_cycle_time = float(data["cycle_time"])
+	upgrade_data = data.get("upgrades", {}).duplicate(true)
+	speed_saturation_threshold = float(data.get("speed_saturation_threshold", speed_saturation_threshold))
+	max_multiplier_level = int(data.get("max_multiplier_level", max_multiplier_level))
 
 func cycle_time(global_speed: float) -> float:
 	return base_cycle_time * pow(0.8, speed_level) / maxf(global_speed, 0.01)
+
+func is_speed_saturated(global_speed: float) -> bool:
+	return cycle_time(global_speed) <= speed_saturation_threshold
+
+func is_multiplier_maxed() -> bool:
+	return multiplier_level >= max_multiplier_level
 
 func output_multiplier() -> int:
 	return 1 << multiplier_level
