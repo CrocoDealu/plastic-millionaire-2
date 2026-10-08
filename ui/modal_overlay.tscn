@@ -1,0 +1,106 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/modal_overlay.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://ui/sprite_placeholder.tscn" id="2_sprite"]
+
+[node name="ModalOverlay" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.019608, 0.027451, 0.054902, 0.78)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+theme_type_variation = &"FrameOverlay"
+
+[node name="Scroll" type="ScrollContainer" parent="Center/Panel"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Content" type="VBoxContainer" parent="Center/Panel/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="Header" type="HBoxContainer" parent="Center/Panel/Scroll/Content"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Heading" type="VBoxContainer" parent="Center/Panel/Scroll/Content/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="Kicker" type="Label" parent="Center/Panel/Scroll/Content/Header/Heading"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Px9"
+theme_override_colors/font_color = Color(0.309804, 0.839216, 1, 1)
+text = "KICKER"
+
+[node name="Title" type="Label" parent="Center/Panel/Scroll/Content/Header/Heading"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Px20"
+text = "TITLE"
+
+[node name="Close" type="Button" parent="Center/Panel/Scroll/Content/Header"]
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_type_variation = &"CloseButton"
+text = "X"
+
+[node name="Sprite" parent="Center/Panel/Scroll/Content" instance=ExtResource("2_sprite")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 2
+
+[node name="Intro" type="Label" parent="Center/Panel/Scroll/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(1, 0)
+layout_mode = 2
+theme_type_variation = &"Body16"
+theme_override_colors/font_color = Color(0.662745, 0.701961, 0.839216, 1)
+text = "Intro."
+autowrap_mode = 3
+
+[node name="Rows" type="VBoxContainer" parent="Center/Panel/Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[connection signal="gui_input" from="Backdrop" to="." method="_on_backdrop_gui_input"]
+[connection signal="pressed" from="Center/Panel/Scroll/Content/Header/Close" to="." method="_on_close_pressed"]

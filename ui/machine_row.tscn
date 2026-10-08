@@ -1,0 +1,212 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/machine_row.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://ui/sprite_placeholder.tscn" id="2_sprite"]
+
+[sub_resource type="Gradient" id="progress_stripes_g"]
+interpolation_mode = 1
+offsets = PackedFloat32Array(0, 0.8)
+colors = PackedColorArray(0.364706, 1, 0.541176, 1, 0.184314, 0.682353, 0.345098, 1)
+
+[sub_resource type="GradientTexture2D" id="progress_stripes"]
+gradient = SubResource("progress_stripes_g")
+width = 10
+height = 1
+
+[sub_resource type="Gradient" id="dash_g"]
+interpolation_mode = 1
+offsets = PackedFloat32Array(0, 0.5714)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="dash"]
+gradient = SubResource("dash_g")
+width = 1
+height = 7
+fill_to = Vector2(0, 1)
+
+[node name="MachineRow" type="VBoxContainer"]
+mouse_filter = 2
+theme_override_constants/separation = 6
+script = ExtResource("1_script")
+
+[node name="Row" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"RowIdle"
+
+[node name="Columns" type="HBoxContainer" parent="Row"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="Sprite" parent="Row/Columns" instance=ExtResource("2_sprite")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(84, 64)
+layout_mode = 2
+
+[node name="Info" type="VBoxContainer" parent="Row/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+size_flags_stretch_ratio = 1.4
+mouse_filter = 2
+theme_override_constants/separation = 5
+
+[node name="Header" type="HBoxContainer" parent="Row/Columns/Info"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Row/Columns/Info/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Px12"
+text = "MACHINE"
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="StatusBadge" type="PanelContainer" parent="Row/Columns/Info/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_type_variation = &"StatusIdle"
+
+[node name="Status" type="Label" parent="Row/Columns/Info/Header/StatusBadge"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Px8"
+text = "IDLE"
+
+[node name="Recipe" type="Label" parent="Row/Columns/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Body14"
+theme_override_colors/font_color = Color(0.541176, 0.576471, 0.721569, 1)
+text = "5 plastic → 2 flakes"
+clip_text = true
+
+[node name="Levels" type="Label" parent="Row/Columns/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Px8"
+theme_override_colors/font_color = Color(0.541176, 0.576471, 0.721569, 1)
+text = "SPD 0 · x1 · OWNED 0"
+
+[node name="Progress" type="VBoxContainer" parent="Row/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_constants/separation = 5
+
+[node name="Bar" type="PanelContainer" parent="Row/Columns/Progress"]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"ProgressBarFrame"
+
+[node name="Track" type="Control" parent="Row/Columns/Progress/Bar"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Fill" type="TextureRect" parent="Row/Columns/Progress/Bar/Track"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("progress_stripes")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="Time" type="Label" parent="Row/Columns/Progress"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Body13"
+theme_override_colors/font_color = Color(0.541176, 0.576471, 0.721569, 1)
+text = "3.5s cycle"
+clip_text = true
+
+[node name="Automation" type="VBoxContainer" parent="Row/Columns"]
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="AutoIn" type="PanelContainer" parent="Row/Columns/Automation"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"AutoChipOff"
+
+[node name="Label" type="Label" parent="Row/Columns/Automation/AutoIn"]
+layout_mode = 2
+theme_type_variation = &"Px8"
+theme_override_colors/font_color = Color(0.290196, 0.32549, 0.470588, 1)
+text = "AUTO-IN"
+
+[node name="AutoOut" type="PanelContainer" parent="Row/Columns/Automation"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"AutoChipOff"
+
+[node name="Label" type="Label" parent="Row/Columns/Automation/AutoOut"]
+layout_mode = 2
+theme_type_variation = &"Px8"
+theme_override_colors/font_color = Color(0.290196, 0.32549, 0.470588, 1)
+text = "AUTO-OUT"
+
+[node name="Action" type="Button" parent="Row/Columns"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_type_variation = &"ActionGreen"
+text = "RUN"
+clip_text = true
+
+[node name="Upgrades" type="Button" parent="Row/Columns"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_type_variation = &"OutlineButton"
+text = "UPGRADES"
+
+[node name="Connector" type="MarginContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 50
+
+[node name="HBox" type="HBoxContainer" parent="Connector"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Dash" type="TextureRect" parent="Connector/HBox"]
+unique_name_in_owner = true
+modulate = Color(0.164706, 0.2, 0.345098, 1)
+custom_minimum_size = Vector2(6, 14)
+layout_mode = 2
+mouse_filter = 2
+texture = SubResource("dash")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="Feeds" type="Label" parent="Connector/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Px8"
+theme_override_colors/font_color = Color(0.164706, 0.2, 0.345098, 1)
+text = "FLAKES FEED MELT PELLETIZER"

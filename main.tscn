@@ -1,28 +1,53 @@
 [gd_scene format=3 uid="uid://cuv3db0jrp6kg"]
 
 [ext_resource type="Script" uid="uid://5yknw1nu5h6e" path="res://main.gd" id="1_main"]
-[ext_resource type="Texture2D" uid="uid://dc87pop2slxt4" path="res://assets/black_bag.png" id="2_bag"]
-[ext_resource type="Theme" path="res://ui_theme.tres" id="3_theme"]
-[ext_resource type="Texture2D" path="res://assets/ui/arcade/BackgroundGrid.png" id="4_grid"]
+[ext_resource type="Texture2D" uid="uid://dc87pop2slxt4" path="res://assets/black_bag.png" id="bag"]
+[ext_resource type="PackedScene" path="res://ui/collector_box.tscn" id="collector_box"]
+[ext_resource type="Texture2D" uid="uid://c3b70hvu25fe8" path="res://assets/ui/arcade/BackgroundGrid.png" id="grid"]
+[ext_resource type="PackedScene" path="res://ui/modal_overlay.tscn" id="modal"]
+[ext_resource type="PackedScene" path="res://ui/nav_card.tscn" id="nav_card"]
+[ext_resource type="PackedScene" path="res://ui/production_overlay.tscn" id="production"]
+[ext_resource type="PackedScene" path="res://ui/stock_row.tscn" id="stock_row"]
+[ext_resource type="Theme" uid="uid://d2uqnifxvr1fo" path="res://ui/control_room_theme.tres" id="theme"]
 
-[sub_resource type="RectangleShape2D" id="GroundShape"]
-size = Vector2(1920, 24)
+[sub_resource type="Gradient" id="floor_stripes_g"]
+interpolation_mode = 1
+offsets = PackedFloat32Array(0, 0.5)
+colors = PackedColorArray(0.086275, 0.109804, 0.207843, 1, 0.07451, 0.094118, 0.188235, 1)
 
-[sub_resource type="StyleBoxEmpty" id="BagButtonEmpty"]
+[sub_resource type="GradientTexture2D" id="floor_stripes"]
+gradient = SubResource("floor_stripes_g")
+width = 80
+height = 1
 
-[sub_resource type="StyleBoxFlat" id="Panel"]
-bg_color = Color(0.121569, 0.168627, 0.27451, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.157647, 0.219608, 0.356863, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
+[sub_resource type="Gradient" id="hp_stripes_g"]
+interpolation_mode = 1
+offsets = PackedFloat32Array(0, 0.8)
+colors = PackedColorArray(0.309804, 0.839216, 1, 1, 0.168627, 0.560784, 0.701961, 1)
 
-[node name="Main" type="Control" unique_id=1138816553]
+[sub_resource type="GradientTexture2D" id="hp_stripes"]
+gradient = SubResource("hp_stripes_g")
+width = 10
+height = 1
+
+[sub_resource type="RectangleShape2D" id="floor_shape"]
+size = Vector2(8000, 24)
+
+[sub_resource type="RectangleShape2D" id="wall_shape"]
+size = Vector2(24, 8000)
+
+[sub_resource type="Gradient" id="scanline_g"]
+interpolation_mode = 1
+offsets = PackedFloat32Array(0, 0.3333)
+colors = PackedColorArray(0, 0, 0, 0.14, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="scanline"]
+gradient = SubResource("scanline_g")
+width = 1
+height = 3
+fill_to = Vector2(0, 1)
+
+[node name="Main" type="Control" unique_id=952094256]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -30,10 +55,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme = ExtResource("3_theme")
+theme = ExtResource("theme")
 script = ExtResource("1_main")
 
-[node name="Background" type="ColorRect" parent="." unique_id=1082525454]
+[node name="Background" type="ColorRect" parent="." unique_id=1589478027]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -41,9 +66,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.0627451, 0.0941176, 0.168627, 1)
+color = Color(0.05098, 0.062745, 0.12549, 1)
 
-[node name="BackgroundGrid" type="TextureRect" parent="." unique_id=3000000012]
+[node name="Grid" type="TextureRect" parent="." unique_id=1089631781]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -51,451 +76,563 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-modulate = Color(0.34, 0.48, 0.62, 0.16)
-texture = ExtResource("4_grid")
-texture_filter = 1
+texture = ExtResource("grid")
 expand_mode = 1
-stretch_mode = 2
+stretch_mode = 1
 
-[node name="Ground" type="StaticBody2D" parent="." unique_id=242547887]
-collision_mask = 2
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground" unique_id=797224950]
-shape = SubResource("GroundShape")
-
-[node name="GroundVisual" type="ColorRect" parent="." unique_id=58820915]
-layout_mode = 0
-offset_top = 988.0
-offset_right = 1920.0
-offset_bottom = 1012.0
-mouse_filter = 2
-color = Color(0.152941, 0.211765, 0.341176, 1)
-
-[node name="DroppedBoxes" type="Node2D" parent="." unique_id=1879929944]
-
-[node name="Layout" type="VBoxContainer" parent="." unique_id=2121844989]
+[node name="Layout" type="VBoxContainer" parent="." unique_id=1598528120]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = 20.0
-offset_right = -24.0
-offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 16
+mouse_filter = 2
+theme_override_constants/separation = 0
 
-[node name="Inventory" type="PanelContainer" parent="Layout" unique_id=488254203]
+[node name="TopBar" type="PanelContainer" parent="Layout" unique_id=1388995628]
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-custom_minimum_size = Vector2(0, 72)
+mouse_filter = 2
+theme_type_variation = &"TopBar"
 
-[node name="InventoryContent" type="HBoxContainer" parent="Layout/Inventory" unique_id=3000000013]
+[node name="HBox" type="HBoxContainer" parent="Layout/TopBar" unique_id=756297371]
 layout_mode = 2
-theme_override_constants/separation = 20
+mouse_filter = 2
+theme_override_constants/separation = 14
 
-[node name="Plastic" type="Label" parent="Layout/Inventory/InventoryContent" unique_id=1614999828]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(180, 0)
+[node name="Title" type="VBoxContainer" parent="Layout/TopBar/HBox" unique_id=1633063740]
+custom_minimum_size = Vector2(228, 0)
 layout_mode = 2
-text = "Plastic: 0"
-
-[node name="Flakes" type="Label" parent="Layout/Inventory/InventoryContent" unique_id=624237166]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 0)
-layout_mode = 2
-text = "Flakes: 0"
-
-[node name="Pellets" type="Label" parent="Layout/Inventory/InventoryContent" unique_id=1210116012]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 0)
-layout_mode = 2
-text = "Pellets: 0"
-
-[node name="Fabric" type="Label" parent="Layout/Inventory/InventoryContent" unique_id=1260617584]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 0)
-layout_mode = 2
-text = "Fabric: 0"
-
-[node name="Money" type="Label" parent="Layout/Inventory/InventoryContent" unique_id=1936068020]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 0)
-layout_mode = 2
-text = "Money: 0"
-theme_override_colors/font_color = Color(1, 0.82, 0.38, 1)
-
-[node name="Body" type="HBoxContainer" parent="Layout" unique_id=1029862002]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 24
-
-[node name="Actions" type="PanelContainer" parent="Layout/Body" unique_id=498072251]
-custom_minimum_size = Vector2(280, 220)
-layout_mode = 2
-size_flags_vertical = 0
-
-[node name="Content" type="VBoxContainer" parent="Layout/Body/Actions" unique_id=3000000014]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="SellMaterials" type="Button" parent="Layout/Body/Actions/Content" unique_id=1849059127]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Sell refined materials"
-custom_minimum_size = Vector2(250, 46)
-
-[node name="Message" type="Label" parent="Layout/Body/Actions/Content" unique_id=1099376847]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
-autowrap_mode = 2
-theme_override_colors/font_color = Color(0.68, 0.82, 0.9, 1)
-theme_override_constants/outline_size = 4
-
-[node name="BagArea" type="VBoxContainer" parent="Layout/Body" unique_id=693197257]
-custom_minimum_size = Vector2(380, 0)
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_constants/separation = 10
+mouse_filter = 2
+theme_override_constants/separation = 2
 alignment = 1
 
-[node name="BagButton" type="Button" parent="Layout/Body/BagArea" unique_id=853804380]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(320, 260)
+[node name="Name" type="Label" parent="Layout/TopBar/HBox/Title" unique_id=1820868158]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-focus_mode = 0
-theme_override_styles/normal = SubResource("BagButtonEmpty")
-theme_override_styles/pressed = SubResource("BagButtonEmpty")
-theme_override_styles/hover = SubResource("BagButtonEmpty")
-theme_override_styles/focus = SubResource("BagButtonEmpty")
-flat = true
-pivot_offset = Vector2(160, 130)
+theme_type_variation = &"PxTitle"
+text = "PLASTIC MILLIONAIRE"
 
-[node name="BagTexture" type="TextureRect" parent="Layout/Body/BagArea/BagButton" unique_id=3000000007]
+[node name="Subtitle" type="Label" parent="Layout/TopBar/HBox/Title" unique_id=1866817347]
+layout_mode = 2
+theme_type_variation = &"Px9"
+theme_override_colors/font_color = Color(0.364706, 1, 0.541176, 1)
+text = "SECOND TRY"
+
+[node name="Main" type="HBoxContainer" parent="Layout" unique_id=2044948009]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="Left" type="MarginContainer" parent="Layout/Main" unique_id=1651858783]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="VBox" type="VBoxContainer" parent="Layout/Main/Left" unique_id=1761912495]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="MoneyRingOuter" type="PanelContainer" parent="Layout/Main/Left/VBox" unique_id=652811578]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"RingGold6"
+
+[node name="MoneyRingInner" type="PanelContainer" parent="Layout/Main/Left/VBox/MoneyRingOuter" unique_id=1226067408]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"RingRoot3"
+
+[node name="MoneyCard" type="PanelContainer" parent="Layout/Main/Left/VBox/MoneyRingOuter/MoneyRingInner" unique_id=831907843]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"MoneyCard"
+
+[node name="VBox" type="VBoxContainer" parent="Layout/Main/Left/VBox/MoneyRingOuter/MoneyRingInner/MoneyCard" unique_id=611942]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Caption" type="Label" parent="Layout/Main/Left/VBox/MoneyRingOuter/MoneyRingInner/MoneyCard/VBox" unique_id=1177880494]
+layout_mode = 2
+theme_type_variation = &"Px9"
+theme_override_colors/font_color = Color(1, 0.788235, 0.25098, 1)
+text = "MONEY"
+
+[node name="Money" type="Label" parent="Layout/Main/Left/VBox/MoneyRingOuter/MoneyRingInner/MoneyCard/VBox" unique_id=122642509]
 unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Px26"
+theme_override_colors/font_color = Color(1, 0.788235, 0.25098, 1)
+text = "$ 0"
+clip_text = true
+
+[node name="Stockpile" type="PanelContainer" parent="Layout/Main/Left/VBox" unique_id=935808528]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"FrameStock"
+
+[node name="VBox" type="VBoxContainer" parent="Layout/Main/Left/VBox/Stockpile" unique_id=736337624]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="HBoxContainer" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=848151120]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Layout/Main/Left/VBox/Stockpile/VBox/Header" unique_id=322592968]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Px11"
+text = "STOCKPILE"
+
+[node name="SellValue" type="Label" parent="Layout/Main/Left/VBox/Stockpile/VBox/Header" unique_id=626145608]
+layout_mode = 2
+theme_type_variation = &"Px8"
+theme_override_colors/font_color = Color(0.541176, 0.576471, 0.721569, 1)
+text = "SELL VALUE"
+
+[node name="StockPlastic" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=546565134 instance=ExtResource("stock_row")]
+unique_name_in_owner = true
+layout_mode = 2
+color = Color(0.309804, 0.839216, 1, 1)
+
+[node name="StockFlakes" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=195895828 instance=ExtResource("stock_row")]
+unique_name_in_owner = true
+layout_mode = 2
+display_name = "Clean Flakes"
+color = Color(0.498039, 0.890196, 1, 1)
+
+[node name="StockPellets" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=1539976543 instance=ExtResource("stock_row")]
+unique_name_in_owner = true
+layout_mode = 2
+display_name = "Poly-Pellets"
+color = Color(0.356863, 0.486275, 1, 1)
+
+[node name="StockFabric" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=981533315 instance=ExtResource("stock_row")]
+unique_name_in_owner = true
+layout_mode = 2
+display_name = "Eco-Fabric"
+color = Color(0.364706, 1, 0.541176, 1)
+
+[node name="StockJunk" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=756250557 instance=ExtResource("stock_row")]
+unique_name_in_owner = true
+layout_mode = 2
+display_name = "Junk"
+color = Color(0.541176, 0.478431, 0.415686, 1)
+
+[node name="StockGold" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=2095873330 instance=ExtResource("stock_row")]
+unique_name_in_owner = true
+layout_mode = 2
+display_name = "Gold"
+color = Color(1, 0.788235, 0.25098, 1)
+name_color = Color(1, 0.788235, 0.25098, 1)
+
+[node name="Sell" type="Button" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=955116791]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_type_variation = &"GoldButton"
+text = "SELL MATERIALS · $ 0"
+clip_text = true
+
+[node name="Caption" type="Label" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=291731077]
+custom_minimum_size = Vector2(1, 0)
+layout_mode = 2
+theme_type_variation = &"Body13"
+theme_override_colors/font_color = Color(0.541176, 0.576471, 0.721569, 1)
+text = "Keeps enough plastic to feed running machines."
+autowrap_mode = 3
+
+[node name="Message" type="PanelContainer" parent="Layout/Main/Left/VBox" unique_id=1604684553]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_type_variation = &"MessageInfo"
+
+[node name="VBox" type="VBoxContainer" parent="Layout/Main/Left/VBox/Message" unique_id=1946945331]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="MessageTag" type="Label" parent="Layout/Main/Left/VBox/Message/VBox" unique_id=90871077]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Px9"
+theme_override_colors/font_color = Color(0.309804, 0.839216, 1, 1)
+text = "STATUS"
+
+[node name="MessageText" type="Label" parent="Layout/Main/Left/VBox/Message/VBox" unique_id=2014835976]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(1, 0)
+layout_mode = 2
+theme_type_variation = &"Body16"
+autowrap_mode = 3
+
+[node name="Stage" type="Control" parent="Layout/Main" unique_id=1915703019]
+unique_name_in_owner = true
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="FloorLine" type="ColorRect" parent="Layout/Main/Stage" unique_id=639371510]
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = 12
+anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = -120.0
+offset_bottom = -116.0
 grow_horizontal = 2
-grow_vertical = 2
+grow_vertical = 0
 mouse_filter = 2
-texture = ExtResource("2_bag")
-texture_filter = 1
+color = Color(0.137255, 0.168627, 0.309804, 1)
+
+[node name="Floor" type="TextureRect" parent="Layout/Main/Stage" unique_id=570153720]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -116.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+texture = SubResource("floor_stripes")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="Pill" type="PanelContainer" parent="Layout/Main/Stage" unique_id=910946262]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_top = 14.0
+offset_bottom = 14.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"Pill"
+
+[node name="HBox" type="HBoxContainer" parent="Layout/Main/Stage/Pill" unique_id=184207727]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="BagName" type="Label" parent="Layout/Main/Stage/Pill/HBox" unique_id=488817620]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Px9"
+theme_override_colors/font_color = Color(0.541176, 0.576471, 0.721569, 1)
+text = "BLACK BAG"
+
+[node name="BagStats" type="Label" parent="Layout/Main/Stage/Pill/HBox" unique_id=1702624224]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Px9"
+theme_override_colors/font_color = Color(0.309804, 0.839216, 1, 1)
+text = "DMG 1 · GOLD 5%"
+
+[node name="Dispenser" type="VBoxContainer" parent="Layout/Main/Stage" unique_id=970280462]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_top = 110.0
+offset_bottom = 110.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_constants/separation = 58
+
+[node name="Bag" type="TextureRect" parent="Layout/Main/Stage/Dispenser" unique_id=901566371]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(321, 378)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_default_cursor_shape = 2
+texture = ExtResource("bag")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Tabs" type="TabContainer" parent="Layout/Body" unique_id=898077877]
-custom_minimum_size = Vector2(700, 0)
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-current_tab = 0
-theme_override_constants/side_margin = 12
-
-[node name="Workshop" type="ScrollContainer" parent="Layout/Body/Tabs" unique_id=1056622948]
-layout_mode = 2
-metadata/_tab_index = 0
-
-[node name="Rows" type="VBoxContainer" parent="Layout/Body/Tabs/Workshop" unique_id=320211154]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 10
-
-[node name="G1" type="PanelContainer" parent="Layout/Body/Tabs/Workshop/Rows" unique_id=465934774]
-layout_mode = 2
-theme_override_styles/panel = SubResource("Panel")
-
-[node name="Content" type="VBoxContainer" parent="Layout/Body/Tabs/Workshop/Rows/G1" unique_id=1080119262]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="G1Title" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content" unique_id=1587905016]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Manual Sorting Table"
-
-[node name="G1Recipe" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content" unique_id=-1294967295]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Recipe: plastic"
-
-[node name="G1Output" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content" unique_id=-1294967294]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Stored output: None"
-
-[node name="G1Rate" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content" unique_id=3000000009]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Production: 0 items/s"
-
-[node name="G1Progress" type="ProgressBar" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content" unique_id=2014522989]
-unique_name_in_owner = true
-layout_mode = 2
-show_percentage = false
-
-[node name="Buttons" type="GridContainer" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content" unique_id=1055151840]
-layout_mode = 2
-theme_override_constants/h_separation = 4
-theme_override_constants/v_separation = 4
-columns = 2
-
-[node name="G1Buy" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content/Buttons" unique_id=1163171990]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Buy"
-
-[node name="G1Run" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content/Buttons" unique_id=1183364343]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Run"
-
-[node name="G1Collect" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content/Buttons" unique_id=1464718359]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Collect"
-
-[node name="G1Speed" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content/Buttons" unique_id=1455169928]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Speed"
-
-[node name="G1Multiplier" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content/Buttons" unique_id=1438599149]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Yield"
-
-[node name="G1AutoIn" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content/Buttons" unique_id=1812671147]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Auto-In"
-
-[node name="G1AutoOut" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G1/Content/Buttons" unique_id=569536208]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Auto-Out"
-
-[node name="G2" type="PanelContainer" parent="Layout/Body/Tabs/Workshop/Rows" unique_id=890629060]
-layout_mode = 2
-theme_override_styles/panel = SubResource("Panel")
-
-[node name="Content" type="VBoxContainer" parent="Layout/Body/Tabs/Workshop/Rows/G2" unique_id=1483992698]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="G2Title" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content" unique_id=476694219]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Melt Pelletizer"
-
-[node name="G2Recipe" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content" unique_id=-1294967293]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Recipe: flakes"
-
-[node name="G2Output" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content" unique_id=-1294967292]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Stored output: None"
-
-[node name="G2Rate" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content" unique_id=3000000010]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Production: 0 items/s"
-
-[node name="G2Progress" type="ProgressBar" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content" unique_id=1253871488]
-unique_name_in_owner = true
-layout_mode = 2
-show_percentage = false
-
-[node name="Buttons" type="GridContainer" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content" unique_id=1713216079]
-layout_mode = 2
-theme_override_constants/h_separation = 4
-theme_override_constants/v_separation = 4
-columns = 2
-
-[node name="G2Buy" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content/Buttons" unique_id=859260925]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Buy"
-
-[node name="G2Run" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content/Buttons" unique_id=303698994]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Run"
-
-[node name="G2Collect" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content/Buttons" unique_id=452549428]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Collect"
-
-[node name="G2Speed" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content/Buttons" unique_id=1725503964]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Speed"
-
-[node name="G2Multiplier" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content/Buttons" unique_id=1602747638]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Yield"
-
-[node name="G2AutoIn" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content/Buttons" unique_id=1780142412]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Auto-In"
-
-[node name="G2AutoOut" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G2/Content/Buttons" unique_id=1605526088]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Auto-Out"
-
-[node name="G3" type="PanelContainer" parent="Layout/Body/Tabs/Workshop/Rows" unique_id=637745624]
-layout_mode = 2
-theme_override_styles/panel = SubResource("Panel")
-
-[node name="Content" type="VBoxContainer" parent="Layout/Body/Tabs/Workshop/Rows/G3" unique_id=2093200027]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="G3Title" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content" unique_id=2137115691]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Weaving Loom"
-
-[node name="G3Recipe" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content" unique_id=-1294967291]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Recipe: pellets"
-
-[node name="G3Output" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content" unique_id=-1294967290]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Stored output: None"
-
-[node name="G3Rate" type="Label" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content" unique_id=3000000011]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Production: 0 items/s"
-
-[node name="G3Progress" type="ProgressBar" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content" unique_id=1645559447]
-unique_name_in_owner = true
-layout_mode = 2
-show_percentage = false
-
-[node name="Buttons" type="GridContainer" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content" unique_id=715678341]
-layout_mode = 2
-theme_override_constants/h_separation = 4
-theme_override_constants/v_separation = 4
-columns = 2
-
-[node name="G3Buy" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content/Buttons" unique_id=568038491]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Buy"
-
-[node name="G3Run" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content/Buttons" unique_id=511059228]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Run"
-
-[node name="G3Collect" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content/Buttons" unique_id=1011042849]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Collect"
-
-[node name="G3Speed" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content/Buttons" unique_id=1499502265]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Speed"
-
-[node name="G3Multiplier" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content/Buttons" unique_id=1690060473]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Yield"
-
-[node name="G3AutoIn" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content/Buttons" unique_id=442278896]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Auto-In"
-
-[node name="G3AutoOut" type="Button" parent="Layout/Body/Tabs/Workshop/Rows/G3/Content/Buttons" unique_id=1853055514]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Auto-Out"
-
-[node name="Shop" type="ScrollContainer" parent="Layout/Body/Tabs" unique_id=222690609]
+[node name="HpBox" type="VBoxContainer" parent="Layout/Main/Stage/Dispenser" unique_id=1518662505]
 visible = false
 layout_mode = 2
-metadata/_tab_index = 1
+mouse_filter = 2
+theme_override_constants/separation = 5
 
-[node name="Items" type="VBoxContainer" parent="Layout/Body/Tabs/Shop" unique_id=1503482861]
+[node name="HpBar" type="PanelContainer" parent="Layout/Main/Stage/Dispenser/HpBox" unique_id=101550480]
+custom_minimum_size = Vector2(220, 14)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_type_variation = &"HpBar"
+
+[node name="Track" type="Control" parent="Layout/Main/Stage/Dispenser/HpBox/HpBar" unique_id=1623576132]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="HpFill" type="TextureRect" parent="Layout/Main/Stage/Dispenser/HpBox/HpBar/Track" unique_id=1545531276]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("hp_stripes")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="HpLabel" type="Label" parent="Layout/Main/Stage/Dispenser/HpBox" unique_id=144727633]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"Px9"
+theme_override_colors/font_color = Color(0.541176, 0.576471, 0.721569, 1)
+text = "10 / 10 HITS LEFT"
+
+[node name="CollectorBox" parent="Layout/Main/Stage" unique_id=1141717081 instance=ExtResource("collector_box")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -150.0
+offset_right = 60.0
+offset_bottom = -120.0
+grow_vertical = 0
+
+[node name="FloorAnchor" type="Control" parent="Layout/Main/Stage" unique_id=835665871]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_top = -120.0
+offset_bottom = -120.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="Floor" type="StaticBody2D" parent="Layout/Main/Stage/FloorAnchor" unique_id=1325572407]
+
+[node name="Shape" type="CollisionShape2D" parent="Layout/Main/Stage/FloorAnchor/Floor" unique_id=1343352314]
+position = Vector2(0, 12)
+shape = SubResource("floor_shape")
+
+[node name="LeftWallAnchor" type="Control" parent="Layout/Main/Stage" unique_id=1425189480]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Wall" type="StaticBody2D" parent="Layout/Main/Stage/LeftWallAnchor" unique_id=439177485]
+
+[node name="Shape" type="CollisionShape2D" parent="Layout/Main/Stage/LeftWallAnchor/Wall" unique_id=367923023]
+position = Vector2(-12, 0)
+shape = SubResource("wall_shape")
+
+[node name="RightWallAnchor" type="Control" parent="Layout/Main/Stage" unique_id=52307360]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Wall" type="StaticBody2D" parent="Layout/Main/Stage/RightWallAnchor" unique_id=690204163]
+
+[node name="Shape" type="CollisionShape2D" parent="Layout/Main/Stage/RightWallAnchor/Wall" unique_id=1507028995]
+position = Vector2(12, 0)
+shape = SubResource("wall_shape")
+
+[node name="DroppedBoxes" type="Node2D" parent="Layout/Main/Stage" unique_id=1847782423]
+unique_name_in_owner = true
+
+[node name="Effects" type="Node2D" parent="Layout/Main/Stage" unique_id=12050468]
+unique_name_in_owner = true
+
+[node name="CollectorChip" type="PanelContainer" parent="Layout/Main/Stage" unique_id=64652398]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -16.0
+offset_top = -14.0
+offset_right = -16.0
+offset_bottom = -14.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_type_variation = &"Hint"
+
+[node name="CollectorLabel" type="Label" parent="Layout/Main/Stage/CollectorChip" unique_id=1093183570]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Px9"
+theme_override_colors/font_color = Color(0.364706, 1, 0.541176, 1)
+text = "COLLECTOR BOX · 3/SWEEP"
+
+[node name="Right" type="MarginContainer" parent="Layout/Main" unique_id=1571495916]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="VBox" type="VBoxContainer" parent="Layout/Main/Right" unique_id=372916677]
+layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 10
 
-[node name="ShopBagDamage" type="Button" parent="Layout/Body/Tabs/Shop/Items" unique_id=1120625076]
+[node name="Header" type="Label" parent="Layout/Main/Right/VBox" unique_id=341038993]
+layout_mode = 2
+theme_type_variation = &"Px11"
+theme_override_colors/font_color = Color(0.541176, 0.576471, 0.721569, 1)
+text = "CONTROL ROOM"
+
+[node name="NavProduction" parent="Layout/Main/Right/VBox" unique_id=163158918 instance=ExtResource("nav_card")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+
+[node name="NavShop" parent="Layout/Main/Right/VBox" unique_id=363043418 instance=ExtResource("nav_card")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_type_variation = &"NavShop"
+title = "SHOP"
+
+[node name="NavAutomation" parent="Layout/Main/Right/VBox" unique_id=533439312 instance=ExtResource("nav_card")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_type_variation = &"NavAutomation"
+title = "AUTOMATION"
+
+[node name="NavMilestones" parent="Layout/Main/Right/VBox" unique_id=1957950275 instance=ExtResource("nav_card")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_type_variation = &"NavMilestones"
+title = "MILESTONES"
+
+[node name="Production" parent="." unique_id=2069089489 instance=ExtResource("production")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[node name="Modal" parent="." unique_id=1981006392 instance=ExtResource("modal")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[node name="Toast" type="PanelContainer" parent="." unique_id=1027873388]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_top = 84.0
+offset_bottom = 84.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"RingRoot4"
+
+[node name="Panel" type="PanelContainer" parent="Toast" unique_id=409521964]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"Toast"
+
+[node name="HBox" type="HBoxContainer" parent="Toast/Panel" unique_id=44073311]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="Medal" type="ColorRect" parent="Toast/Panel/HBox" unique_id=796923302]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(1, 0.788235, 0.25098, 1)
+
+[node name="ShadeBottom" type="ColorRect" parent="Toast/Panel/HBox/Medal" unique_id=1735767845]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -4.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+color = Color(0.721569, 0.541176, 0.109804, 1)
+
+[node name="ShadeRight" type="ColorRect" parent="Toast/Panel/HBox/Medal" unique_id=1800968107]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -4.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.721569, 0.541176, 0.109804, 1)
+
+[node name="Text" type="VBoxContainer" parent="Toast/Panel/HBox" unique_id=2106265368]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Caption" type="Label" parent="Toast/Panel/HBox/Text" unique_id=485702413]
+layout_mode = 2
+theme_type_variation = &"Px9"
+theme_override_colors/font_color = Color(1, 0.788235, 0.25098, 1)
+text = "ACHIEVEMENT UNLOCKED"
+
+[node name="ToastName" type="Label" parent="Toast/Panel/HBox/Text" unique_id=2083584807]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Heavy Duty Cutters"
+theme_type_variation = &"Body17"
+text = "First Burst"
 
-[node name="ShopGoldChance" type="Button" parent="Layout/Body/Tabs/Shop/Items" unique_id=74599781]
+[node name="Scanlines" type="TextureRect" parent="." unique_id=498312978]
 unique_name_in_owner = true
-layout_mode = 2
-text = "Lucky Seams"
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("scanline")
+expand_mode = 1
+stretch_mode = 1
 
-[node name="ShopBagUpgrade" type="Button" parent="Layout/Body/Tabs/Shop/Items" unique_id=3000000008]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Reinforced Green Bag"
-
-[node name="ShopCollector" type="Button" parent="Layout/Body/Tabs/Shop/Items" unique_id=1620173303]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Basic Collector Box"
-
-[node name="ShopCollectorSpeed" type="Button" parent="Layout/Body/Tabs/Shop/Items" unique_id=2089100297]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Box Motor Upgrade"
-
-[node name="AchievementsTitle" type="Label" parent="Layout" unique_id=1012655301]
-layout_mode = 2
-text = "ACHIEVEMENTS (+5% global cycle speed each)"
-theme_override_colors/font_color = Color(0.72, 1, 0.66, 1)
-theme_override_colors/font_shadow_color = Color(0.02, 0.07, 0.11, 0.9)
-theme_override_constants/shadow_offset_x = 2
-theme_override_constants/shadow_offset_y = 2
-
-[node name="Achievements" type="HBoxContainer" parent="Layout" unique_id=1385310010]
-layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="AchievementFirstBag" type="Label" parent="Layout/Achievements" unique_id=204917319]
-unique_name_in_owner = true
-layout_mode = 2
-text = "○ First bag"
-
-[node name="AchievementFirstMachine" type="Label" parent="Layout/Achievements" unique_id=1110698602]
-unique_name_in_owner = true
-layout_mode = 2
-text = "○ First machine"
-
-[node name="AchievementFirstPellets" type="Label" parent="Layout/Achievements" unique_id=1248919057]
-unique_name_in_owner = true
-layout_mode = 2
-text = "○ First pellets"
-
-[node name="AchievementFirstFabric" type="Label" parent="Layout/Achievements" unique_id=399319937]
-unique_name_in_owner = true
-layout_mode = 2
-text = "○ First fabric"
-
-[node name="AchievementIndustrialist" type="Label" parent="Layout/Achievements" unique_id=1951846306]
-unique_name_in_owner = true
-layout_mode = 2
-text = "○ Industrialist"
+[connection signal="gui_input" from="Layout/Main/Stage/Dispenser/Bag" to="." method="_on_bag_gui_input"]
+[connection signal="drop_touched" from="Layout/Main/Stage/CollectorBox" to="." method="_collect_box" flags=3]

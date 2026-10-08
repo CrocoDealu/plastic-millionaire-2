@@ -4,6 +4,7 @@
     "flakes": { "sell_value": 5 },
     "pellets": { "sell_value": 15 },
     "fabric": { "sell_value": 50 },
+    "junk": { "sell_value": 0.1 },
     "gold": { "sell_value": 100 }
   },
   "bag": {
@@ -49,6 +50,7 @@
     "shop_u_collector_speed": {
       "name": "Box Motor Upgrade",
       "cost": { "money": 400 },
+      "requires": "shop_u_collector_base",
       "description": "Increases Collector Box capacity by 3 items and global processing speed by 1.5x.",
       "effect": { "global_speed_multiplier": 1.5, "collector_capacity_add": 3 }
     }
@@ -110,6 +112,7 @@
     "plastic": 1000000,
     "money": 1000000
   },
+  "sell_plastic_reserve": 40,
   "achievement_speed_bonus": 1.05,
   "generator_limits": {
     "speed_saturation_threshold": 0.5,
