@@ -4,8 +4,6 @@ extends Control
 ## ui/*.tscn and ui/control_room_theme.tres; this script only connects signals and updates values.
 
 const GAME_SCRIPT := preload("res://recycler_game.gd")
-const BAG_SCALE := 2.0
-const BAG_TOP := 110.0
 const TOAST_SECONDS := 2.6
 const CLICK_EFFECT_SCENE := preload("res://effects/click_effect.tscn")
 const BAG_BURST_SCENE := preload("res://effects/bag_burst.tscn")
@@ -31,10 +29,6 @@ var _bag_breaking := false
 var _bag_tween: Tween
 var _dragging_pickup := false
 
-@onready var chips := {
-	&"plastic": %ChipPlastic, &"flakes": %ChipFlakes, &"pellets": %ChipPellets,
-	&"fabric": %ChipFabric, &"junk": %ChipJunk, &"gold": %ChipGold,
-}
 @onready var stock_rows := {
 	&"plastic": %StockPlastic, &"flakes": %StockFlakes, &"pellets": %StockPellets,
 	&"fabric": %StockFabric, &"junk": %StockJunk, &"gold": %StockGold,
@@ -92,17 +86,15 @@ func _refresh() -> void:
 	_dirty = false
 	_refresh_timer = 0.1
 	var inventory: ResourceInventory = game.inventory
-	for id: StringName in chips:
-		var amount := UiConst.fmt(inventory.get_amount(id))
-		chips[id].set_value(amount)
-		stock_rows[id].set_amount(amount)
+	for id: StringName in stock_rows:
+		stock_rows[id].set_amount(UiConst.fmt(inventory.get_amount(id)))
 	%Money.text = "$ %s" % UiConst.fmt(inventory.get_amount(&"money"))
 	%Sell.text = "SELL MATERIALS · $ %s" % UiConst.fmt(game.sell_value(game.sellable_amounts()))
 	_refresh_bag()
 	var collector_on := game.is_collector_enabled()
 	%CollectorBox.visible = collector_on
-	%CollectorLabel.text = "COLLECTOR BOX · %d/SWEEP" % game.get_collector_capacity() if collector_on else "COLLECTOR BOX · NOT OWNED"
-	%CollectorLabel.add_theme_color_override("font_color", UiConst.GREEN if collector_on else UiConst.LOCKED)
+	%CollectorChip.visible = collector_on
+	%CollectorLabel.text = "COLLECTOR BOX · %d/SWEEP" % game.get_collector_capacity()
 	_refresh_nav()
 	%Production.refresh()
 	%Modal.refresh()
@@ -113,13 +105,9 @@ func _refresh_bag() -> void:
 	%BagName.text = "REINFORCED GREEN BAG" if green else "BLACK BAG"
 	%BagStats.text = "DMG %d · GOLD %d%%" % [bag.click_damage, roundi(bag.gold_chance * 100.0)]
 	var bag_rect: TextureRect = %Bag
+	# Size comes from the scene: fixed height, width follows the texture's aspect.
 	if bag_rect.texture.resource_path != game.bag_texture_path:
 		bag_rect.texture = load(game.bag_texture_path)
-		var bag_size := bag_rect.texture.get_size() * BAG_SCALE
-		bag_rect.offset_left = -bag_size.x * 0.5
-		bag_rect.offset_right = bag_size.x * 0.5
-		bag_rect.offset_bottom = BAG_TOP + bag_size.y
-		bag_rect.pivot_offset = bag_size * 0.5
 	var remaining := bag.clicks_to_burst - bag.clicks
 	var alpha := bag.alpha_stage_1
 	if remaining <= bag.alpha_stage_2_remaining:
@@ -224,8 +212,8 @@ func _collect_box(box: DropBox) -> void:
 	box.freeze = true
 	box.collision_layer = 0
 	game.collect_drop(box.resource_id)
-	# Fly into the matching inventory chip in the top bar.
-	var target: Vector2 = chips[box.resource_id].get_global_rect().get_center()
+	# Fly into the matching stockpile row.
+	var target: Vector2 = stock_rows[box.resource_id].get_global_rect().get_center()
 	var tween := box.create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(box, "global_position", target, 0.28).set_trans(Tween.TRANS_QUAD)
@@ -234,20 +222,11 @@ func _collect_box(box: DropBox) -> void:
 	tween.chain().tween_callback(box.queue_free)
 
 func _collector_sweep() -> void:
-	var boxes: Array = %DroppedBoxes.get_children().filter(func(box: DropBox) -> bool: return not box.is_collected)
-	if boxes.is_empty():
+	if %CollectorBox.is_sweeping():
 		return
-	var stage: Control = %Stage
-	_step_move(%CollectorBox, Vector2(boxes[0].global_position.x - stage.global_position.x - 22.0, %CollectorBox.position.y), 0.4, 6)
-	for box: DropBox in boxes.slice(0, game.get_collector_capacity()):
-		_collect_box(box)
-
-# The Collector Box moves in discrete pixel steps (CSS steps(n)), never a smooth tween.
-func _step_move(node: Control, target: Vector2, duration: float, steps: int) -> Tween:
-	var origin := node.position
-	var tween := node.create_tween()
-	tween.tween_method(func(t: float) -> void: node.position = origin.lerp(target, floorf(t * steps) / steps), 0.0, 1.0, duration)
-	return tween
+	if %DroppedBoxes.get_children().any(func(box: DropBox) -> bool: return not box.is_collected):
+		%CollectorBox.capacity = game.get_collector_capacity()
+		%CollectorBox.sweep()
 
 func _show_message(text: String, kind: StringName) -> void:
 	var look: Array = MESSAGE_KINDS.get(kind, MESSAGE_KINDS[&"info"])
