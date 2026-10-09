@@ -38,9 +38,10 @@ def flat(bg, border=None, bw=0, radius=0, content=(0,), bg_a=1.0, extra=None):
 
 def p(t, k, v): props.append(f"{t}/{k} = {v}")
 
-pix = ext_res("FontFile", "assets/fonts/PixelifySans.ttf")
-silk = ext_res("FontFile", "assets/fonts/Silkscreen-Regular.ttf")
-silkb = ext_res("FontFile", "assets/fonts/Silkscreen-Bold.ttf")
+pix = f'ExtResource("{ext_res("FontFile", "assets/fonts/PixelifySans.ttf")}")'
+# Regular Silkscreen reads too thin at the 1.5x stretch; embolden it a bit (no layout change).
+silk = sub("FontVariation", {"base_font": f'ExtResource("{ext_res("FontFile", "assets/fonts/Silkscreen-Regular.ttf")}")', "variation_embolden": 0.5})
+silkb = f'ExtResource("{ext_res("FontFile", "assets/fonts/Silkscreen-Bold.ttf")}")'
 T = {k: ext_res("Texture2D", f"assets/ui/x3/{k}.png") for k in [
     "buttons_Blue_ButtonA_Unpressed", "buttons_Blue_ButtonA_Press", "buttons_Blue_ButtonC_Unpressed",
     "buttons_Gold_ButtonA_Highlighted", "buttons_Gold_ButtonC_Highlighted", "buttons_Orange_ButtonA_Highlighted",
@@ -48,7 +49,7 @@ T = {k: ext_res("Texture2D", f"assets/ui/x3/{k}.png") for k in [
 empty = sub("StyleBoxEmpty", {})
 
 # Defaults
-props.append(f'default_font = ExtResource("{pix}")')
+props.append(f'default_font = {pix}')
 props.append("default_font_size = 13")
 p("Label", "colors/font_color", col("#ece8df"))
 p("Label", "colors/font_shadow_color", col("#06080f", 0.0))
@@ -56,7 +57,7 @@ p("Label", "colors/font_shadow_color", col("#06080f", 0.0))
 # Label variations: Silk (regular) / SilkBold
 for name, font, size, c in [("Silk", silk, 9, "#9a968c"), ("SilkBold", silkb, 11, "#ece8df")]:
     p(name, "base_type", '&"Label"')
-    p(name, "fonts/font", f'ExtResource("{font}")')
+    p(name, "fonts/font", font)
     p(name, "font_sizes/font_size", size)
     p(name, "colors/font_color", col(c))
 
@@ -70,7 +71,7 @@ def button(name, tex, fg, pad, slice_px, font, size, hover_tex=None, press_tex=N
     p(name, "styles/hover_pressed", tex_box(press_tex, slice_px, pad) if press_tex else tex_box(tex, slice_px, pad, 0.85))
     p(name, "styles/disabled", tex_box(tex, slice_px, pad))
     p(name, "styles/focus", empty)
-    p(name, "fonts/font", f'ExtResource("{font}")')
+    p(name, "fonts/font", font)
     p(name, "font_sizes/font_size", size)
     for state in ["font_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color", "font_disabled_color"]:
         p(name, f"colors/{state}", col(fg))

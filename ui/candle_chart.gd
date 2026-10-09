@@ -10,7 +10,7 @@ const TIME_H := 18.0
 @export var plot_style: StyleBox
 @export var axis_style: StyleBox
 
-var _font: Font = preload("res://assets/fonts/Silkscreen-Regular.ttf")
+@onready var _font: Font = get_theme_font(&"font", &"Silk")  # emboldened Silkscreen from the theme
 
 
 func _ready() -> void:
