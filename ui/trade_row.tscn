@@ -1,0 +1,39 @@
+[gd_scene format=3]
+
+[node name="TradeRow" type="MarginContainer"]
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 4
+
+[node name="HBox" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Time" type="Label" parent="HBox"]
+custom_minimum_size = Vector2(62, 0)
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+theme_override_font_sizes/font_size = 8
+text = "00:00:00"
+
+[node name="Tk" type="Label" parent="HBox"]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+theme_type_variation = &"Silk"
+text = "GRY"
+
+[node name="Desc" type="Label" parent="HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.7412, 0.7216, 0.6784, 1)
+text = "Sold 1 @ $1.00"
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="Total" type="Label" parent="HBox"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(1, 0.8196, 0.4, 1)
+text = "+$1.00"

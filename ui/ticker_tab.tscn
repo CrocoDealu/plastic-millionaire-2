@@ -1,0 +1,57 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/ticker_tab.gd" id="1"]
+[ext_resource type="Script" path="res://ui/box_chip.gd" id="2"]
+
+[node name="TickerTab" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 46)
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_type_variation = &"Tab"
+script = ExtResource("1")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="Row" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Chip" type="Control" parent="VBox/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(10, 10)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("2")
+dark = 3
+light = 0
+
+[node name="Tk" type="Label" parent="VBox/Row"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+text = "GRY"
+
+[node name="Chg" type="Label" parent="VBox/Row"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Silk"
+theme_override_font_sizes/font_size = 8
+text = "+0.0%"
+horizontal_alignment = 2
+clip_text = true
+
+[node name="Price" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.9255, 0.9098, 0.8745, 1)
+theme_override_font_sizes/font_size = 12
+text = "$1.00"
+clip_text = true
+text_overrun_behavior = 3

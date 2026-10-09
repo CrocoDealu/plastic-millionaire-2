@@ -1,0 +1,44 @@
+[gd_scene format=3]
+
+[ext_resource type="Texture2D" path="res://assets/ui/x3/Stars_Gold_Star_Full.png" id="1"]
+
+[node name="Toast" type="PanelContainer"]
+visible = false
+offset_right = 300.0
+offset_bottom = 60.0
+mouse_filter = 2
+theme_type_variation = &"PanelGold"
+
+[node name="HBox" type="HBoxContainer" parent="."]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="Star" type="TextureRect" parent="HBox"]
+custom_minimum_size = Vector2(36, 30)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("1")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VBox" type="VBoxContainer" parent="HBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="Title" type="Label" parent="HBox/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_colors/font_color = Color(1, 0.8196, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "TITLE"
+
+[node name="Sub" type="Label" parent="HBox/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098, 0.7686, 0.5412, 1)
+theme_override_font_sizes/font_size = 14
+text = "Sub"

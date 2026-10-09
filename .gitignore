@@ -5,3 +5,6 @@
 
 # Operating system files
 .DS_Store
+
+# design handoff reference
+design_ref/

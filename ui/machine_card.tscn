@@ -1,0 +1,288 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/machine_card.gd" id="1"]
+[ext_resource type="Script" path="res://ui/box_chip.gd" id="chip"]
+[ext_resource type="Script" path="res://ui/content_button.gd" id="cb"]
+
+[sub_resource type="StyleBoxFlat" id="bar_bg"]
+bg_color = Color(0.0784, 0.0784, 0.0863, 1)
+corner_radius_top_left = 99
+corner_radius_top_right = 99
+corner_radius_bottom_right = 99
+corner_radius_bottom_left = 99
+
+[sub_resource type="StyleBoxFlat" id="bar_fill"]
+resource_local_to_scene = true
+bg_color = Color(0.7255, 0.7098, 0.6667, 1)
+corner_radius_top_left = 99
+corner_radius_top_right = 99
+corner_radius_bottom_right = 99
+corner_radius_bottom_left = 99
+
+[sub_resource type="StyleBoxFlat" id="tag_on"]
+content_margin_left = 5.0
+content_margin_top = 2.0
+content_margin_right = 5.0
+content_margin_bottom = 2.0
+bg_color = Color(0.2275, 0.1882, 0.0627, 1)
+corner_radius_top_left = 99
+corner_radius_top_right = 99
+corner_radius_bottom_right = 99
+corner_radius_bottom_left = 99
+
+[sub_resource type="StyleBoxFlat" id="tag_off"]
+content_margin_left = 5.0
+content_margin_top = 2.0
+content_margin_right = 5.0
+content_margin_bottom = 2.0
+bg_color = Color(0.0784, 0.0784, 0.0863, 1)
+corner_radius_top_left = 99
+corner_radius_top_right = 99
+corner_radius_bottom_right = 99
+corner_radius_bottom_left = 99
+
+[node name="MachineCard" type="PanelContainer"]
+mouse_default_cursor_shape = 2
+theme_type_variation = &"Card"
+script = ExtResource("1")
+tag_on = SubResource("tag_on")
+tag_off = SubResource("tag_off")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Top" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Chip" type="Control" parent="VBox/Top"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("chip")
+
+[node name="Name" type="Label" parent="VBox/Top"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"SilkBold"
+text = "PRESS ARM"
+
+[node name="Own" type="Label" parent="VBox/Top"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_colors/font_color = Color(1, 0.8196, 0.4, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="Recipe" type="HFlowContainer" parent="VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/h_separation = 5
+theme_override_constants/v_separation = 4
+
+[node name="In0" type="PanelContainer" parent="VBox/Recipe"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"Pill"
+
+[node name="HBox" type="HBoxContainer" parent="VBox/Recipe/In0"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Dot" type="ColorRect" parent="VBox/Recipe/In0/HBox"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="VBox/Recipe/In0/HBox"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.9255, 0.9098, 0.8745, 1)
+text = "3 GRY"
+
+[node name="In1" type="PanelContainer" parent="VBox/Recipe"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"Pill"
+
+[node name="HBox" type="HBoxContainer" parent="VBox/Recipe/In1"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Dot" type="ColorRect" parent="VBox/Recipe/In1/HBox"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="VBox/Recipe/In1/HBox"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.9255, 0.9098, 0.8745, 1)
+text = "3 GRY"
+
+[node name="NoInput" type="Label" parent="VBox/Recipe"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+text = "NO INPUT"
+
+[node name="Arrow" type="Label" parent="VBox/Recipe"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+text = "→"
+
+[node name="Out" type="PanelContainer" parent="VBox/Recipe"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"Pill"
+
+[node name="HBox" type="HBoxContainer" parent="VBox/Recipe/Out"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Dot" type="ColorRect" parent="VBox/Recipe/Out/HBox"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="VBox/Recipe/Out/HBox"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.9255, 0.9098, 0.8745, 1)
+text = "3 GRY"
+
+[node name="Every" type="Label" parent="VBox/Recipe"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+text = "EVERY 2.0S"
+
+[node name="Bar" type="ProgressBar" parent="VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/background = SubResource("bar_bg")
+theme_override_styles/fill = SubResource("bar_fill")
+show_percentage = false
+
+[node name="Rate" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7412, 0.7216, 0.6784, 1)
+text = "+0.50 GRY/s"
+
+[node name="Autos" type="HBoxContainer" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="InTag" type="PanelContainer" parent="VBox/Autos"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_styles/panel = SubResource("tag_off")
+
+[node name="HBox" type="HBoxContainer" parent="VBox/Autos/InTag"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Dot" type="ColorRect" parent="VBox/Autos/InTag/HBox"]
+custom_minimum_size = Vector2(5, 5)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="VBox/Autos/InTag/HBox"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_font_sizes/font_size = 7
+text = "IN"
+
+[node name="OutTag" type="PanelContainer" parent="VBox/Autos"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_styles/panel = SubResource("tag_off")
+
+[node name="HBox" type="HBoxContainer" parent="VBox/Autos/OutTag"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Dot" type="ColorRect" parent="VBox/Autos/OutTag/HBox"]
+custom_minimum_size = Vector2(5, 5)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="VBox/Autos/OutTag/HBox"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_font_sizes/font_size = 7
+text = "OUT"
+
+[node name="Actions" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Act" type="Button" parent="VBox/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"BtnGrey"
+theme_override_font_sizes/font_size = 9
+text = "RUN"
+clip_text = true
+
+[node name="Buy" type="Button" parent="VBox/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_type_variation = &"BtnGrey"
+script = ExtResource("cb")
+
+[node name="HBox" type="HBoxContainer" parent="VBox/Actions/Buy"]
+layout_mode = 0
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="VBox/Actions/Buy/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"SilkBold"
+theme_override_font_sizes/font_size = 10
+text = "BUY ×1"
+
+[node name="Cost" type="Label" parent="VBox/Actions/Buy/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_font_sizes/font_size = 10
+text = "$12.00"
