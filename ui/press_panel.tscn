@@ -1,0 +1,274 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/press_panel.gd" id="1"]
+[ext_resource type="Shader" path="res://ui/stripes.gdshader" id="2"]
+
+[sub_resource type="StyleBoxFlat" id="housing"]
+bg_color = Color(0.2275, 0.2275, 0.2392, 1)
+border_width_bottom = 6
+border_color = Color(0.1647, 0.1647, 0.1765, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="ShaderMaterial" id="hazard"]
+shader = ExtResource("2")
+shader_parameter/color_a = Color(0.9608, 0.7725, 0.0941, 1)
+shader_parameter/color_b = Color(0.0784, 0.0784, 0.0863, 1)
+shader_parameter/band = 8.0
+shader_parameter/angle = 135.0
+shader_parameter/rect_size = Vector2(130, 12)
+
+[sub_resource type="StyleBoxFlat" id="rod"]
+bg_color = Color(0.4667, 0.4549, 0.4235, 1)
+border_width_right = 5
+border_color = Color(0.3529, 0.3451, 0.3216, 1)
+
+[sub_resource type="StyleBoxFlat" id="head"]
+bg_color = Color(0.9608, 0.7725, 0.0941, 1)
+border_width_bottom = 6
+border_color = Color(0.7686, 0.6039, 0.0549, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="die"]
+bg_color = Color(0.1765, 0.1765, 0.1882, 1)
+border_width_top = 4
+border_color = Color(0.2275, 0.2275, 0.2392, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="ShaderMaterial" id="floor"]
+shader = ExtResource("2")
+shader_parameter/color_a = Color(0.2, 0.2, 0.2118, 1)
+shader_parameter/color_b = Color(0.1765, 0.1765, 0.1882, 1)
+shader_parameter/band = 32.0
+shader_parameter/angle = 90.0
+shader_parameter/rect_size = Vector2(256, 36)
+
+[sub_resource type="StyleBoxFlat" id="sweeper"]
+bg_color = Color(0.8863, 0.4392, 0.1647, 1)
+border_width_bottom = 5
+border_color = Color(0.6588, 0.3137, 0.1098, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="PressPanel" type="PanelContainer"]
+custom_minimum_size = Vector2(280, 0)
+theme_type_variation = &"PanelOutlined"
+script = ExtResource("1")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="HBoxContainer" parent="VBox"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBox/Title"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"SilkBold"
+theme_override_colors/font_color = Color(0.9608, 0.7725, 0.0941, 1)
+theme_override_font_sizes/font_size = 12
+text = "BOX PRESS"
+
+[node name="PerPress" type="Label" parent="VBox/Title"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Silk"
+text = "1 GRY PER PRESS"
+
+[node name="Stage" type="PanelContainer" parent="VBox"]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(256, 440)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"Stage"
+
+[node name="Area" type="Control" parent="VBox/Stage"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Hover" type="ColorRect" parent="VBox/Stage/Area"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 256.0
+offset_bottom = 260.0
+mouse_filter = 2
+color = Color(0.9608, 0.7725, 0.0941, 0.04)
+
+[node name="Housing" type="Panel" parent="VBox/Stage/Area"]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 16.0
+offset_right = 208.0
+offset_bottom = 64.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("housing")
+
+[node name="Hazard" type="ColorRect" parent="VBox/Stage/Area/Housing"]
+material = SubResource("hazard")
+layout_mode = 0
+offset_left = 15.0
+offset_top = 15.0
+offset_right = 145.0
+offset_bottom = 27.0
+mouse_filter = 2
+
+[node name="Rod" type="Panel" parent="VBox/Stage/Area"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 118.0
+offset_top = 64.0
+offset_right = 138.0
+offset_bottom = 96.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("rod")
+
+[node name="Head" type="Panel" parent="VBox/Stage/Area"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 72.0
+offset_top = 96.0
+offset_right = 184.0
+offset_bottom = 120.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("head")
+
+[node name="Die" type="Panel" parent="VBox/Stage/Area"]
+layout_mode = 0
+offset_left = 53.0
+offset_top = 178.0
+offset_right = 203.0
+offset_bottom = 196.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("die")
+
+[node name="Hint" type="Label" parent="VBox/Stage/Area"]
+layout_mode = 0
+offset_top = 206.0
+offset_right = 256.0
+offset_bottom = 218.0
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+text = "CLICK TO PRESS"
+horizontal_alignment = 1
+
+[node name="Combo" type="Label" parent="VBox/Stage/Area"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_top = 226.0
+offset_right = 256.0
+offset_bottom = 250.0
+theme_type_variation = &"SilkBold"
+theme_override_colors/font_color = Color(0.8863, 0.4392, 0.1647, 1)
+theme_override_colors/font_shadow_color = Color(0.0235, 0.0314, 0.0588, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 12
+text = "COMBO ×5"
+horizontal_alignment = 1
+
+[node name="FloorEdge" type="ColorRect" parent="VBox/Stage/Area"]
+layout_mode = 0
+offset_top = 400.0
+offset_right = 256.0
+offset_bottom = 404.0
+mouse_filter = 2
+color = Color(0.9608, 0.7725, 0.0941, 1)
+
+[node name="Floor" type="ColorRect" parent="VBox/Stage/Area"]
+material = SubResource("floor")
+layout_mode = 0
+offset_top = 404.0
+offset_right = 256.0
+offset_bottom = 440.0
+mouse_filter = 2
+
+[node name="Sweeper" type="Panel" parent="VBox/Stage/Area"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = -60.0
+offset_top = 410.0
+offset_right = -16.0
+offset_bottom = 430.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sweeper")
+
+[node name="Label" type="Label" parent="VBox/Stage/Area/Sweeper"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -3.0
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.0784, 0.0784, 0.0863, 1)
+theme_override_font_sizes/font_size = 7
+text = "SWEEP"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Boxes" type="Control" parent="VBox/Stage/Area"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Playtest" type="PanelContainer" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"Inset"
+
+[node name="VBox" type="VBoxContainer" parent="VBox/Playtest"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Head" type="HBoxContainer" parent="VBox/Playtest/VBox"]
+layout_mode = 2
+
+[node name="Clock" type="Label" parent="VBox/Playtest/VBox/Head"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.9608, 0.7725, 0.0941, 1)
+theme_override_font_sizes/font_size = 8
+text = "PLAYTEST 00:00"
+
+[node name="Wait" type="Label" parent="VBox/Playtest/VBox/Head"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_font_sizes/font_size = 8
+text = "WAIT 0S · MAX 0S"
+
+[node name="Milestones" type="GridContainer" parent="VBox/Playtest/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 0
+columns = 2
+
+[node name="HowTo" type="Label" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
+text = "Click the press for grey boxes. Click or drag across boxes on the floor to collect them."
+autowrap_mode = 3

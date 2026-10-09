@@ -1,637 +1,265 @@
-[gd_scene format=3 uid="uid://cuv3db0jrp6kg"]
+[gd_scene format=3]
 
-[ext_resource type="Script" uid="uid://5yknw1nu5h6e" path="res://main.gd" id="1_main"]
-[ext_resource type="Texture2D" uid="uid://dc87pop2slxt4" path="res://assets/black_bag.png" id="bag"]
-[ext_resource type="PackedScene" path="res://ui/collector_box.tscn" id="collector_box"]
-[ext_resource type="Texture2D" uid="uid://c3b70hvu25fe8" path="res://assets/ui/arcade/BackgroundGrid.png" id="grid"]
-[ext_resource type="PackedScene" path="res://ui/modal_overlay.tscn" id="modal"]
-[ext_resource type="PackedScene" path="res://ui/nav_card.tscn" id="nav_card"]
-[ext_resource type="PackedScene" path="res://ui/production_overlay.tscn" id="production"]
-[ext_resource type="PackedScene" path="res://ui/stock_row.tscn" id="stock_row"]
-[ext_resource type="Theme" uid="uid://d2uqnifxvr1fo" path="res://ui/control_room_theme.tres" id="theme"]
+[ext_resource type="Script" path="res://main.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/arcade/BackgroundGrid.png" id="2"]
+[ext_resource type="Script" path="res://ui/drift.gd" id="3"]
+[ext_resource type="Texture2D" path="res://assets/ui/icon_settings.png" id="4"]
+[ext_resource type="PackedScene" path="res://ui/press_panel.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://ui/market_panel.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://ui/machines_panel.tscn" id="7"]
+[ext_resource type="PackedScene" path="res://ui/shelf_slot.tscn" id="8"]
+[ext_resource type="PackedScene" path="res://ui/machine_modal.tscn" id="9"]
+[ext_resource type="PackedScene" path="res://ui/settings_modal.tscn" id="10"]
 
-[sub_resource type="Gradient" id="floor_stripes_g"]
-interpolation_mode = 1
-offsets = PackedFloat32Array(0, 0.5)
-colors = PackedColorArray(0.086275, 0.109804, 0.207843, 1, 0.07451, 0.094118, 0.188235, 1)
+[sub_resource type="Shader" id="scan_shader"]
+code = "shader_type canvas_item;
+// 1px black line every 3 canvas pixels at 10% (CSS repeating-linear-gradient(#000 0 1px, transparent 1px 3px)).
+uniform float height = 800.0;
+void fragment() {
+	COLOR = vec4(0.0, 0.0, 0.0, mod(floor(UV.y * height), 3.0) < 1.0 ? 0.1 : 0.0);
+}
+"
 
-[sub_resource type="GradientTexture2D" id="floor_stripes"]
-gradient = SubResource("floor_stripes_g")
-width = 80
-height = 1
+[sub_resource type="ShaderMaterial" id="scan"]
+shader = SubResource("scan_shader")
 
-[sub_resource type="Gradient" id="hp_stripes_g"]
-interpolation_mode = 1
-offsets = PackedFloat32Array(0, 0.8)
-colors = PackedColorArray(0.309804, 0.839216, 1, 1, 0.168627, 0.560784, 0.701961, 1)
-
-[sub_resource type="GradientTexture2D" id="hp_stripes"]
-gradient = SubResource("hp_stripes_g")
-width = 10
-height = 1
-
-[sub_resource type="RectangleShape2D" id="floor_shape"]
-size = Vector2(8000, 24)
-
-[sub_resource type="RectangleShape2D" id="wall_shape"]
-size = Vector2(24, 8000)
-
-[sub_resource type="Gradient" id="scanline_g"]
-interpolation_mode = 1
-offsets = PackedFloat32Array(0, 0.3333)
-colors = PackedColorArray(0, 0, 0, 0.14, 0, 0, 0, 0)
-
-[sub_resource type="GradientTexture2D" id="scanline"]
-gradient = SubResource("scanline_g")
-width = 1
-height = 3
-fill_to = Vector2(0, 1)
-
-[node name="Main" type="Control" unique_id=952094256]
+[node name="Main" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme = ExtResource("theme")
-script = ExtResource("1_main")
+script = ExtResource("1")
 
-[node name="Background" type="ColorRect" parent="." unique_id=1589478027]
+[node name="Bg" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 mouse_filter = 2
-color = Color(0.05098, 0.062745, 0.12549, 1)
+color = Color(0.149, 0.149, 0.1647, 1)
 
-[node name="Grid" type="TextureRect" parent="." unique_id=1089631781]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Grid" type="TextureRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = -400.0
+offset_top = -300.0
+offset_right = 1280.0
+offset_bottom = 800.0
 mouse_filter = 2
-texture = ExtResource("grid")
-expand_mode = 1
+texture = ExtResource("2")
 stretch_mode = 1
 
-[node name="Layout" type="VBoxContainer" parent="." unique_id=1598528120]
+[node name="Drift" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 mouse_filter = 2
+script = ExtResource("3")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 theme_override_constants/separation = 0
 
-[node name="TopBar" type="PanelContainer" parent="Layout" unique_id=1388995628]
+[node name="Header" type="PanelContainer" parent="Layout"]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-mouse_filter = 2
-theme_type_variation = &"TopBar"
+theme_type_variation = &"Header"
 
-[node name="HBox" type="HBoxContainer" parent="Layout/TopBar" unique_id=756297371]
+[node name="HBox" type="HBoxContainer" parent="Layout/Header"]
 layout_mode = 2
-mouse_filter = 2
 theme_override_constants/separation = 14
 
-[node name="Title" type="VBoxContainer" parent="Layout/TopBar/HBox" unique_id=1633063740]
-custom_minimum_size = Vector2(228, 0)
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 2
-alignment = 1
-
-[node name="Name" type="Label" parent="Layout/TopBar/HBox/Title" unique_id=1820868158]
-layout_mode = 2
-theme_type_variation = &"PxTitle"
-text = "PLASTIC MILLIONAIRE"
-
-[node name="Subtitle" type="Label" parent="Layout/TopBar/HBox/Title" unique_id=1866817347]
-layout_mode = 2
-theme_type_variation = &"Px9"
-theme_override_colors/font_color = Color(0.364706, 1, 0.541176, 1)
-text = "SECOND TRY"
-
-[node name="Main" type="HBoxContainer" parent="Layout" unique_id=2044948009]
-layout_mode = 2
-size_flags_vertical = 3
-mouse_filter = 2
-theme_override_constants/separation = 0
-
-[node name="Left" type="MarginContainer" parent="Layout/Main" unique_id=1651858783]
-custom_minimum_size = Vector2(250, 0)
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 14
-
-[node name="VBox" type="VBoxContainer" parent="Layout/Main/Left" unique_id=1761912495]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 12
-
-[node name="MoneyRingOuter" type="PanelContainer" parent="Layout/Main/Left/VBox" unique_id=652811578]
-layout_mode = 2
-mouse_filter = 2
-theme_type_variation = &"RingGold6"
-
-[node name="MoneyRingInner" type="PanelContainer" parent="Layout/Main/Left/VBox/MoneyRingOuter" unique_id=1226067408]
-layout_mode = 2
-mouse_filter = 2
-theme_type_variation = &"RingRoot3"
-
-[node name="MoneyCard" type="PanelContainer" parent="Layout/Main/Left/VBox/MoneyRingOuter/MoneyRingInner" unique_id=831907843]
-layout_mode = 2
-mouse_filter = 2
-theme_type_variation = &"MoneyCard"
-
-[node name="VBox" type="VBoxContainer" parent="Layout/Main/Left/VBox/MoneyRingOuter/MoneyRingInner/MoneyCard" unique_id=611942]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 6
-
-[node name="Caption" type="Label" parent="Layout/Main/Left/VBox/MoneyRingOuter/MoneyRingInner/MoneyCard/VBox" unique_id=1177880494]
-layout_mode = 2
-theme_type_variation = &"Px9"
-theme_override_colors/font_color = Color(1, 0.788235, 0.25098, 1)
-text = "MONEY"
-
-[node name="Money" type="Label" parent="Layout/Main/Left/VBox/MoneyRingOuter/MoneyRingInner/MoneyCard/VBox" unique_id=122642509]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Px26"
-theme_override_colors/font_color = Color(1, 0.788235, 0.25098, 1)
-text = "$ 0"
-clip_text = true
-
-[node name="Stockpile" type="PanelContainer" parent="Layout/Main/Left/VBox" unique_id=935808528]
-layout_mode = 2
-mouse_filter = 2
-theme_type_variation = &"FrameStock"
-
-[node name="VBox" type="VBoxContainer" parent="Layout/Main/Left/VBox/Stockpile" unique_id=736337624]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 8
-
-[node name="Header" type="HBoxContainer" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=848151120]
-layout_mode = 2
-mouse_filter = 2
-
-[node name="Title" type="Label" parent="Layout/Main/Left/VBox/Stockpile/VBox/Header" unique_id=322592968]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"Px11"
-text = "STOCKPILE"
-
-[node name="SellValue" type="Label" parent="Layout/Main/Left/VBox/Stockpile/VBox/Header" unique_id=626145608]
-layout_mode = 2
-theme_type_variation = &"Px8"
-theme_override_colors/font_color = Color(0.541176, 0.576471, 0.721569, 1)
-text = "SELL VALUE"
-
-[node name="StockPlastic" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=546565134 instance=ExtResource("stock_row")]
-unique_name_in_owner = true
-layout_mode = 2
-color = Color(0.309804, 0.839216, 1, 1)
-
-[node name="StockFlakes" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=195895828 instance=ExtResource("stock_row")]
-unique_name_in_owner = true
-layout_mode = 2
-display_name = "Clean Flakes"
-color = Color(0.498039, 0.890196, 1, 1)
-
-[node name="StockPellets" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=1539976543 instance=ExtResource("stock_row")]
-unique_name_in_owner = true
-layout_mode = 2
-display_name = "Poly-Pellets"
-color = Color(0.356863, 0.486275, 1, 1)
-
-[node name="StockFabric" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=981533315 instance=ExtResource("stock_row")]
-unique_name_in_owner = true
-layout_mode = 2
-display_name = "Eco-Fabric"
-color = Color(0.364706, 1, 0.541176, 1)
-
-[node name="StockJunk" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=756250557 instance=ExtResource("stock_row")]
-unique_name_in_owner = true
-layout_mode = 2
-display_name = "Junk"
-color = Color(0.541176, 0.478431, 0.415686, 1)
-
-[node name="StockGold" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=2095873330 instance=ExtResource("stock_row")]
-unique_name_in_owner = true
-layout_mode = 2
-display_name = "Gold"
-color = Color(1, 0.788235, 0.25098, 1)
-name_color = Color(1, 0.788235, 0.25098, 1)
-
-[node name="Sell" type="Button" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=955116791]
-unique_name_in_owner = true
-layout_mode = 2
-focus_mode = 0
-mouse_default_cursor_shape = 2
-theme_type_variation = &"GoldButton"
-text = "SELL MATERIALS · $ 0"
-clip_text = true
-
-[node name="Caption" type="Label" parent="Layout/Main/Left/VBox/Stockpile/VBox" unique_id=291731077]
-custom_minimum_size = Vector2(1, 0)
-layout_mode = 2
-theme_type_variation = &"Body13"
-theme_override_colors/font_color = Color(0.541176, 0.576471, 0.721569, 1)
-text = "Keeps enough plastic to feed running machines."
-autowrap_mode = 3
-
-[node name="Message" type="PanelContainer" parent="Layout/Main/Left/VBox" unique_id=1604684553]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
-mouse_filter = 2
-theme_type_variation = &"MessageInfo"
-
-[node name="VBox" type="VBoxContainer" parent="Layout/Main/Left/VBox/Message" unique_id=1946945331]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 6
-
-[node name="MessageTag" type="Label" parent="Layout/Main/Left/VBox/Message/VBox" unique_id=90871077]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Px9"
-theme_override_colors/font_color = Color(0.309804, 0.839216, 1, 1)
-text = "STATUS"
-
-[node name="MessageText" type="Label" parent="Layout/Main/Left/VBox/Message/VBox" unique_id=2014835976]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(1, 0)
-layout_mode = 2
-theme_type_variation = &"Body16"
-autowrap_mode = 3
-
-[node name="Stage" type="Control" parent="Layout/Main" unique_id=1915703019]
-unique_name_in_owner = true
-clip_contents = true
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-
-[node name="FloorLine" type="ColorRect" parent="Layout/Main/Stage" unique_id=639371510]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -120.0
-offset_bottom = -116.0
-grow_horizontal = 2
-grow_vertical = 0
-mouse_filter = 2
-color = Color(0.137255, 0.168627, 0.309804, 1)
-
-[node name="Floor" type="TextureRect" parent="Layout/Main/Stage" unique_id=570153720]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -116.0
-grow_horizontal = 2
-grow_vertical = 0
-mouse_filter = 2
-texture = SubResource("floor_stripes")
-expand_mode = 1
-stretch_mode = 1
-
-[node name="Pill" type="PanelContainer" parent="Layout/Main/Stage" unique_id=910946262]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_top = 14.0
-offset_bottom = 14.0
-grow_horizontal = 2
-mouse_filter = 2
-theme_type_variation = &"Pill"
-
-[node name="HBox" type="HBoxContainer" parent="Layout/Main/Stage/Pill" unique_id=184207727]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 8
-
-[node name="BagName" type="Label" parent="Layout/Main/Stage/Pill/HBox" unique_id=488817620]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Px9"
-theme_override_colors/font_color = Color(0.541176, 0.576471, 0.721569, 1)
-text = "BLACK BAG"
-
-[node name="BagStats" type="Label" parent="Layout/Main/Stage/Pill/HBox" unique_id=1702624224]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Px9"
-theme_override_colors/font_color = Color(0.309804, 0.839216, 1, 1)
-text = "DMG 1 · GOLD 5%"
-
-[node name="Dispenser" type="VBoxContainer" parent="Layout/Main/Stage" unique_id=970280462]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_top = 110.0
-offset_bottom = 110.0
-grow_horizontal = 2
-mouse_filter = 2
-theme_override_constants/separation = 58
-
-[node name="Bag" type="TextureRect" parent="Layout/Main/Stage/Dispenser" unique_id=901566371]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(321, 378)
-layout_mode = 2
-size_flags_horizontal = 4
-mouse_default_cursor_shape = 2
-texture = ExtResource("bag")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="HpBox" type="VBoxContainer" parent="Layout/Main/Stage/Dispenser" unique_id=1518662505]
-visible = false
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 5
-
-[node name="HpBar" type="PanelContainer" parent="Layout/Main/Stage/Dispenser/HpBox" unique_id=101550480]
-custom_minimum_size = Vector2(220, 14)
-layout_mode = 2
-size_flags_horizontal = 4
-mouse_filter = 2
-theme_type_variation = &"HpBar"
-
-[node name="Track" type="Control" parent="Layout/Main/Stage/Dispenser/HpBox/HpBar" unique_id=1623576132]
-layout_mode = 2
-mouse_filter = 2
-
-[node name="HpFill" type="TextureRect" parent="Layout/Main/Stage/Dispenser/HpBox/HpBar/Track" unique_id=1545531276]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = SubResource("hp_stripes")
-expand_mode = 1
-stretch_mode = 1
-
-[node name="HpLabel" type="Label" parent="Layout/Main/Stage/Dispenser/HpBox" unique_id=144727633]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 4
-theme_type_variation = &"Px9"
-theme_override_colors/font_color = Color(0.541176, 0.576471, 0.721569, 1)
-text = "10 / 10 HITS LEFT"
-
-[node name="CollectorBox" parent="Layout/Main/Stage" unique_id=1141717081 instance=ExtResource("collector_box")]
-unique_name_in_owner = true
-visible = false
-layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 16.0
-offset_top = -150.0
-offset_right = 60.0
-offset_bottom = -120.0
-grow_vertical = 0
-
-[node name="FloorAnchor" type="Control" parent="Layout/Main/Stage" unique_id=835665871]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_top = -120.0
-offset_bottom = -120.0
-grow_horizontal = 2
-grow_vertical = 0
-mouse_filter = 2
-
-[node name="Floor" type="StaticBody2D" parent="Layout/Main/Stage/FloorAnchor" unique_id=1325572407]
-
-[node name="Shape" type="CollisionShape2D" parent="Layout/Main/Stage/FloorAnchor/Floor" unique_id=1343352314]
-position = Vector2(0, 12)
-shape = SubResource("floor_shape")
-
-[node name="LeftWallAnchor" type="Control" parent="Layout/Main/Stage" unique_id=1425189480]
-layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 0.5
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="Wall" type="StaticBody2D" parent="Layout/Main/Stage/LeftWallAnchor" unique_id=439177485]
-
-[node name="Shape" type="CollisionShape2D" parent="Layout/Main/Stage/LeftWallAnchor/Wall" unique_id=367923023]
-position = Vector2(-12, 0)
-shape = SubResource("wall_shape")
-
-[node name="RightWallAnchor" type="Control" parent="Layout/Main/Stage" unique_id=52307360]
-layout_mode = 1
-anchors_preset = 6
-anchor_left = 1.0
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-grow_horizontal = 0
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="Wall" type="StaticBody2D" parent="Layout/Main/Stage/RightWallAnchor" unique_id=690204163]
-
-[node name="Shape" type="CollisionShape2D" parent="Layout/Main/Stage/RightWallAnchor/Wall" unique_id=1507028995]
-position = Vector2(12, 0)
-shape = SubResource("wall_shape")
-
-[node name="DroppedBoxes" type="Node2D" parent="Layout/Main/Stage" unique_id=1847782423]
-unique_name_in_owner = true
-
-[node name="Effects" type="Node2D" parent="Layout/Main/Stage" unique_id=12050468]
-unique_name_in_owner = true
-
-[node name="CollectorChip" type="PanelContainer" parent="Layout/Main/Stage" unique_id=64652398]
-unique_name_in_owner = true
-visible = false
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -16.0
-offset_top = -14.0
-offset_right = -16.0
-offset_bottom = -14.0
-grow_horizontal = 0
-grow_vertical = 0
-mouse_filter = 2
-theme_type_variation = &"Hint"
-
-[node name="CollectorLabel" type="Label" parent="Layout/Main/Stage/CollectorChip" unique_id=1093183570]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Px9"
-theme_override_colors/font_color = Color(0.364706, 1, 0.541176, 1)
-text = "COLLECTOR BOX · 3/SWEEP"
-
-[node name="Right" type="MarginContainer" parent="Layout/Main" unique_id=1571495916]
-custom_minimum_size = Vector2(250, 0)
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 14
-
-[node name="VBox" type="VBoxContainer" parent="Layout/Main/Right" unique_id=372916677]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 10
-
-[node name="Header" type="Label" parent="Layout/Main/Right/VBox" unique_id=341038993]
-layout_mode = 2
-theme_type_variation = &"Px11"
-theme_override_colors/font_color = Color(0.541176, 0.576471, 0.721569, 1)
-text = "CONTROL ROOM"
-
-[node name="NavProduction" parent="Layout/Main/Right/VBox" unique_id=163158918 instance=ExtResource("nav_card")]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 72)
-layout_mode = 2
-
-[node name="NavShop" parent="Layout/Main/Right/VBox" unique_id=363043418 instance=ExtResource("nav_card")]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 72)
-layout_mode = 2
-theme_type_variation = &"NavShop"
-title = "SHOP"
-
-[node name="NavAutomation" parent="Layout/Main/Right/VBox" unique_id=533439312 instance=ExtResource("nav_card")]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 72)
-layout_mode = 2
-theme_type_variation = &"NavAutomation"
-title = "AUTOMATION"
-
-[node name="NavMilestones" parent="Layout/Main/Right/VBox" unique_id=1957950275 instance=ExtResource("nav_card")]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 72)
-layout_mode = 2
-theme_type_variation = &"NavMilestones"
-title = "MILESTONES"
-
-[node name="Production" parent="." unique_id=2069089489 instance=ExtResource("production")]
-unique_name_in_owner = true
-layout_mode = 1
-
-[node name="Modal" parent="." unique_id=1981006392 instance=ExtResource("modal")]
-unique_name_in_owner = true
-layout_mode = 1
-
-[node name="Toast" type="PanelContainer" parent="." unique_id=1027873388]
-unique_name_in_owner = true
-visible = false
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_top = 84.0
-offset_bottom = 84.0
-grow_horizontal = 2
-mouse_filter = 2
-theme_type_variation = &"RingRoot4"
-
-[node name="Panel" type="PanelContainer" parent="Toast" unique_id=409521964]
-layout_mode = 2
-mouse_filter = 2
-theme_type_variation = &"Toast"
-
-[node name="HBox" type="HBoxContainer" parent="Toast/Panel" unique_id=44073311]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 12
-
-[node name="Medal" type="ColorRect" parent="Toast/Panel/HBox" unique_id=796923302]
-custom_minimum_size = Vector2(16, 16)
+[node name="Title" type="VBoxContainer" parent="Layout/Header/HBox"]
+custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_vertical = 4
-mouse_filter = 2
-color = Color(1, 0.788235, 0.25098, 1)
+theme_override_constants/separation = 4
 
-[node name="ShadeBottom" type="ColorRect" parent="Toast/Panel/HBox/Medal" unique_id=1735767845]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -4.0
-grow_horizontal = 2
-grow_vertical = 0
-mouse_filter = 2
-color = Color(0.721569, 0.541176, 0.109804, 1)
-
-[node name="ShadeRight" type="ColorRect" parent="Toast/Panel/HBox/Medal" unique_id=1800968107]
-layout_mode = 1
-anchors_preset = 11
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -4.0
-grow_horizontal = 0
-grow_vertical = 2
-mouse_filter = 2
-color = Color(0.721569, 0.541176, 0.109804, 1)
-
-[node name="Text" type="VBoxContainer" parent="Toast/Panel/HBox" unique_id=2106265368]
+[node name="Name" type="Label" parent="Layout/Header/HBox/Title"]
 layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 2
+theme_type_variation = &"SilkBold"
+theme_override_font_sizes/font_size = 14
+text = "PLASTIC MILLIONAIRE"
 
-[node name="Caption" type="Label" parent="Toast/Panel/HBox/Text" unique_id=485702413]
+[node name="Sub" type="Label" parent="Layout/Header/HBox/Title"]
 layout_mode = 2
-theme_type_variation = &"Px9"
-theme_override_colors/font_color = Color(1, 0.788235, 0.25098, 1)
-text = "ACHIEVEMENT UNLOCKED"
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.8863, 0.4392, 0.1647, 1)
+text = "BOX EXCHANGE"
 
-[node name="ToastName" type="Label" parent="Toast/Panel/HBox/Text" unique_id=2083584807]
+[node name="Spacer" type="Control" parent="Layout/Header/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Settings" type="Button" parent="Layout/Header/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_type_variation = &"Body17"
-text = "First Burst"
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+theme_type_variation = &"BtnSettings"
+theme_override_constants/h_separation = 8
+theme_override_colors/icon_normal_color = Color(0.9255, 0.9098, 0.8745, 1)
+theme_override_colors/icon_hover_color = Color(0.9608, 0.7725, 0.0941, 1)
+theme_override_colors/icon_pressed_color = Color(0.9608, 0.7725, 0.0941, 1)
+theme_override_colors/icon_hover_pressed_color = Color(0.9608, 0.7725, 0.0941, 1)
+theme_override_colors/icon_focus_color = Color(0.9255, 0.9098, 0.8745, 1)
+text = "SETTINGS"
+icon = ExtResource("4")
 
-[node name="Scanlines" type="TextureRect" parent="." unique_id=498312978]
+[node name="Money" type="PanelContainer" parent="Layout/Header/HBox"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"PanelMoney"
+
+[node name="VBox" type="VBoxContainer" parent="Layout/Header/HBox/Money"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 0
+
+[node name="Label" type="Label" parent="Layout/Header/HBox/Money/VBox"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.9098, 0.7686, 0.5412, 1)
+theme_override_font_sizes/font_size = 8
+text = "MONEY"
+
+[node name="Value" type="Label" parent="Layout/Header/HBox/Money/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_colors/font_color = Color(1, 0.8196, 0.4, 1)
+theme_override_font_sizes/font_size = 20
+text = "$0.00"
+horizontal_alignment = 2
+
+[node name="Main" type="MarginContainer" parent="Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="Columns" type="HBoxContainer" parent="Layout/Main"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PressPanel" parent="Layout/Main/Columns" instance=ExtResource("5")]
+layout_mode = 2
+
+[node name="MarketPanel" parent="Layout/Main/Columns" instance=ExtResource("6")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MachinesPanel" parent="Layout/Main/Columns" instance=ExtResource("7")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Shelf" type="MarginContainer" parent="Layout"]
+custom_minimum_size = Vector2(0, 92)
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HBox" type="HBoxContainer" parent="Layout/Shelf"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Slot0" parent="Layout/Shelf/HBox" instance=ExtResource("8")]
+layout_mode = 2
+
+[node name="Slot1" parent="Layout/Shelf/HBox" instance=ExtResource("8")]
+layout_mode = 2
+box = 1
+
+[node name="Slot2" parent="Layout/Shelf/HBox" instance=ExtResource("8")]
+layout_mode = 2
+box = 2
+
+[node name="Slot3" parent="Layout/Shelf/HBox" instance=ExtResource("8")]
+layout_mode = 2
+box = 3
+
+[node name="Slot4" parent="Layout/Shelf/HBox" instance=ExtResource("8")]
+layout_mode = 2
+box = 4
+
+[node name="Summary" type="PanelContainer" parent="Layout/Shelf/HBox"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_type_variation = &"PanelBlack"
+
+[node name="VBox" type="VBoxContainer" parent="Layout/Shelf/HBox/Summary"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 5
+
+[node name="Row" type="HBoxContainer" parent="Layout/Shelf/HBox/Summary/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Layout/Shelf/HBox/Summary/VBox/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Silk"
+theme_override_font_sizes/font_size = 8
+text = "WAREHOUSE"
+
+[node name="WhValue" type="Label" parent="Layout/Shelf/HBox/Summary/VBox/Row"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(1, 0.8196, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+text = "$0.00"
+
+[node name="SellSurplus" type="Button" parent="Layout/Shelf/HBox/Summary/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"BtnCGrey"
+text = "SELL ALL SURPLUS"
+
+[node name="Modals" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = SubResource("scanline")
-expand_mode = 1
-stretch_mode = 1
+color = Color(0.0118, 0.0196, 0.0392, 0.55)
 
-[connection signal="gui_input" from="Layout/Main/Stage/Dispenser/Bag" to="." method="_on_bag_gui_input"]
-[connection signal="drop_touched" from="Layout/Main/Stage/CollectorBox" to="." method="_collect_box" flags=3]
+[node name="Center" type="CenterContainer" parent="Modals"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="MachineModal" parent="Modals/Center" instance=ExtResource("9")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="SettingsModal" parent="Modals/Center" instance=ExtResource("10")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="Scanlines" type="ColorRect" parent="Overlay"]
+unique_name_in_owner = true
+material = SubResource("scan")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2

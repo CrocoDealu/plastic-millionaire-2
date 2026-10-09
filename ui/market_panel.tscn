@@ -1,0 +1,582 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/market_panel.gd" id="1"]
+[ext_resource type="PackedScene" path="res://ui/ticker_tab.tscn" id="tab"]
+[ext_resource type="Script" path="res://ui/box_chip.gd" id="chip"]
+[ext_resource type="Script" path="res://ui/candle_chart.gd" id="chart"]
+[ext_resource type="Script" path="res://ui/content_button.gd" id="cb"]
+[ext_resource type="PackedScene" path="res://ui/quote_row.tscn" id="qrow"]
+[ext_resource type="Texture2D" path="res://assets/ui/x3/buttons_Orange_ButtonCloseA_Highlighted.png" id="close"]
+
+[sub_resource type="StyleBoxFlat" id="plot"]
+bg_color = Color(0.0784, 0.0784, 0.0863, 1)
+corner_radius_top_left = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="axis"]
+bg_color = Color(0.1137, 0.1137, 0.1255, 1)
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+
+[sub_resource type="StyleBoxFlat" id="check_on"]
+bg_color = Color(0.9608, 0.7725, 0.0941, 1)
+anti_aliasing = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9608, 0.7725, 0.0941, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="check_off"]
+bg_color = Color(0, 0, 0, 0)
+anti_aliasing = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4667, 0.4549, 0.4235, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="MarketPanel" type="PanelContainer"]
+theme_type_variation = &"PanelOutlined"
+script = ExtResource("1")
+check_on = SubResource("check_on")
+check_off = SubResource("check_off")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Tabs" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Tab0" parent="VBox/Tabs" instance=ExtResource("tab")]
+layout_mode = 2
+box = 0
+
+[node name="Tab1" parent="VBox/Tabs" instance=ExtResource("tab")]
+layout_mode = 2
+box = 1
+
+[node name="Tab2" parent="VBox/Tabs" instance=ExtResource("tab")]
+layout_mode = 2
+box = 2
+
+[node name="Tab3" parent="VBox/Tabs" instance=ExtResource("tab")]
+layout_mode = 2
+box = 3
+
+[node name="Tab4" parent="VBox/Tabs" instance=ExtResource("tab")]
+layout_mode = 2
+box = 4
+
+[node name="Head" type="HBoxContainer" parent="VBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Chip" type="Control" parent="VBox/Head"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+size_flags_vertical = 4
+script = ExtResource("chip")
+dark = 5
+light = 4
+
+[node name="Info" type="VBoxContainer" parent="VBox/Head"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 3
+
+[node name="Name" type="Label" parent="VBox/Head/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Silk"
+text = "GREY BOX · 5S CANDLES"
+
+[node name="Row" type="HBoxContainer" parent="VBox/Head/Info"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Price" type="Label" parent="VBox/Head/Info/Row"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_font_sizes/font_size = 20
+text = "$1.00"
+
+[node name="Chg" type="Label" parent="VBox/Head/Info/Row"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 8
+theme_type_variation = &"Silk"
+theme_override_font_sizes/font_size = 11
+text = "+0.00%"
+
+[node name="HL" type="Label" parent="VBox/Head"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
+text = "H 1.00 · L 1.00"
+clip_text = true
+
+[node name="Modes" type="HBoxContainer" parent="VBox/Head"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 4
+
+[node name="Candles" type="Button" parent="VBox/Head/Modes"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"BtnCGold"
+text = "CANDLES"
+
+[node name="Line" type="Button" parent="VBox/Head/Modes"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"BtnCGrey"
+text = "LINE"
+
+[node name="QuotesBtn" type="Button" parent="VBox/Head"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+theme_type_variation = &"BtnGrey"
+theme_override_font_sizes/font_size = 9
+text = "QUOTES"
+
+[node name="Chart" type="Control" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+script = ExtResource("chart")
+plot_style = SubResource("plot")
+axis_style = SubResource("axis")
+
+[node name="SellBar" type="PanelContainer" parent="VBox"]
+layout_mode = 2
+theme_type_variation = &"SellBar"
+
+[node name="HBox" type="HBoxContainer" parent="VBox/SellBar"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Info" type="VBoxContainer" parent="VBox/SellBar/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 4
+
+[node name="Hold" type="HBoxContainer" parent="VBox/SellBar/HBox/Info"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="VBox/SellBar/HBox/Info/Hold"]
+layout_mode = 2
+size_flags_vertical = 8
+theme_type_variation = &"Silk"
+text = "YOU HOLD"
+
+[node name="Count" type="Label" parent="VBox/SellBar/HBox/Info/Hold"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_font_sizes/font_size = 18
+text = "0"
+
+[node name="Tk" type="Label" parent="VBox/SellBar/HBox/Info/Hold"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 8
+theme_type_variation = &"Silk"
+theme_override_font_sizes/font_size = 11
+text = "GRY"
+
+[node name="Sub" type="Label" parent="VBox/SellBar/HBox/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
+text = "0 sellable ≈ $0.00"
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="Reserve" type="HBoxContainer" parent="VBox/SellBar/HBox/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+theme_override_constants/separation = 6
+
+[node name="Check" type="Panel" parent="VBox/SellBar/HBox/Info/Reserve"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(10, 10)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("check_on")
+
+[node name="ResLabel" type="Label" parent="VBox/SellBar/HBox/Info/Reserve"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"Silk"
+theme_override_font_sizes/font_size = 8
+text = "KEEP MACHINE RESERVE"
+
+[node name="Btns" type="HBoxContainer" parent="VBox/SellBar/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Sell1" type="Button" parent="VBox/SellBar/HBox/Btns"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+theme_type_variation = &"BtnGrey"
+script = ExtResource("cb")
+
+[node name="VBox" type="VBoxContainer" parent="VBox/SellBar/HBox/Btns/Sell1"]
+custom_minimum_size = Vector2(58, 0)
+layout_mode = 0
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="Label" type="Label" parent="VBox/SellBar/HBox/Btns/Sell1/VBox"]
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_font_sizes/font_size = 10
+text = "SELL 1"
+horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="VBox/SellBar/HBox/Btns/Sell1/VBox"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_font_sizes/font_size = 8
+text = "—"
+horizontal_alignment = 1
+
+[node name="Sell10" type="Button" parent="VBox/SellBar/HBox/Btns"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+theme_type_variation = &"BtnGrey"
+script = ExtResource("cb")
+
+[node name="VBox" type="VBoxContainer" parent="VBox/SellBar/HBox/Btns/Sell10"]
+custom_minimum_size = Vector2(58, 0)
+layout_mode = 0
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="Label" type="Label" parent="VBox/SellBar/HBox/Btns/Sell10/VBox"]
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_font_sizes/font_size = 10
+text = "SELL 10"
+horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="VBox/SellBar/HBox/Btns/Sell10/VBox"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_font_sizes/font_size = 8
+text = "—"
+horizontal_alignment = 1
+
+[node name="SellHalf" type="Button" parent="VBox/SellBar/HBox/Btns"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+theme_type_variation = &"BtnGrey"
+script = ExtResource("cb")
+
+[node name="VBox" type="VBoxContainer" parent="VBox/SellBar/HBox/Btns/SellHalf"]
+custom_minimum_size = Vector2(58, 0)
+layout_mode = 0
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="Label" type="Label" parent="VBox/SellBar/HBox/Btns/SellHalf/VBox"]
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_font_sizes/font_size = 10
+text = "SELL 50%"
+horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="VBox/SellBar/HBox/Btns/SellHalf/VBox"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_font_sizes/font_size = 8
+text = "—"
+horizontal_alignment = 1
+
+[node name="SellAll" type="Button" parent="VBox/SellBar/HBox/Btns"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+theme_type_variation = &"BtnGrey"
+script = ExtResource("cb")
+
+[node name="VBox" type="VBoxContainer" parent="VBox/SellBar/HBox/Btns/SellAll"]
+custom_minimum_size = Vector2(58, 0)
+layout_mode = 0
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="Label" type="Label" parent="VBox/SellBar/HBox/Btns/SellAll/VBox"]
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_font_sizes/font_size = 10
+text = "SELL ALL"
+horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="VBox/SellBar/HBox/Btns/SellAll/VBox"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_font_sizes/font_size = 8
+text = "—"
+horizontal_alignment = 1
+
+[node name="Closed" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Stage"
+
+[node name="VBox" type="VBoxContainer" parent="Closed"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 14
+
+[node name="Boxes" type="Control" parent="Closed/VBox"]
+custom_minimum_size = Vector2(64, 56)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="A" type="Control" parent="Closed/VBox/Boxes"]
+layout_mode = 0
+offset_top = 16.0
+offset_right = 40.0
+offset_bottom = 56.0
+script = ExtResource("chip")
+locked = true
+
+[node name="B" type="Control" parent="Closed/VBox/Boxes"]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 16.0
+offset_right = 64.0
+offset_bottom = 56.0
+script = ExtResource("chip")
+locked = true
+
+[node name="Title" type="Label" parent="Closed/VBox"]
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
+theme_override_font_sizes/font_size = 18
+text = "EXCHANGE CLOSED"
+horizontal_alignment = 1
+
+[node name="Text" type="Label" parent="Closed/VBox"]
+custom_minimum_size = Vector2(340, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+theme_override_font_sizes/font_size = 16
+text = "Press the Box Press and collect your first grey box to open the market."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="DrawerHost" type="Control" parent="."]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Drawer" type="PanelContainer" parent="DrawerHost"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -420.0
+grow_horizontal = 0
+theme_type_variation = &"Drawer"
+
+[node name="VBox" type="VBoxContainer" parent="DrawerHost/Drawer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Head" type="HBoxContainer" parent="DrawerHost/Drawer/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="DrawerHost/Drawer/VBox/Head"]
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_colors/font_color = Color(0.9608, 0.7725, 0.0941, 1)
+theme_override_font_sizes/font_size = 13
+text = "QUOTES"
+
+[node name="Live" type="Label" parent="DrawerHost/Drawer/VBox/Head"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4824, 0.7882, 0.4353, 1)
+theme_override_font_sizes/font_size = 8
+text = "LIVE"
+
+[node name="Clock" type="Label" parent="DrawerHost/Drawer/VBox/Head"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Silk"
+text = "00:00:00"
+
+[node name="Close" type="TextureButton" parent="DrawerHost/Drawer/VBox/Head"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("close")
+
+[node name="Cols" type="MarginContainer" parent="DrawerHost/Drawer/VBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_right = 6
+
+[node name="HBox" type="HBoxContainer" parent="DrawerHost/Drawer/VBox/Cols"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TICKER" type="Label" parent="DrawerHost/Drawer/VBox/Cols/HBox"]
+custom_minimum_size = Vector2(62, 0)
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+theme_override_font_sizes/font_size = 7
+text = "TICKER"
+
+[node name="LAST" type="Label" parent="DrawerHost/Drawer/VBox/Cols/HBox"]
+custom_minimum_size = Vector2(0, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+theme_override_font_sizes/font_size = 7
+text = "LAST"
+
+[node name="CHG" type="Label" parent="DrawerHost/Drawer/VBox/Cols/HBox"]
+custom_minimum_size = Vector2(54, 0)
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+theme_override_font_sizes/font_size = 7
+text = "CHG"
+
+[node name="HIGH" type="Label" parent="DrawerHost/Drawer/VBox/Cols/HBox"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+theme_override_font_sizes/font_size = 7
+text = "HIGH"
+
+[node name="LOW" type="Label" parent="DrawerHost/Drawer/VBox/Cols/HBox"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+theme_override_font_sizes/font_size = 7
+text = "LOW"
+
+[node name="UPDATED" type="Label" parent="DrawerHost/Drawer/VBox/Cols/HBox"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+theme_override_font_sizes/font_size = 7
+text = "UPDATED"
+
+[node name="Quotes" type="VBoxContainer" parent="DrawerHost/Drawer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Quote0" parent="DrawerHost/Drawer/VBox/Quotes" instance=ExtResource("qrow")]
+layout_mode = 2
+box = 0
+
+[node name="Quote1" parent="DrawerHost/Drawer/VBox/Quotes" instance=ExtResource("qrow")]
+layout_mode = 2
+box = 1
+
+[node name="Quote2" parent="DrawerHost/Drawer/VBox/Quotes" instance=ExtResource("qrow")]
+layout_mode = 2
+box = 2
+
+[node name="Quote3" parent="DrawerHost/Drawer/VBox/Quotes" instance=ExtResource("qrow")]
+layout_mode = 2
+box = 3
+
+[node name="Quote4" parent="DrawerHost/Drawer/VBox/Quotes" instance=ExtResource("qrow")]
+layout_mode = 2
+box = 4
+
+[node name="LogHead" type="MarginContainer" parent="DrawerHost/Drawer/VBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 6
+
+[node name="HBox" type="HBoxContainer" parent="DrawerHost/Drawer/VBox/LogHead"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="DrawerHost/Drawer/VBox/LogHead/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"SilkBold"
+theme_override_colors/font_color = Color(0.9608, 0.7725, 0.0941, 1)
+text = "TRADE LOG"
+
+[node name="Earned" type="Label" parent="DrawerHost/Drawer/VBox/LogHead/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 8
+theme_type_variation = &"Silk"
+theme_override_font_sizes/font_size = 8
+
+[node name="Scroll" type="ScrollContainer" parent="DrawerHost/Drawer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Trades" type="VBoxContainer" parent="DrawerHost/Drawer/VBox/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="NoTrades" type="Label" parent="DrawerHost/Drawer/VBox/Scroll/Trades"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+text = "No trades yet. Sales show here with the time and fill price."
+autowrap_mode = 3
