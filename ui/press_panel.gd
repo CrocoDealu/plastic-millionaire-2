@@ -5,7 +5,7 @@ extends PanelContainer
 
 @export var show_pacing := true
 
-const FLOOR := 400.0
+const FLOOR := 320.0
 const GRAV := 1400.0
 const MAX_DROPS := 40
 const PRESS_H := 260.0

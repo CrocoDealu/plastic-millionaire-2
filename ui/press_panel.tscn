@@ -90,7 +90,7 @@ text = "1 GRY PER PRESS"
 [node name="Stage" type="PanelContainer" parent="VBox"]
 unique_name_in_owner = true
 clip_contents = true
-custom_minimum_size = Vector2(256, 440)
+custom_minimum_size = Vector2(256, 360)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 theme_type_variation = &"Stage"
@@ -183,18 +183,18 @@ horizontal_alignment = 1
 
 [node name="FloorEdge" type="ColorRect" parent="VBox/Stage/Area"]
 layout_mode = 0
-offset_top = 400.0
+offset_top = 320.0
 offset_right = 256.0
-offset_bottom = 404.0
+offset_bottom = 324.0
 mouse_filter = 2
 color = Color(0.9608, 0.7725, 0.0941, 1)
 
 [node name="Floor" type="ColorRect" parent="VBox/Stage/Area"]
 material = SubResource("floor")
 layout_mode = 0
-offset_top = 404.0
+offset_top = 324.0
 offset_right = 256.0
-offset_bottom = 440.0
+offset_bottom = 360.0
 mouse_filter = 2
 
 [node name="Sweeper" type="Panel" parent="VBox/Stage/Area"]
@@ -202,9 +202,9 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 0
 offset_left = -60.0
-offset_top = 410.0
+offset_top = 330.0
 offset_right = -16.0
-offset_bottom = 430.0
+offset_bottom = 350.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("sweeper")
 

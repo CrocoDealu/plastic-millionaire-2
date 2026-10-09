@@ -14,7 +14,7 @@
 [sub_resource type="Shader" id="scan_shader"]
 code = "shader_type canvas_item;
 // 1px black line every 3 canvas pixels at 10% (CSS repeating-linear-gradient(#000 0 1px, transparent 1px 3px)).
-uniform float height = 800.0;
+uniform float height = 720.0;
 void fragment() {
 	COLOR = vec4(0.0, 0.0, 0.0, mod(floor(UV.y * height), 3.0) < 1.0 ? 0.1 : 0.0);
 }

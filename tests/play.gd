@@ -8,8 +8,8 @@ func _click(p: Vector2) -> void:
 		var e := InputEventMouseButton.new()
 		e.button_index = MOUSE_BUTTON_LEFT
 		e.pressed = pressed
-		e.position = p
-		e.global_position = p
+		e.position = root.get_final_transform() * p  # canvas -> window px (stretch scale)
+		e.global_position = e.position
 		root.push_input(e)
 		await process_frame
 
@@ -53,7 +53,7 @@ func _initialize() -> void:
 	await _click(buy.get_global_rect().get_center())
 	assert(game.own[0] == 1)
 	var m := InputEventMouseMotion.new()
-	m.position = buy.get_global_rect().get_center() + Vector2(4, 0)
+	m.position = root.get_final_transform() * (buy.get_global_rect().get_center() + Vector2(4, 0))
 	m.global_position = m.position
 	root.push_input(m)
 	await create_timer(0.5).timeout

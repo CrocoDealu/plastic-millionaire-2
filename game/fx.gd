@@ -1,7 +1,7 @@
 extends CanvasLayer
 
 ## Screen-space juice and overlays: square particles, rising number floats, bump / shake / pulse
-## helpers for buttons, the hover tooltip and the unlock toast. Positions are canvas (1280x800) coords.
+## helpers for buttons, the hover tooltip and the unlock toast. Positions are canvas (1280x720) coords.
 
 const MAX_PARTS := 160
 const MAX_FLOATS := 30
@@ -166,7 +166,8 @@ func _render_tip() -> void:
 	var p := Vector2(r.position.x - 262.0, r.position.y - 8.0) if _tip_side == "left" else Vector2(r.position.x, r.end.y + 8.0)
 	if _tip_side == "up":
 		p.y = r.position.y - _tip.size.y - 8.0
-	_tip.position = Vector2(clampf(p.x, 8.0, 1280.0 - 262.0), clampf(p.y, 8.0, 800.0 - _tip.size.y - 8.0)).round()
+	var vp := get_viewport().get_visible_rect().size
+	_tip.position = Vector2(clampf(p.x, 8.0, vp.x - 262.0), clampf(p.y, 8.0, vp.y - _tip.size.y - 8.0)).round()
 
 
 # ---------------------------------------------------------------- toast
@@ -183,7 +184,7 @@ func _step_toast() -> void:
 	_toast.visible = ta < 3.0
 	if not _toast.visible:
 		return
-	_toast.position = Vector2(roundf((1280.0 - _toast.size.x) / 2.0), roundf(76.0 - (20.0 * (1.0 - ta / 0.2) if ta < 0.2 else 0.0)))
+	_toast.position = Vector2(roundf((get_viewport().get_visible_rect().size.x - _toast.size.x) / 2.0), roundf(76.0 - (20.0 * (1.0 - ta / 0.2) if ta < 0.2 else 0.0)))
 	_toast.modulate.a = clampf((3.0 - ta) / 0.4, 0.0, 1.0) if ta > 2.6 else 1.0
 
 
