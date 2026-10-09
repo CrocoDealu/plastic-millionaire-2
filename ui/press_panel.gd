@@ -166,12 +166,8 @@ func _step_drops(dt: float) -> void:
 		if d.x > w - 4.0 - d.s:
 			d.x = w - 4.0 - d.s
 			d.vx = -absf(d.vx) * 0.5
-		var fl := FLOOR
-		for o in _drops:
-			if o != d and o.rest and o.x < d.x + d.s - 4.0 and o.x + o.s > d.x + 4.0:
-				fl = minf(fl, o.y)
-		if d.vy > 0.0 and d.y + d.s >= fl:
-			d.y = fl - d.s
+		if d.vy > 0.0 and d.y + d.s >= FLOOR:  # boxes only hit the floor, never each other
+			d.y = FLOOR - d.s
 			if d.vy > 220.0:
 				d.vy = -d.vy * 0.3
 				d.vx *= 0.6
