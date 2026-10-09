@@ -38,10 +38,13 @@ def flat(bg, border=None, bw=0, radius=0, content=(0,), bg_a=1.0, extra=None):
 
 def p(t, k, v): props.append(f"{t}/{k} = {v}")
 
-pix = f'ExtResource("{ext_res("FontFile", "assets/fonts/PixelifySans.ttf")}")'
-# Regular Silkscreen reads too thin at the 1.5x stretch; embolden it a bit (no layout change).
-silk = sub("FontVariation", {"base_font": f'ExtResource("{ext_res("FontFile", "assets/fonts/Silkscreen-Regular.ttf")}")', "variation_embolden": 0.5})
-silkb = f'ExtResource("{ext_res("FontFile", "assets/fonts/Silkscreen-Bold.ttf")}")'
+def bold_font(path, embolden):
+    return sub("FontVariation", {"base_font": f'ExtResource("{ext_res("FontFile", path)}")', "variation_embolden": embolden})
+
+# Fonts read too thin at the 2x stretch; embolden them (no layout change). Tune weights here.
+pix = bold_font("assets/fonts/PixelifySans.ttf", 0.6)
+silk = bold_font("assets/fonts/Silkscreen-Regular.ttf", 1.0)
+silkb = bold_font("assets/fonts/Silkscreen-Bold.ttf", 0.5)
 T = {k: ext_res("Texture2D", f"assets/ui/x3/{k}.png") for k in [
     "buttons_Blue_ButtonA_Unpressed", "buttons_Blue_ButtonA_Press", "buttons_Blue_ButtonC_Unpressed",
     "buttons_Gold_ButtonA_Highlighted", "buttons_Gold_ButtonC_Highlighted", "buttons_Orange_ButtonA_Highlighted",
