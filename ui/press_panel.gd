@@ -9,9 +9,13 @@ const FLOOR := 320.0
 const GRAV := 1400.0
 const MAX_DROPS := 40
 const PRESS_H := 260.0
-const SLAM := 0.15  # downstroke seconds; boxes eject when the head bottoms out
-const HOLD := 0.05  # head rests on the squashed blank before lifting
+const SLAM := 0.1  # full downstroke seconds; boxes eject when the head bottoms out
+const SLAM_MIN := 0.03  # a click with the head already down still gets a short, audible hit
+const HOLD := 0.03  # head rests on the squashed blank before lifting
 const RETURN := 0.2
+const REGROW := 0.12  # fresh blank rises out of the die once the head is back at the top
+const QUAKE_BASE := 3.0
+const QUAKE_MAX := 7.0  # combo grows the stage shake up to this many px
 const SWEEP_EVERY := 1.5
 const SWEEP_SPEED := 140.0
 const SWEEP_CARRY := 8
@@ -25,6 +29,11 @@ const SPARKS := [Color("#77746c"), Color("#9a968c"), Color("#f5c518")]
 
 var _drops: Array[Dictionary] = []
 var _press_at := -10.0
+var _slam := SLAM  # this stroke's downstroke time; shorter when the head was already partway down
+var _from := 0.0  # stroke fraction (0 = up, 1 = on the die) the head started this slam from
+var _f := 0.0
+var _grow := BLANK.y  # unsquashed height of the blank on the die; 0 while it's shattered
+var _grow_from := BLANK.y
 var _combo := 0
 var _last_press := -10.0
 var _streak := 0
@@ -34,6 +43,7 @@ var _sweep_dir := 1.0  # alternates each pass: 1 = left to right
 var _sweeping := false
 var _train: Array[Dictionary] = []  # boxes being pushed ahead of the sweeper, nearest first
 var _milestone_rows := {}
+var _blank_cols: Array = []
 
 @onready var stage: Control = %Stage
 @onready var boxes: Control = %Boxes
@@ -81,6 +91,7 @@ func _refresh() -> void:
 	for i in Defs.BOXES.size():
 		if Game.unlocked(i):
 			cols.append(Defs.BOXES[i].color)
+	_blank_cols = Array(cols)
 	%Blank.material.set_shader_parameter(&"n", cols.size())
 	cols.resize(Defs.BOXES.size())
 	%Blank.material.set_shader_parameter(&"cols", cols)
@@ -123,8 +134,12 @@ func _press() -> void:
 	var per := Game.press()
 	_combo = _combo + 1 if t - _last_press < COMBO_WINDOW else 1
 	_last_press = t
+	# Slam from wherever the head is, so rapid clicks keep it low and hammer down instead of snapping it up.
 	_press_at = t
-	get_tree().create_timer(SLAM).timeout.connect(_eject.bind(per, _combo))
+	_from = _f
+	_grow_from = _grow
+	_slam = maxf(SLAM_MIN, SLAM * (1.0 - _from))
+	get_tree().create_timer(_slam).timeout.connect(_eject.bind(per, _combo))
 
 
 func _eject(per: int, combo: int) -> void:
@@ -143,8 +158,10 @@ func _eject(per: int, combo: int) -> void:
 	var o := stage.global_position
 	Fx.burst(o + Vector2(w / 2.0 - 70.0, 184.0), 5, SPARKS, 120.0, 300.0)
 	Fx.burst(o + Vector2(w / 2.0 + 70.0, 184.0), 5, SPARKS, 120.0, 300.0)
+	if %Blank.visible:  # the blank shatters
+		Fx.burst(o + Vector2(w / 2.0, DIE_TOP - 4.0), 12, _blank_cols, 200.0, 700.0)
 	Sfx.play("press", combo)
-	Fx.quake(stage, 2.0)
+	Fx.quake(stage, minf(QUAKE_BASE + combo * 0.5, QUAKE_MAX))
 
 
 func _collect(idx: int) -> void:
@@ -170,22 +187,30 @@ func _credit(ds: Array) -> void:
 func _process(delta: float) -> void:
 	var dt := minf(0.1, delta)
 	_step_drops(dt)
-	# Piston rests on the blank, accelerates down 32px over SLAM, holds on the blank, then eases back over RETURN.
+	# Piston accelerates down to the die over _slam, holds, then eases back up over RETURN.
 	var pa := _now() - _press_at
-	var f := 0.0
-	if pa < SLAM:
-		f = pow(pa / SLAM, 2.0)
-	elif pa < SLAM + HOLD:
-		f = 1.0
-	elif pa < SLAM + HOLD + RETURN:
-		f = 1.0 - ease((pa - SLAM - HOLD) / RETURN, 0.5)
-	var head_top := roundf(118.0 + 32.0 * f)
+	_f = 0.0
+	if pa < _slam:
+		_f = lerpf(_from, 1.0, pow(pa / _slam, 2.0))
+	elif pa < _slam + HOLD:
+		_f = 1.0
+	elif pa < _slam + HOLD + RETURN:
+		_f = 1.0 - ease((pa - _slam - HOLD) / RETURN, 0.5)
+	var head_top := roundf(118.0 + 32.0 * _f)
 	%Head.position.y = head_top
 	%Rod.size.y = head_top - 64.0
-	# Blank on the die squashes (wider, flatter) under the head
-	# and springs back as the piston returns.
-	var bh := minf(BLANK.y, DIE_TOP - head_top - 24.0)
-	var bw := minf(DIE_W, roundf(BLANK.x * BLANK.y / bh))
+	# Blank shatters on impact; the die stays empty while the head lifts, then a fresh one
+	# rises out of it once the head is back at the top. The slamming head squashes it wider and flatter.
+	var back := _slam + HOLD + RETURN
+	if pa < _slam:
+		_grow = _grow_from
+	elif pa < back:
+		_grow = 0.0
+	else:
+		_grow = BLANK.y * clampf((pa - back) / REGROW, 0.0, 1.0)
+	var bh := roundf(minf(_grow, DIE_TOP - head_top - 24.0))
+	%Blank.visible = bh > 0.0
+	var bw := minf(DIE_W, roundf(BLANK.x * _grow / bh)) if pa < _slam and bh > 0.0 else BLANK.x
 	%Blank.size = Vector2(bw, bh)
 	%Blank.position = Vector2(roundf(stage.size.x / 2.0 - bw / 2.0), DIE_TOP - bh)
 	var combo_on := _combo >= 5 and _now() - _last_press < STREAK_WINDOW
