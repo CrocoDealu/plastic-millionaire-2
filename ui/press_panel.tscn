@@ -121,16 +121,6 @@ mouse_filter = 2
 texture = ExtResource("tBlank")
 expand_mode = 1
 
-[node name="Hint" type="Label" parent="VBox/Stage/Area"]
-layout_mode = 0
-offset_top = 206.0
-offset_right = 256.0
-offset_bottom = 218.0
-theme_type_variation = &"Silk"
-theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
-text = "CLICK TO PRESS"
-horizontal_alignment = 1
-
 [node name="Combo" type="Label" parent="VBox/Stage/Area"]
 unique_name_in_owner = true
 visible = false
