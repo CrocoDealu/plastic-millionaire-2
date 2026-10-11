@@ -65,5 +65,17 @@ func _initialize() -> void:
 	assert(main.get_node("%Modals").visible)
 	await _click(Vector2(20, 400))
 	assert(not main.get_node("%Modals").visible)
+	# Sweeper: 12 resting boxes, one pass pushes 8 off and credits them only off the far edge.
+	game.up["sweep"] = true
+	panel._drops.clear()
+	for k in 12:
+		panel._drops.append({x = 20.0 + k * 18.0, y = 300.0, s = 18.0, vx = 0.0, vy = 0.0, rot = 0.0, vr = 0.0, rest = true})
+	var g0: int = game.inv[0]
+	await create_timer(1.8).timeout
+	assert(panel._sweeping and game.inv[0] == g0)
+	root.get_texture().get_image().save_png(OS.get_cmdline_user_args()[0].replace(".png", "_sweep.png"))
+	await create_timer(2.2).timeout
+	print("sweep: floor ", panel._drops.size(), " GRY +", game.inv[0] - g0)
+	assert(panel._drops.size() == 4 and game.inv[0] == g0 + 8 and panel._sweep_dir < 0.0)
 	print("play OK")
 	quit()

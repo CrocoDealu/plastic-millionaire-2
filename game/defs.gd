@@ -20,7 +20,7 @@ const GENS := [
 ]
 const UPS := [
 	{id = "heavy", tier = 0, name = "Heavy Press", cost = 40.0, desc = "+1 grey box per press.", req_t = ""},
-	{id = "sweep", tier = 0, name = "Floor Sweeper", cost = 120.0, desc = "Collects every box on the press floor each 1.5s.", req_t = "OWN 1 ARM"},
+	{id = "sweep", tier = 0, name = "Floor Sweeper", cost = 120.0, desc = "Drives across the press floor every 1.5s, pushing up to 8 boxes off the edge.", req_t = "OWN 1 ARM"},
 	{id = "heavy2", tier = 0, name = "Hydraulic Press", cost = 450.0, desc = "+2 more grey boxes per press.", req_t = "HEAVY PRESS"},
 	{id = "broker", tier = 1, name = "Broker Bot", cost = 500.0, desc = "Every 5s, sells surplus of any box trading above its average.", req_t = "OWN 1 VAT"},
 	{id = "insider", tier = 1, name = "Market Maker", cost = 1500.0, desc = "Halves the price drop caused by your own sales.", req_t = "OWN 5 VATS"},

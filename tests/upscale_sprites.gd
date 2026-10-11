@@ -4,7 +4,7 @@ extends SceneTree
 ## no scale, so bake nearest-neighbour 3x copies into assets/ui/x3/.
 
 const SRC := [
-	"buttons/Blue/ButtonA_Unpressed", "buttons/Blue/ButtonA_Press", "buttons/Blue/ButtonC_Unpressed",
+	"buttons/Blue/ButtonA_Unpressed", "buttons/Blue/ButtonA_Pressed", "buttons/Black/ButtonA_Pressed", "buttons/Blue/ButtonC_Unpressed",
 	"buttons/Gold/ButtonA_Highlighted", "buttons/Gold/ButtonC_Highlighted",
 	"buttons/Orange/ButtonA_Highlighted", "buttons/Orange/ButtonCloseA_Highlighted",
 	"panels/Black/PanelOutlined", "panels/Black/Panel", "panels/Black/PanelDigital", "panels/Gold/Panel",
