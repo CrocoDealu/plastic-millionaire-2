@@ -83,7 +83,7 @@ layout_mode = 0
 offset_left = 118.0
 offset_top = 64.0
 offset_right = 138.0
-offset_bottom = 96.0
+offset_bottom = 118.0
 mouse_filter = 2
 texture = ExtResource("tRod")
 expand_mode = 1
@@ -92,9 +92,9 @@ expand_mode = 1
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 72.0
-offset_top = 96.0
+offset_top = 118.0
 offset_right = 184.0
-offset_bottom = 120.0
+offset_bottom = 142.0
 mouse_filter = 2
 texture = ExtResource("tHead")
 expand_mode = 1
@@ -206,13 +206,6 @@ theme_type_variation = &"Silk"
 theme_override_colors/font_color = Color(0.9608, 0.7725, 0.0941, 1)
 theme_override_font_sizes/font_size = 8
 text = "PLAYTEST 00:00"
-
-[node name="Wait" type="Label" parent="VBox/Playtest/VBox/Head"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Silk"
-theme_override_font_sizes/font_size = 8
-text = "WAIT 0S · MAX 0S"
 
 [node name="Milestones" type="GridContainer" parent="VBox/Playtest/VBox"]
 unique_name_in_owner = true

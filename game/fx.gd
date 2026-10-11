@@ -8,6 +8,8 @@ const MAX_FLOATS := 30
 const FLOAT_RISE := 44.0
 const FLOAT_DUR := 0.9
 const PULSE_PERIOD := 1.6
+const QUAKE_DECAY := 20.0  # px/s
+const QUAKE_GAP := 0.25  # min seconds between kicks, so rapid presses don't blur into a buzz
 
 var _parts: Array[Dictionary] = []
 var _floats: Array[Dictionary] = []
@@ -19,6 +21,10 @@ var _tip_side := ""
 var _tip_fn: Callable
 var _toast: PanelContainer = preload("res://ui/toast.tscn").instantiate()
 var _toast_at := -10.0
+var _quake := 0.0
+var _quake_c: Control
+var _quake_off := Vector2.ZERO
+var _quake_at := -10.0
 
 
 func _ready() -> void:
@@ -45,6 +51,7 @@ func _process(delta: float) -> void:
 	for n: CanvasItem in get_tree().get_nodes_in_group(&"pulse"):
 		n.self_modulate = Color(k, k, k)
 	_canvas.queue_redraw()
+	_step_quake(delta)
 	if _tip.visible:
 		if is_instance_valid(_tip_src) and _tip_src.is_visible_in_tree():
 			_render_tip()
@@ -81,6 +88,28 @@ func bump(c: Control) -> void:
 	var t := c.create_tween()
 	c.scale = Vector2(1.1, 1.1)
 	t.tween_property(c, "scale", Vector2.ONE, 0.22)
+
+
+## Impact shake: jolts `c` up to `px` pixels, decaying at QUAKE_DECAY. Offsets the drawing, not the layout.
+func quake(c: Control, px: float) -> void:
+	if c != _quake_c and is_instance_valid(_quake_c):
+		_quake_c.position -= _quake_off
+		_quake_off = Vector2.ZERO
+	var t := Time.get_ticks_msec() / 1000.0
+	if c == _quake_c and t - _quake_at < QUAKE_GAP:
+		return
+	_quake_at = t
+	_quake_c = c
+	_quake = maxf(_quake, px)
+
+
+func _step_quake(delta: float) -> void:
+	if not is_instance_valid(_quake_c) or (_quake <= 0.0 and _quake_off == Vector2.ZERO):
+		return
+	var off := (Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * _quake).round()
+	_quake_c.position += off - _quake_off
+	_quake_off = off
+	_quake = move_toward(_quake, 0.0, QUAKE_DECAY * delta)
 
 
 ## Can't-afford shake: +-5px horizontal over 300ms. Shakes the drawing, not the layout.

@@ -10,6 +10,7 @@ const GRAV := 1400.0
 const MAX_DROPS := 40
 const PRESS_H := 260.0
 const SLAM := 0.15  # downstroke seconds; boxes eject when the head bottoms out
+const HOLD := 0.05  # head rests on the squashed blank before lifting
 const RETURN := 0.2
 const SWEEP_EVERY := 1.5
 const SWEEP_SPEED := 140.0
@@ -86,8 +87,6 @@ func _refresh() -> void:
 	if not show_pacing:
 		return
 	%Clock.text = "PLAYTEST " + Defs.mmss(Game.play)
-	%Wait.text = "WAIT %dS · MAX %dS" % [floori(Game.wait_cur), floori(Game.wait_max)]
-	Defs.tint(%Wait, &"font_color", Defs.WARN if Game.wait_cur > 20.0 else Defs.MUTED)
 	for k: String in _milestone_rows:
 		var done := Game.ms.has(k)
 		var c := Defs.TEXT if done else Defs.FAINT
@@ -145,6 +144,7 @@ func _eject(per: int, combo: int) -> void:
 	Fx.burst(o + Vector2(w / 2.0 - 70.0, 184.0), 5, SPARKS, 120.0, 300.0)
 	Fx.burst(o + Vector2(w / 2.0 + 70.0, 184.0), 5, SPARKS, 120.0, 300.0)
 	Sfx.play("press", combo)
+	Fx.quake(stage, 2.0)
 
 
 func _collect(idx: int) -> void:
@@ -170,10 +170,16 @@ func _credit(ds: Array) -> void:
 func _process(delta: float) -> void:
 	var dt := minf(0.1, delta)
 	_step_drops(dt)
-	# Piston slams down 54px over SLAM and returns over RETURN.
+	# Piston rests on the blank, accelerates down 32px over SLAM, holds on the blank, then eases back over RETURN.
 	var pa := _now() - _press_at
-	var f := pa / SLAM if pa < SLAM else (1.0 - (pa - SLAM) / RETURN if pa < SLAM + RETURN else 0.0)
-	var head_top := roundf(96.0 + 54.0 * f)
+	var f := 0.0
+	if pa < SLAM:
+		f = pow(pa / SLAM, 2.0)
+	elif pa < SLAM + HOLD:
+		f = 1.0
+	elif pa < SLAM + HOLD + RETURN:
+		f = 1.0 - ease((pa - SLAM - HOLD) / RETURN, 0.5)
+	var head_top := roundf(118.0 + 32.0 * f)
 	%Head.position.y = head_top
 	%Rod.size.y = head_top - 64.0
 	# Blank on the die squashes (wider, flatter) under the head
