@@ -9,9 +9,16 @@ const FLOOR := 320.0
 const GRAV := 1400.0
 const MAX_DROPS := 40
 const PRESS_H := 260.0
+const SLAM := 0.15  # downstroke seconds; boxes eject when the head bottoms out
+const RETURN := 0.2
 const SWEEP_EVERY := 1.5
+const SWEEP_SPEED := 140.0
+const SWEEP_CARRY := 8
 const COMBO_WINDOW := 0.45
 const STREAK_WINDOW := 0.7
+const DIE_TOP := 178.0
+const DIE_W := 150.0
+const BLANK := Vector2(40, 36)
 const BOX_C := Color("#b9b5aa")
 const SPARKS := [Color("#77746c"), Color("#9a968c"), Color("#f5c518")]
 
@@ -22,6 +29,9 @@ var _last_press := -10.0
 var _streak := 0
 var _last_coll := -10.0
 var _sweep_t := 0.0
+var _sweep_dir := 1.0  # alternates each pass: 1 = left to right
+var _sweeping := false
+var _train: Array[Dictionary] = []  # boxes being pushed ahead of the sweeper, nearest first
 var _milestone_rows := {}
 
 @onready var stage: Control = %Stage
@@ -57,7 +67,6 @@ static func _now() -> float:
 
 func _refresh() -> void:
 	%PerPress.text = "%d GRY PER PRESS" % Game.per_press()
-	%Sweeper.visible = Game.up.has("sweep")
 	if not show_pacing:
 		return
 	%Clock.text = "PLAYTEST " + Defs.mmss(Game.play)
@@ -100,6 +109,10 @@ func _press() -> void:
 	_combo = _combo + 1 if t - _last_press < COMBO_WINDOW else 1
 	_last_press = t
 	_press_at = t
+	get_tree().create_timer(SLAM).timeout.connect(_eject.bind(per, _combo))
+
+
+func _eject(per: int, combo: int) -> void:
 	var w := stage.size.x
 	for j in per:
 		var s: float = [18.0, 20.0, 22.0, 24.0].pick_random()
@@ -113,7 +126,7 @@ func _press() -> void:
 	var o := stage.global_position
 	Fx.burst(o + Vector2(w / 2.0 - 70.0, 184.0), 5, SPARKS, 120.0, 300.0)
 	Fx.burst(o + Vector2(w / 2.0 + 70.0, 184.0), 5, SPARKS, 120.0, 300.0)
-	Sfx.play("press", _combo)
+	Sfx.play("press", combo)
 
 
 func _collect(idx: int) -> void:
@@ -132,22 +145,30 @@ func _collect(idx: int) -> void:
 func _process(delta: float) -> void:
 	var dt := minf(0.1, delta)
 	_step_drops(dt)
-	# Piston slams down 54px in 50ms and returns over 200ms.
+	# Piston slams down 54px over SLAM and returns over RETURN.
 	var pa := _now() - _press_at
-	var f := pa / 0.05 if pa < 0.05 else (1.0 - (pa - 0.05) / 0.2 if pa < 0.25 else 0.0)
+	var f := pa / SLAM if pa < SLAM else (1.0 - (pa - SLAM) / RETURN if pa < SLAM + RETURN else 0.0)
 	var head_top := roundf(96.0 + 54.0 * f)
 	%Head.position.y = head_top
 	%Rod.size.y = head_top - 64.0
+	# Blank on the die squashes (wider, flatter) under the head
+	# and springs back as the piston returns.
+	var bh := minf(BLANK.y, DIE_TOP - head_top - 24.0)
+	var bw := minf(DIE_W, roundf(BLANK.x * BLANK.y / bh))
+	%Blank.size = Vector2(bw, bh)
+	%Blank.position = Vector2(roundf(stage.size.x / 2.0 - bw / 2.0), DIE_TOP - bh)
 	var combo_on := _combo >= 5 and _now() - _last_press < STREAK_WINDOW
 	%Combo.visible = combo_on
 	if combo_on:
 		%Combo.text = "COMBO ×%d" % _combo
 		%Combo.add_theme_font_size_override(&"font_size", int(minf(22.0, 12.0 + _combo * 0.4)))
-	if Game.up.has("sweep"):
+	if _sweeping:
+		_step_sweep(dt)
+	elif Game.up.has("sweep"):
 		_sweep_t += dt
-		if _sweep_t >= SWEEP_EVERY:
+		if _sweep_t >= SWEEP_EVERY and _drops.any(func(d): return d.rest):
 			_sweep_t = 0.0
-			_sweep()
+			_start_sweep()
 	boxes.queue_redraw()
 
 
@@ -180,31 +201,63 @@ func _step_drops(dt: float) -> void:
 				d.rest = true
 
 
-func _sweep() -> void:
-	var rest := _drops.filter(func(d): return d.rest)
-	if rest.is_empty():
+func _start_sweep() -> void:
+	var sw: Control = %Sweeper
+	sw.position.x = -sw.size.x if _sweep_dir > 0.0 else stage.size.x
+	sw.visible = true
+	_sweeping = true
+	_train.clear()
+
+
+## Drives across the floor pushing resting boxes it reaches (up to SWEEP_CARRY; once full it
+## rolls over the rest). Boxes never collide with each other, so pushed ones all ride against
+## the sweeper's face, overlapping. Credited only once off the far edge.
+func _step_sweep(dt: float) -> void:
+	var sw: Control = %Sweeper
+	sw.position.x += _sweep_dir * SWEEP_SPEED * dt
+	var x0 := sw.position.x
+	var x1 := x0 + sw.size.x
+	for i in range(_drops.size() - 1, -1, -1):
+		var d := _drops[i]
+		if _train.size() < SWEEP_CARRY and d.rest and d.x < x1 and d.x + d.s > x0:
+			_drops.remove_at(i)
+			_train.append(d)
+	for d in _train:
+		d.y = FLOOR - d.s
+		d.rot = 0.0
+		d.x = x1 if _sweep_dir > 0.0 else x0 - d.s
+	if x0 > stage.size.x or x1 < 0.0:
+		_finish_sweep()
+
+
+func _finish_sweep() -> void:
+	%Sweeper.visible = false
+	_sweeping = false
+	var ex := stage.size.x - 16.0 if _sweep_dir > 0.0 else 16.0
+	_sweep_dir = -_sweep_dir
+	var n := _train.size()
+	_train.clear()
+	if n == 0:
 		return
-	var ax: float = rest.reduce(func(a, d): return a + d.x, 0.0) / rest.size()
-	_drops = _drops.filter(func(d): return not d.rest)
-	# CSS: transition left 300ms steps(5)
-	var from: float = %Sweeper.position.x
-	var to := maxf(0.0, ax - 22.0)
-	%Sweeper.create_tween().tween_method(func(k: float): %Sweeper.position.x = lerpf(from, to, ceilf(k * 5.0) / 5.0), 0.0, 1.0, 0.3)
 	var o := stage.global_position
-	Fx.float_text(o + Vector2(ax, FLOOR - 30.0), "+%d" % rest.size(), BOX_C, 16)
-	Fx.burst(o + Vector2(ax, FLOOR - 6.0), 8, [Defs.ORANGE, Defs.CAUTION], 140.0, 500.0)
+	Fx.float_text(o + Vector2(ex, FLOOR - 30.0), "+%d" % n, BOX_C, 16)
+	Fx.burst(o + Vector2(ex, FLOOR - 6.0), 8, [Defs.ORANGE, Defs.CAUTION], 140.0, 500.0)
 	Sfx.play("collect", 6)
-	Game.collect_grey(rest.size())
+	Game.collect_grey(n)
 
 
 func _draw_boxes() -> void:
-	for d in _drops:
+	for d in _drops + _train:
 		var s: float = d.s
 		boxes.draw_set_transform(Vector2(d.x + s / 2.0, d.y + s / 2.0).round(), deg_to_rad(roundf(d.rot)))
-		var r := Rect2(-s / 2.0, -s / 2.0, s, s)
-		boxes.draw_rect(r, BOX_C)
-		boxes.draw_rect(Rect2(r.position, Vector2(s, 3)), Color(1, 1, 1, 0.35))
-		boxes.draw_rect(Rect2(r.position + Vector2(0, 3), Vector2(3, s - 3)), Color(1, 1, 1, 0.35))
-		boxes.draw_rect(Rect2(r.position + Vector2(s - 4, 0), Vector2(4, s)), Color(0, 0, 0, 0.3))
-		boxes.draw_rect(Rect2(r.position + Vector2(0, s - 4), Vector2(s - 4, 4)), Color(0, 0, 0, 0.3))
+		_draw_box(Rect2(-s / 2.0, -s / 2.0, s, s))
 	boxes.draw_set_transform(Vector2.ZERO)
+
+
+func _draw_box(r: Rect2) -> void:
+	var s := r.size.x
+	boxes.draw_rect(r, BOX_C)
+	boxes.draw_rect(Rect2(r.position, Vector2(s, 3)), Color(1, 1, 1, 0.35))
+	boxes.draw_rect(Rect2(r.position + Vector2(0, 3), Vector2(3, s - 3)), Color(1, 1, 1, 0.35))
+	boxes.draw_rect(Rect2(r.position + Vector2(s - 4, 0), Vector2(4, s)), Color(0, 0, 0, 0.3))
+	boxes.draw_rect(Rect2(r.position + Vector2(0, s - 4), Vector2(s - 4, 4)), Color(0, 0, 0, 0.3))

@@ -46,7 +46,7 @@ pix = bold_font("assets/fonts/PixelifySans.ttf", 0.6)
 silk = bold_font("assets/fonts/Silkscreen-Regular.ttf", 1.0)
 silkb = bold_font("assets/fonts/Silkscreen-Bold.ttf", 0.5)
 T = {k: ext_res("Texture2D", f"assets/ui/x3/{k}.png") for k in [
-    "buttons_Blue_ButtonA_Unpressed", "buttons_Blue_ButtonA_Press", "buttons_Blue_ButtonC_Unpressed",
+    "buttons_Blue_ButtonA_Unpressed", "buttons_Blue_ButtonA_Pressed", "buttons_Black_ButtonA_Pressed", "buttons_Blue_ButtonC_Unpressed",
     "buttons_Gold_ButtonA_Highlighted", "buttons_Gold_ButtonC_Highlighted", "buttons_Orange_ButtonA_Highlighted",
     "panels_Black_PanelOutlined", "panels_Black_Panel", "panels_Black_PanelDigital", "panels_Gold_Panel"]}
 empty = sub("StyleBoxEmpty", {})
@@ -83,11 +83,11 @@ def button(name, tex, fg, pad, slice_px, font, size, hover_tex=None, press_tex=N
 button("BtnGold", T["buttons_Gold_ButtonA_Highlighted"], "#ffd166", A_PAD, 12, silkb, 10)
 button("BtnOrange", T["buttons_Orange_ButtonA_Highlighted"], "#ece8df", A_PAD, 12, silkb, 10)
 button("BtnGrey", T["buttons_Blue_ButtonA_Unpressed"], "#77746c", A_PAD, 12, silkb, 10)
-button("BtnOwned", T["buttons_Blue_ButtonA_Press"], "#7bc96f", A_PAD, 12, silkb, 10)
+button("BtnOwned", T["buttons_Black_ButtonA_Pressed"], "#7bc96f", A_PAD, 12, silkb, 10)
 button("BtnCGold", T["buttons_Gold_ButtonC_Highlighted"], "#ffd166", C_PAD, 9, silk, 9)
 button("BtnCGrey", T["buttons_Blue_ButtonC_Unpressed"], "#9a968c", C_PAD, 9, silk, 9)
 button("BtnSettings", T["buttons_Blue_ButtonA_Unpressed"], "#ece8df", A_PAD, 12, silkb, 10,
-       hover_tex=T["buttons_Orange_ButtonA_Highlighted"], press_tex=T["buttons_Blue_ButtonA_Press"], hover_fg="#f5c518")
+       hover_tex=T["buttons_Orange_ButtonA_Highlighted"], press_tex=T["buttons_Blue_ButtonA_Pressed"], hover_fg="#f5c518")
 
 # Sprite panels (PanelContainer variations).
 def panel(name, style):

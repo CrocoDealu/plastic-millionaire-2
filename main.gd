@@ -35,6 +35,13 @@ func _process(delta: float) -> void:
 	%Value.text = Defs.cash(_shown)
 
 
+func _unhandled_key_input(e: InputEvent) -> void:
+	# Debug builds only: F9 grants $1M for testing.
+	if OS.is_debug_build() and e is InputEventKey and e.pressed and e.keycode == KEY_F9:
+		Game.money += 1_000_000.0
+		Game.changed.emit()
+
+
 func _refresh() -> void:
 	%WhValue.text = Defs.cash(Game.warehouse_value())
 	%SellSurplus.theme_type_variation = &"BtnCGold" if Game.sell_value() > 0.0 else &"BtnCGrey"
