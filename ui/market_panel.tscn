@@ -101,7 +101,7 @@ theme_override_constants/separation = 3
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Silk"
-text = "GREY BOX · 5S CANDLES"
+text = "GREY BOX"
 
 [node name="Row" type="HBoxContainer" parent="VBox/Head/Info"]
 layout_mode = 2

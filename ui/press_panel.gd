@@ -57,6 +57,7 @@ func _ready() -> void:
 		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		%Milestones.add_child(row)
 		_milestone_rows[m[0]] = [name_l, t]
+	Fx.hover_tip(%PressTitle, "", func(): return ["BOX PRESS", [["%d GRY PER PRESS" % Game.per_press(), Defs.TEXT]]])
 	Game.changed.connect(_refresh)
 	_refresh()
 
@@ -66,7 +67,14 @@ static func _now() -> float:
 
 
 func _refresh() -> void:
-	%PerPress.text = "%d GRY PER PRESS" % Game.per_press()
+	# The blank cycles through every box colour unlocked so far.
+	var cols := PackedColorArray()
+	for i in Defs.BOXES.size():
+		if Game.unlocked(i):
+			cols.append(Defs.BOXES[i].color)
+	%Blank.material.set_shader_parameter(&"n", cols.size())
+	cols.resize(Defs.BOXES.size())
+	%Blank.material.set_shader_parameter(&"cols", cols)
 	if not show_pacing:
 		return
 	%Clock.text = "PLAYTEST " + Defs.mmss(Game.play)

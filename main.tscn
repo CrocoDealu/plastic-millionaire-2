@@ -22,6 +22,7 @@ void fragment() {
 
 [sub_resource type="ShaderMaterial" id="scan"]
 shader = SubResource("scan_shader")
+shader_parameter/height = 720.0
 
 [node name="Main" type="Control" unique_id=1797479502]
 layout_mode = 3
@@ -270,6 +271,7 @@ layer = 2
 
 [node name="Scanlines" type="ColorRect" parent="Overlay" unique_id=245978615]
 unique_name_in_owner = true
+visible = false
 material = SubResource("scan")
 anchors_preset = 15
 anchor_right = 1.0

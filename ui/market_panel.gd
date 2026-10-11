@@ -54,7 +54,7 @@ func _refresh() -> void:
 	var chg_c := Defs.UP if chg >= 0.0 else Defs.DOWN
 
 	%Chip.color = b.color
-	%Name.text = "%s · %dS CANDLES" % [b.name.to_upper(), int(Game.CANDLE_S)]
+	%Name.text = b.name.to_upper()
 	%Price.text = "$" + Defs.px(m.p)
 	%Chg.text = Defs.pct(chg, 2)
 	%Chg.add_theme_color_override(&"font_color", chg_c)

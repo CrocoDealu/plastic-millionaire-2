@@ -243,32 +243,12 @@ func shop_items() -> Array[Dictionary]:
 	return items
 
 
-## Machine card buy + per-machine upgrades affordable right now.
-func machine_affordable_count() -> int:
-	var n := 0
-	for i in Defs.GENS.size():
-		if not visible_tier(i):
-			continue
-		if money >= gen_cost(i, qty_for(i)):
-			n += 1
-		n += machine_upgrades_affordable(i)
-	return n
-
-
 func machine_upgrades_affordable(i: int) -> int:
 	if own[i] == 0:
 		return 0
 	var n := 0
 	for k in ["spd", "yld", "ain", "aout"]:
 		if not mu_maxed(i, k) and money >= mu_cost(i, k):
-			n += 1
-	return n
-
-
-func upgrade_affordable_count() -> int:
-	var n := 0
-	for u: Dictionary in Defs.UPS:
-		if up_visible(u) and not up.has(u.id) and up_req_met(u.id) and money >= u.cost:
 			n += 1
 	return n
 

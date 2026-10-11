@@ -40,21 +40,6 @@ theme_type_variation = &"SilkBold"
 theme_override_font_sizes/font_size = 10
 text = "MACHINES"
 
-[node name="Badge" type="PanelContainer" parent="VBox/Tabs/MachinesTab/HBox"]
-visible = false
-custom_minimum_size = Vector2(12, 0)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_filter = 2
-theme_type_variation = &"Badge"
-
-[node name="Label" type="Label" parent="VBox/Tabs/MachinesTab/HBox/Badge"]
-layout_mode = 2
-theme_type_variation = &"Silk"
-theme_override_colors/font_color = Color(0.0784, 0.0784, 0.0863, 1)
-theme_override_font_sizes/font_size = 8
-text = "1"
-horizontal_alignment = 1
 
 [node name="UpgradesTab" type="Button" parent="VBox/Tabs"]
 unique_name_in_owner = true
@@ -76,21 +61,6 @@ theme_type_variation = &"SilkBold"
 theme_override_font_sizes/font_size = 10
 text = "UPGRADES"
 
-[node name="Badge" type="PanelContainer" parent="VBox/Tabs/UpgradesTab/HBox"]
-visible = false
-custom_minimum_size = Vector2(12, 0)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_filter = 2
-theme_type_variation = &"Badge"
-
-[node name="Label" type="Label" parent="VBox/Tabs/UpgradesTab/HBox/Badge"]
-layout_mode = 2
-theme_type_variation = &"Silk"
-theme_override_colors/font_color = Color(0.0784, 0.0784, 0.0863, 1)
-theme_override_font_sizes/font_size = 8
-text = "1"
-horizontal_alignment = 1
 
 [node name="ModeRow" type="HBoxContainer" parent="VBox"]
 unique_name_in_owner = true
