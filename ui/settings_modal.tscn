@@ -21,11 +21,21 @@ theme_override_constants/separation = 10
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Title" type="Label" parent="VBox/Head"]
+[node name="Titles" type="VBoxContainer" parent="VBox/Head"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="App" type="Label" parent="VBox/Head/Titles"]
+layout_mode = 2
 theme_type_variation = &"SilkBold"
 theme_override_font_sizes/font_size = 18
+text = "PLASTIC MILLIONAIRE"
+
+[node name="Title" type="Label" parent="VBox/Head/Titles"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.8863, 0.4392, 0.1647, 1)
 text = "SETTINGS"
 
 [node name="Close" type="TextureButton" parent="VBox/Head"]

@@ -83,50 +83,6 @@ theme_type_variation = &"Header"
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Title" type="VBoxContainer" parent="Layout/Header/HBox" unique_id=553906551]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-size_flags_vertical = 4
-theme_override_constants/separation = 4
-
-[node name="Name" type="Label" parent="Layout/Header/HBox/Title" unique_id=613151422]
-layout_mode = 2
-theme_type_variation = &"SilkBold"
-theme_override_font_sizes/font_size = 14
-text = "PLASTIC MILLIONAIRE"
-
-[node name="Sub" type="Label" parent="Layout/Header/HBox/Title" unique_id=312383941]
-layout_mode = 2
-theme_type_variation = &"Silk"
-theme_override_colors/font_color = Color(0.8863, 0.4392, 0.1647, 1)
-text = "BOX EXCHANGE"
-
-[node name="Spacer" type="Control" parent="Layout/Header/HBox" unique_id=1222672304]
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-
-[node name="Career" type="VBoxContainer" parent="Layout/Header/HBox"]
-layout_mode = 2
-size_flags_vertical = 4
-theme_override_constants/separation = 4
-
-[node name="Label" type="Label" parent="Layout/Header/HBox/Career"]
-layout_mode = 2
-theme_type_variation = &"Silk"
-theme_override_colors/font_color = Color(0.9098, 0.7686, 0.5412, 1)
-theme_override_font_sizes/font_size = 8
-text = "TITLE"
-horizontal_alignment = 2
-
-[node name="Title" type="Label" parent="Layout/Header/HBox/Career"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"SilkBold"
-theme_override_font_sizes/font_size = 12
-text = "Unpaid Intern, Red Department"
-horizontal_alignment = 2
-
 [node name="Settings" type="Button" parent="Layout/Header/HBox" unique_id=1839414503]
 unique_name_in_owner = true
 layout_mode = 2
@@ -141,6 +97,30 @@ theme_override_colors/icon_hover_pressed_color = Color(0.9608, 0.7725, 0.0941, 1
 theme_override_constants/h_separation = 8
 text = "SETTINGS"
 icon = ExtResource("4")
+
+[node name="Career" type="VBoxContainer" parent="Layout/Header/HBox"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 4
+
+[node name="Label" type="Label" parent="Layout/Header/HBox/Career"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.9098, 0.7686, 0.5412, 1)
+theme_override_font_sizes/font_size = 8
+text = "TITLE"
+
+[node name="Title" type="Label" parent="Layout/Header/HBox/Career"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_font_sizes/font_size = 12
+text = "Unpaid Intern, Red Department"
+
+[node name="Spacer" type="Control" parent="Layout/Header/HBox" unique_id=1222672304]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
 
 [node name="Money" type="PanelContainer" parent="Layout/Header/HBox" unique_id=1434016123]
 unique_name_in_owner = true

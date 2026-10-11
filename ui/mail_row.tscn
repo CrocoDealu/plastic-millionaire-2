@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[node name="MailRow" type="PanelContainer"]
+theme_type_variation = &"Card"
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="From" type="Label" parent="VBox"]
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_colors/font_color = Color(0.9098, 0.7686, 0.5412, 1)
+theme_override_font_sizes/font_size = 10
+text = "HR"
+
+[node name="Body" type="Label" parent="VBox"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7412, 0.7216, 0.6784, 1)
+theme_override_font_sizes/font_size = 12
+text = "Welcome aboard."
+autowrap_mode = 3

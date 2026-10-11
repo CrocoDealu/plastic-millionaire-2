@@ -34,6 +34,7 @@ var sel := 0
 var chart := "candles"
 var quotes := false
 var rtab := "machines"
+var mail_seen := 0  # inbox size when the INBOX tab was last open
 var buy_mode := "x1"
 var reserve := true
 var mute := false
@@ -76,6 +77,7 @@ func _fresh() -> void:
 	chart = "candles"
 	quotes = false
 	rtab = "machines"
+	mail_seen = 0
 	buy_mode = "x1"
 	reserve = true
 	play = 0.0
@@ -527,6 +529,14 @@ func mark(key: String) -> void:
 		_mail(key)
 
 
+## Emails received so far (EMAILS keys), newest first. The HR "opened" email waits for its beat.
+func inbox() -> Array:
+	var ks := Defs.EMAILS.keys().filter(func(k): return ms.has(k) and not (k == "opened" and opening))
+	var order := Defs.EMAILS.keys()
+	ks.sort_custom(func(a, b): return ms[a] > ms[b] or (ms[a] == ms[b] and order.find(a) > order.find(b)))
+	return ks
+
+
 func _mail(key: String) -> void:
 	toast.emit(Defs.EMAILS[key][0], Defs.EMAILS[key][1], true)
 
@@ -722,7 +732,7 @@ func save() -> void:
 		return
 	f.store_string(JSON.stringify({v = 1, money = money, inv = inv, own = own, up = up, trades = trades,
 		mute = mute, buy_mode = buy_mode, reserve = reserve, play = play, ms = ms, ev = ev, wait_max = wait_max,
-		total_earned = total_earned, sel = sel, chart = chart, quotes = quotes, mx = mx, rtab = rtab}))
+		total_earned = total_earned, sel = sel, chart = chart, quotes = quotes, mx = mx, rtab = rtab, mail_seen = mail_seen}))
 	saved_at = now()
 
 
@@ -753,6 +763,7 @@ func load_save() -> void:
 	chart = d.get("chart", "candles")
 	quotes = d.get("quotes", false)
 	rtab = d.get("rtab", "machines")
+	mail_seen = int(d.get("mail_seen", 0))
 	saved_at = now()
 
 

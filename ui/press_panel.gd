@@ -54,7 +54,7 @@ func _ready() -> void:
 	boxes.draw.connect(_draw_boxes)
 	stage.gui_input.connect(_on_stage_input)
 	stage.mouse_exited.connect(func(): %Hover.visible = false)
-	Fx.hover_tip(%PressTitle, "", _press_tip)
+	Fx.hover_tip(%Slots, "", _press_tip)
 	Game.changed.connect(_refresh)
 	Game.news.connect(_show_news.bind(true))
 	_show_news(Game.news_line(), false)
@@ -83,7 +83,7 @@ static func _now() -> float:
 
 
 func _refresh() -> void:
-	# The blank and recipe show what the next slam crafts; both dim while inputs are short.
+	# The blank and header recipe show what the next slam crafts; both dim while inputs are short.
 	# The ??? blank has no grade, so no colour: it's black.
 	var t := Game.press_target()
 	var col: Color = Defs.INK if t == Defs.MYSTERY else Defs.BOXES[t].color
@@ -92,21 +92,28 @@ func _refresh() -> void:
 	var cols := PackedColorArray([col if ok else col.lerp(Defs.BG, 0.65)])  # shader ignores modulate
 	cols.resize(Defs.BOXES.size())
 	%Blank.material.set_shader_parameter(&"cols", cols)
-	%Recipe.text = "%s → %s" % [Defs.recipe(t), Defs.tk(t)]
-	Defs.tint(%Recipe, &"font_color", (Defs.TEXT if t == Defs.MYSTERY else col) if ok else Defs.FAINT)
+	# Output chip mirrors the inputs; ×N = boxes per slam (Heavy/Hydraulic), ??? for the mystery.
+	var mystery := t == Defs.MYSTERY
+	%Out.color = col if ok else col.lerp(Defs.BG, 0.65)
+	%Out.outline = Defs.DEAD if mystery else col.darkened(0.35)
+	%Out.locked = not ok and not mystery
+	%OutN.text = "???" if mystery else "×%d" % Game.per_press()
+	%OutN.visible = mystery or Game.per_press() > 1
+	Defs.tint(%OutN, &"font_color", (Defs.TEXT if mystery else col) if ok else Defs.FAINT)
+	Defs.tint(%Recipe, &"font_color", Defs.TEXT if ok else Defs.FAINT)
 	if not ok:
 		%Hover.visible = false
 	_refresh_slots(t)
 
 
 ## One chip per box the recipe needs, inputs in recipe order: solid if the warehouse has it,
-## a dashed placeholder in that colour if not. ×N = slams' worth of inputs on hand.
+## a dashed placeholder in that colour if not. (N) = recipes' worth of inputs on hand.
 func _refresh_slots(t: int) -> void:
 	var need: Array[int] = []
 	for k: int in Defs.inputs(t):
 		for j in Defs.inputs(t)[k]:
 			need.append(k)
-	var chips := %Slots.get_children().filter(func(c): return c is BoxChip)
+	var chips := %Slots.get_children().filter(func(c): return c is BoxChip and c != %Out)
 	var used := {}
 	for j in chips.size():
 		var chip: BoxChip = chips[j]
@@ -120,7 +127,7 @@ func _refresh_slots(t: int) -> void:
 		chip.outline = col.darkened(0.35)
 		chip.locked = Game.inv[k] < used[k]
 	var n := Game.batches(t, 999999)
-	%Ready.text = "×" + Defs.fmt(n)
+	%Ready.text = "(%s)" % Defs.fmt(n)
 	Defs.tint(%Ready, &"font_color", Defs.TEXT if n > 0 else Defs.FAINT)
 
 

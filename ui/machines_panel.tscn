@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://ui/upgrade_card.tscn" id="up"]
 [ext_resource type="Script" path="res://ui/box_chip.gd" id="chip"]
 [ext_resource type="Script" path="res://ui/dashed_panel.gd" id="dash"]
+[ext_resource type="PackedScene" path="res://ui/mail_row.tscn" id="mail"]
 
 [node name="MachinesPanel" type="PanelContainer"]
 custom_minimum_size = Vector2(316, 0)
@@ -60,6 +61,27 @@ layout_mode = 2
 theme_type_variation = &"SilkBold"
 theme_override_font_sizes/font_size = 10
 text = "UPGRADES"
+
+
+[node name="InboxTab" type="Button" parent="VBox/Tabs"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_type_variation = &"BtnGrey"
+script = ExtResource("cb")
+
+[node name="HBox" type="HBoxContainer" parent="VBox/Tabs/InboxTab"]
+layout_mode = 0
+mouse_filter = 2
+alignment = 1
+theme_override_constants/separation = 6
+
+[node name="Label" type="Label" parent="VBox/Tabs/InboxTab/HBox"]
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_font_sizes/font_size = 10
+text = "INBOX"
 
 
 [node name="ModeRow" type="HBoxContainer" parent="VBox"]
@@ -194,3 +216,27 @@ index = 3
 [node name="Up4" parent="VBox/Scroll/List" instance=ExtResource("up")]
 layout_mode = 2
 index = 4
+
+[node name="Mail0" parent="VBox/Scroll/List" instance=ExtResource("mail")]
+layout_mode = 2
+
+[node name="Mail1" parent="VBox/Scroll/List" instance=ExtResource("mail")]
+layout_mode = 2
+
+[node name="Mail2" parent="VBox/Scroll/List" instance=ExtResource("mail")]
+layout_mode = 2
+
+[node name="Mail3" parent="VBox/Scroll/List" instance=ExtResource("mail")]
+layout_mode = 2
+
+[node name="Mail4" parent="VBox/Scroll/List" instance=ExtResource("mail")]
+layout_mode = 2
+
+[node name="Mail5" parent="VBox/Scroll/List" instance=ExtResource("mail")]
+layout_mode = 2
+
+[node name="Mail6" parent="VBox/Scroll/List" instance=ExtResource("mail")]
+layout_mode = 2
+
+[node name="Mail7" parent="VBox/Scroll/List" instance=ExtResource("mail")]
+layout_mode = 2

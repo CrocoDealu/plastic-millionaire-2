@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Renders main.tscn and saves a PNG: godot -s res://tests/shot.gd -- out.png [seconds] [setup]
-## setup: "fresh" (default), "mid" (some machines + market open), "modal", "settings", "quotes", "upgrades",
+## setup: "fresh" (default), "mid" (some machines + market open), "modal", "settings", "quotes", "upgrades", "inbox",
 ## "mystery" (Forge owned: the ??? press), "end" (box opened, end card up).
 
 func _initialize() -> void:
@@ -38,6 +38,7 @@ func _initialize() -> void:
 	if setup == "end": main.open_end()
 	if setup == "quotes": game.set_pref("quotes", true)
 	if setup == "upgrades": game.set_pref("rtab", "upgrades"); game.set_pref("chart", "line")
+	if setup == "inbox": game.set_pref("rtab", "inbox")
 	await create_timer(secs).timeout
 	await process_frame
 	root.get_texture().get_image().save_png(out)

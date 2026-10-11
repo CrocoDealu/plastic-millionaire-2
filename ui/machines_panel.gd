@@ -1,7 +1,7 @@
 extends PanelContainer
 
-## Right column: MACHINES | UPGRADES selector, buy mode, the
-## machine cards with a "??? MACHINE" teaser, and the general upgrades list.
+## Right column: MACHINES | UPGRADES | INBOX selector, buy mode, the machine cards with a
+## "??? MACHINE" teaser, the general upgrades list, and received emails (newest first).
 
 signal open_machine(i: int)
 
@@ -11,6 +11,7 @@ const MODES := {"X1": "x1", "X10": "x10", "Max": "max"}
 func _ready() -> void:
 	%MachinesTab.pressed.connect(_set_tab.bind("machines"))
 	%UpgradesTab.pressed.connect(_set_tab.bind("upgrades"))
+	%InboxTab.pressed.connect(_set_tab.bind("inbox"))
 	for n: String in MODES:
 		get_node("%" + n).pressed.connect(func(): Game.set_pref("buy_mode", MODES[n]); Sfx.play("tick"))
 	for i in Defs.GENS.size():
@@ -28,7 +29,9 @@ func _set_tab(t: String) -> void:
 func _refresh() -> void:
 	var on_m := Game.rtab == "machines"
 	_tab(%MachinesTab, on_m)
-	_tab(%UpgradesTab, not on_m)
+	_tab(%UpgradesTab, Game.rtab == "upgrades")
+	_tab(%InboxTab, Game.rtab == "inbox")
+	_refresh_inbox()
 	%ModeRow.visible = on_m
 	%Modes.visible = Game.modes_on()
 	%Note.visible = not Game.modes_on()
@@ -44,3 +47,18 @@ func _tab(b: Button, selected: bool) -> void:
 	b.theme_type_variation = &"BtnGold" if selected else &"BtnGrey"
 	Defs.tint(b.get_node("HBox/Label"), &"font_color", Defs.GOLD if selected else Defs.MUTED)
 
+
+## Rows Mail0..7 show the inbox while its tab is open; the tab shows an unread count otherwise.
+func _refresh_inbox() -> void:
+	var mails := Game.inbox()
+	var open := Game.rtab == "inbox"
+	if open:
+		Game.mail_seen = mails.size()
+	var unread := mails.size() - Game.mail_seen
+	%InboxTab.get_node("HBox/Label").text = "INBOX (%d)" % unread if unread > 0 else "INBOX"
+	for j in 8:
+		var row: Control = get_node("VBox/Scroll/List/Mail%d" % j)
+		row.visible = open and j < mails.size()
+		if row.visible:
+			row.get_node("VBox/From").text = Defs.EMAILS[mails[j]][0].to_upper()
+			row.get_node("VBox/Body").text = Defs.EMAILS[mails[j]][1]

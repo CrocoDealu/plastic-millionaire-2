@@ -105,9 +105,11 @@ const EVENTS := {
 		fx = {2: [[0, 1.0], [120, 3.0], [150, 0.3], [330, 1.0]]}},
 	forge = {head = "Short sellers learn only 8 violet boxes exist.", fx = {4: [[0, 1.0], [5, 5.0], [180, 1.0]]}, impact = 2.0},
 	# Fired by the ending itself, not on a timer.
-	opened = {head = "Purple Hands: whatever it is, we're buying.", fx = {
-		0: [[0, 0.7], [300, 1.0]], 1: [[0, 0.5], [300, 1.0]], 2: [[0, 0.4], [300, 1.0]],
-		3: [[0, 0.2], [300, 1.0]], 4: [[0, 3.0], [300, 1.0]]}},
+	# Every market snaps to ~3% of its price, holds near zero for 90s, then claws back over ~5 min.
+	opened = {head = "Every box market falls 97%. Nobody will say why.", fx = {
+		0: [[0, 0.03], [90, 0.03], [420, 1.0]], 1: [[0, 0.03], [90, 0.03], [420, 1.0]],
+		2: [[0, 0.03], [90, 0.03], [420, 1.0]], 3: [[0, 0.03], [90, 0.03], [420, 1.0]],
+		4: [[0, 0.03], [90, 0.03], [420, 1.0]]}},
 }
 const ENDING := {
 	tip = "You were told not to.",

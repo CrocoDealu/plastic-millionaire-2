@@ -112,8 +112,9 @@ func _initialize() -> void:
 	assert(ended[0] and g.ms.has("end") and g.ms.has("ev_opened"))
 	assert(heard == [Defs.ENDING.breaking, Defs.ENDING.removed, Defs.EVENTS.opened.head])
 	assert(mail.has("HR") and g.title() == "Pending")
-	assert(g.market[3].p < p_tea * 0.5 and g.market[4].p > p_vio * 2.0)
-	assert(g.ev_mul(3) < 0.3 and g.ev_mul(4) > 2.5)
+	assert(g.market[3].p < p_tea * 0.1 and g.market[4].p < p_vio * 0.1)
+	for i in 5: assert(g.ev_mul(i) < 0.05)  # every market near zero
+	assert(g.inbox()[0] == "opened" and g.inbox().has("forge"))  # newest first
 	assert(g.stage() == "after" and g.news_line() == "Contents: still classified.")
 	g.inv.assign([0, 0, 9, 9, 0])
 	assert(g.press_target() == 4 and g.press() == 2 and g.inv[4] == 0)  # heavy: 2 VIO recipes
