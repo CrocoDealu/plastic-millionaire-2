@@ -68,6 +68,15 @@ theme_override_font_sizes/font_size = 16
 text = "No input → 1 GRY every 2.0s per machine."
 autowrap_mode = 3
 
+[node name="Flavour" type="Label" parent="VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+theme_override_font_sizes/font_size = 14
+text = "Was here before you. Will be here after you."
+autowrap_mode = 3
+
 [node name="Spd" parent="VBox" instance=ExtResource("row")]
 layout_mode = 2
 key = "spd"

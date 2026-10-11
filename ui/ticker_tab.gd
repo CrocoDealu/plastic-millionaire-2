@@ -52,5 +52,5 @@ func _on_input(e: InputEvent) -> void:
 
 func _tip() -> Array:
 	if Game.unlocked(box):
-		return []
+		return [Defs.BOXES[box].name.to_upper(), [[Defs.REPS[box]]]]
 	return ["MARKET LOCKED", [["Build a %s to list %ses." % [Defs.GENS[box].name, Defs.BOXES[box].name] if Game.visible_tier(box) else "A later machine opens this market."]]]

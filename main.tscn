@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" path="res://ui/shelf_slot.tscn" id="8"]
 [ext_resource type="PackedScene" path="res://ui/machine_modal.tscn" id="9"]
 [ext_resource type="PackedScene" path="res://ui/settings_modal.tscn" id="10"]
+[ext_resource type="Texture2D" path="res://assets/ui/x3/buttons_Orange_ButtonCloseA_Highlighted.png" id="close"]
 
 [sub_resource type="Shader" id="scan_shader"]
 code = "shader_type canvas_item;
@@ -104,6 +105,27 @@ text = "BOX EXCHANGE"
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
+
+[node name="Career" type="VBoxContainer" parent="Layout/Header/HBox"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 4
+
+[node name="Label" type="Label" parent="Layout/Header/HBox/Career"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.9098, 0.7686, 0.5412, 1)
+theme_override_font_sizes/font_size = 8
+text = "TITLE"
+horizontal_alignment = 2
+
+[node name="Title" type="Label" parent="Layout/Header/HBox/Career"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_font_sizes/font_size = 12
+text = "Unpaid Intern, Red Department"
+horizontal_alignment = 2
 
 [node name="Settings" type="Button" parent="Layout/Header/HBox" unique_id=1839414503]
 unique_name_in_owner = true
@@ -265,6 +287,52 @@ layout_mode = 2
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
+
+[node name="EndCard" type="PanelContainer" parent="Modals/Center"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(440, 0)
+layout_mode = 2
+theme_type_variation = &"PanelDigital"
+
+[node name="Body" type="ColorRect" parent="Modals/Center/EndCard"]
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.0784, 0.0784, 0.0863, 1)
+
+[node name="VBox" type="VBoxContainer" parent="Modals/Center/EndCard"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Head" type="HBoxContainer" parent="Modals/Center/EndCard/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="EndText" type="Label" parent="Modals/Center/EndCard/VBox/Head"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"SilkBold"
+theme_override_font_sizes/font_size = 16
+text = "End of demo."
+autowrap_mode = 3
+
+[node name="EndClose" type="TextureButton" parent="Modals/Center/EndCard/VBox/Head"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("close")
+
+[node name="Itch" type="LinkButton" parent="Modals/Center/EndCard/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_colors/font_color = Color(0.9608, 0.7725, 0.0941, 1)
+theme_override_colors/font_hover_color = Color(1, 0.8196, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "itch.io"
 
 [node name="Overlay" type="CanvasLayer" parent="." unique_id=230783759]
 layer = 2

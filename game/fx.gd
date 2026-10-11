@@ -21,6 +21,8 @@ var _tip_side := ""
 var _tip_fn: Callable
 var _toast: PanelContainer = preload("res://ui/toast.tscn").instantiate()
 var _toast_at := -10.0
+var _toast_dur := 3.0
+var _toast_q: Array = []  # [title, sub] waiting for the current toast to finish
 var _quake := 0.0
 var _quake_c: Control
 var _quake_off := Vector2.ZERO
@@ -201,20 +203,26 @@ func _render_tip() -> void:
 
 # ---------------------------------------------------------------- toast
 
+## Queued, so a milestone's email and its BUILT toast both get read. Long ones stay up longer.
 func toast(title: String, sub: String) -> void:
-	_toast.get_node("%Title").text = title
-	_toast.get_node("%Sub").text = sub
-	_toast.reset_size()
-	_toast_at = Time.get_ticks_msec() / 1000.0
+	_toast_q.append([title, sub])
 
 
 func _step_toast() -> void:
 	var ta := Time.get_ticks_msec() / 1000.0 - _toast_at
-	_toast.visible = ta < 3.0
+	if ta >= _toast_dur and not _toast_q.is_empty():
+		var t: Array = _toast_q.pop_front()
+		_toast.get_node("%Title").text = t[0]
+		_toast.get_node("%Sub").text = t[1]
+		_toast.reset_size()
+		_toast_dur = maxf(3.0, t[1].length() / 18.0)
+		_toast_at = Time.get_ticks_msec() / 1000.0
+		ta = 0.0
+	_toast.visible = ta < _toast_dur
 	if not _toast.visible:
 		return
 	_toast.position = Vector2(roundf((get_viewport().get_visible_rect().size.x - _toast.size.x) / 2.0), roundf(76.0 - (20.0 * (1.0 - ta / 0.2) if ta < 0.2 else 0.0)))
-	_toast.modulate.a = clampf((3.0 - ta) / 0.4, 0.0, 1.0) if ta > 2.6 else 1.0
+	_toast.modulate.a = clampf((_toast_dur - ta) / 0.4, 0.0, 1.0) if ta > _toast_dur - 0.4 else 1.0
 
 
 ## Affordable / ready buttons join the "pulse" group; leaving it restores normal brightness.

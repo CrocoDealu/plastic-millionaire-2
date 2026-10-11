@@ -32,5 +32,6 @@ func _refresh() -> void:
 	%Name.text = g.name.to_upper()
 	%Summary.text = "%s → %d %s every %.1fs per machine. Upgrades apply to every %s you own." % [
 		recipe if recipe else "No input", Game.mul(i), ob.k, Game.cyc(i), g.name]
+	%Flavour.text = Defs.FLAVOUR[g.id]
 	for r in [$VBox/Spd, $VBox/Yld, $VBox/Ain, $VBox/Aout]:
 		r.refresh()

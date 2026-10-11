@@ -1,9 +1,8 @@
 extends PanelContainer
 
 ## Box Press: click the upper stage to slam the piston; it crafts the next box tier from
-## warehouse inputs, the boxes fly out and settle on the floor; click or drag across them to collect. Layout lives in press_panel.tscn.
-
-@export var show_pacing := true
+## warehouse inputs, the boxes fly out and settle on the floor; click or drag across them to collect.
+## Below it, the news ticker. Layout lives in press_panel.tscn.
 
 const FLOOR := 320.0
 const GRAV := 1400.0
@@ -25,6 +24,8 @@ const DIE_TOP := 178.0
 const DIE_W := 150.0
 const BLANK := Vector2(40, 36)
 const SPARKS := [Color("#77746c"), Color("#9a968c"), Color("#f5c518")]
+const NEWS_SPEED := 45.0  # px/s
+const NEWS_HOLD := 2.0  # priority headlines sit still at the left edge first
 
 var _drops: Array[Dictionary] = []
 var _press_at := -10.0
@@ -41,8 +42,9 @@ var _sweep_t := 0.0
 var _sweep_dir := 1.0  # alternates each pass: 1 = left to right
 var _sweeping := false
 var _train: Array[Dictionary] = []  # boxes being pushed ahead of the sweeper, nearest first
-var _milestone_rows := {}
 var _blank_cols: Array = []
+var _news_x := 0.0
+var _news_hold := 0.0
 
 @onready var stage: Control = %Stage
 @onready var boxes: Control = %Boxes
@@ -52,31 +54,28 @@ func _ready() -> void:
 	boxes.draw.connect(_draw_boxes)
 	stage.gui_input.connect(_on_stage_input)
 	stage.mouse_exited.connect(func(): %Hover.visible = false)
-	%Playtest.visible = show_pacing
-	%HowTo.visible = not show_pacing
-	for m: Array in Defs.MILESTONES:
-		var row := HBoxContainer.new()
-		var name_l := Label.new()
-		name_l.text = m[1]
-		name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_l.clip_text = true
-		var t := Label.new()
-		for l: Label in [name_l, t]:
-			l.add_theme_font_size_override(&"font_size", 11)
-			row.add_child(l)
-		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		%Milestones.add_child(row)
-		_milestone_rows[m[0]] = [name_l, t]
 	Fx.hover_tip(%PressTitle, "", _press_tip)
 	Game.changed.connect(_refresh)
+	Game.news.connect(_show_news.bind(true))
+	_show_news(Game.news_line(), false)
 	_refresh()
 
 
 func _press_tip() -> Array:
 	var t := Game.press_target()
+	if t == Defs.MYSTERY:
+		return ["BOX PRESS", [["%s → ???" % Defs.recipe(t), Defs.TEXT], [Defs.ENDING.tip, Defs.WARN]]]
 	return ["BOX PRESS", [
 		["%s → 1 %s" % [Defs.recipe(t), Defs.BOXES[t].k], Defs.BOXES[t].color],
 		["UP TO %d PER SLAM" % Game.per_press(), Defs.TEXT]]]
+
+
+## Pool headlines scroll in from the right; priority ones replace the current line at the left edge.
+func _show_news(text: String, priority: bool) -> void:
+	%Headline.text = text
+	%Headline.reset_size()
+	_news_x = 0.0 if priority else %Strip.size.x
+	_news_hold = NEWS_HOLD if priority else 0.0
 
 
 static func _now() -> float:
@@ -85,35 +84,27 @@ static func _now() -> float:
 
 func _refresh() -> void:
 	# The blank and recipe show what the next slam crafts; both dim while inputs are short.
+	# The ??? blank has no grade, so no colour: it's black.
 	var t := Game.press_target()
-	var col: Color = Defs.BOXES[t].color
+	var col: Color = Defs.INK if t == Defs.MYSTERY else Defs.BOXES[t].color
 	var ok := Game.can_press()
-	_blank_cols = [col]
+	_blank_cols = [col, Defs.DEAD] if t == Defs.MYSTERY else [col]
 	var cols := PackedColorArray([col if ok else col.lerp(Defs.BG, 0.65)])  # shader ignores modulate
 	cols.resize(Defs.BOXES.size())
 	%Blank.material.set_shader_parameter(&"cols", cols)
-	%Recipe.text = "%s → %s" % [Defs.recipe(t), Defs.BOXES[t].k]
-	Defs.tint(%Recipe, &"font_color", col if ok else Defs.FAINT)
+	%Recipe.text = "%s → %s" % [Defs.recipe(t), Defs.tk(t)]
+	Defs.tint(%Recipe, &"font_color", (Defs.TEXT if t == Defs.MYSTERY else col) if ok else Defs.FAINT)
 	if not ok:
 		%Hover.visible = false
 	_refresh_slots(t)
-	if not show_pacing:
-		return
-	%Clock.text = "PLAYTEST " + Defs.mmss(Game.play)
-	for k: String in _milestone_rows:
-		var done := Game.ms.has(k)
-		var c := Defs.TEXT if done else Defs.FAINT
-		_milestone_rows[k][1].text = Defs.mmss(Game.ms[k]) if done else "—"
-		for l: Label in _milestone_rows[k]:
-			Defs.tint(l, &"font_color", c)
 
 
 ## One chip per box the recipe needs, inputs in recipe order: solid if the warehouse has it,
 ## a dashed placeholder in that colour if not. ×N = slams' worth of inputs on hand.
 func _refresh_slots(t: int) -> void:
 	var need: Array[int] = []
-	for k: int in Defs.GENS[t].inputs:
-		for j in Defs.GENS[t].inputs[k]:
+	for k: int in Defs.inputs(t):
+		for j in Defs.inputs(t)[k]:
 			need.append(k)
 	var chips := %Slots.get_children().filter(func(c): return c is BoxChip)
 	var used := {}
@@ -157,6 +148,7 @@ func _hit(p: Vector2) -> int:
 
 
 func _press() -> void:
+	var c := Game.press_target()  # read first: opening the box changes the target
 	var per := Game.press()
 	if per == 0:
 		return
@@ -168,12 +160,12 @@ func _press() -> void:
 	_from = _f
 	_grow_from = _grow
 	_slam = maxf(SLAM_MIN, SLAM * (1.0 - _from))
-	get_tree().create_timer(_slam).timeout.connect(_eject.bind(Game.press_target(), per, _combo))
+	get_tree().create_timer(_slam).timeout.connect(_eject.bind(c, per, _combo))
 
 
 func _eject(c: int, per: int, combo: int) -> void:
 	var w := stage.size.x
-	for j in per:
+	for j in 0 if c == Defs.MYSTERY else per:  # the ??? slam makes no box
 		var s: float = [18.0, 20.0, 22.0].pick_random()
 		var dir := -1.0 if randf() < 0.5 else 1.0
 		_drops.append({x = w / 2.0 - s / 2.0 + dir * 62.0, y = 168.0, s = s, vx = dir * randf_range(60, 230),
@@ -188,7 +180,7 @@ func _eject(c: int, per: int, combo: int) -> void:
 	if %Blank.visible:  # the blank shatters
 		Fx.burst(o + Vector2(w / 2.0, DIE_TOP - 4.0), 12, _blank_cols, 200.0, 700.0)
 	Sfx.play("press", combo)
-	Fx.quake(stage, minf(QUAKE_BASE + combo * 0.5, QUAKE_MAX))
+	Fx.quake(stage, QUAKE_MAX if c == Defs.MYSTERY else minf(QUAKE_BASE + combo * 0.5, QUAKE_MAX))
 
 
 func _collect(idx: int) -> void:
@@ -214,6 +206,13 @@ func _credit(ds: Array) -> void:
 func _process(delta: float) -> void:
 	var dt := minf(0.1, delta)
 	_step_drops(dt)
+	if _news_hold > 0.0:
+		_news_hold -= dt
+	else:
+		_news_x -= NEWS_SPEED * dt
+	if _news_x < -%Headline.size.x:
+		_show_news(Game.news_line(), false)
+	%Headline.position.x = roundf(_news_x)
 	# Piston accelerates down to the die over _slam, holds, then eases back up over RETURN.
 	var pa := _now() - _press_at
 	_f = 0.0

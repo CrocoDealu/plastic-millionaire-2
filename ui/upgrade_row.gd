@@ -36,6 +36,8 @@ func refresh() -> void:
 	}[key]
 	%Name.text = name_desc[0]
 	%Desc.text = name_desc[1]
+	%Flavour.visible = Defs.FLAVOUR.has(key)
+	%Flavour.text = Defs.FLAVOUR.get(key, "")
 	%Eff.text = name_desc[2]
 	Defs.tint(%Eff, &"font_color", Defs.UP if maxed else Defs.CAUTION)
 	%Label.text = "LV %d" % lvl if leveled else ("ON" if lvl else "OFF")

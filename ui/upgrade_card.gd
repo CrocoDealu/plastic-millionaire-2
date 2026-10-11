@@ -44,7 +44,7 @@ func _buy() -> void:
 
 func _tip() -> Array:
 	var u := _u()
-	var lines := [[u.desc]]
+	var lines := [[u.desc], [Defs.FLAVOUR[u.id], Defs.FAINT]]
 	if Game.up.has(u.id):
 		lines.append(["Owned", Defs.UP])
 	elif not Game.up_req_met(u.id):

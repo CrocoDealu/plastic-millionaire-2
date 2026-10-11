@@ -7,6 +7,8 @@ signal changed
 signal sold(i: int, q: int, total: float, auto: bool)
 signal produced(i: int, q: int)
 signal toast(title: String, sub: String, chime: bool)
+signal news(text: String)  # priority ticker headline
+signal ended  # the box is opened: show the end card
 
 enum Act { NONE, COLLECTED, STARTED, DENIED }
 
@@ -16,6 +18,8 @@ const SAVE_EVERY := 10.0
 const ECON_STEP := 0.1
 const CANDLE_S := 5.0
 const BROKER_EVERY := 5.0
+## Seconds between ending steps: breaking headline, removal, crash, HR email, end card.
+const ENDING_BEATS := [2.5, 7.0, 2.5, 3.0]
 
 var money := 0.0
 var inv: Array[int] = [0, 0, 0, 0, 0]
@@ -36,6 +40,7 @@ var mute := false
 # Playtest stats.
 var play := 0.0
 var ms := {}
+var ev := {}  # market event id -> play time it fires; fired ones are marked "ev_<id>"
 var wait_cur := 0.0
 var wait_max := 0.0
 # Transient.
@@ -43,6 +48,9 @@ var new_mk := {}
 var saved_at := 0.0
 var autosave := true
 var last_collected := 0
+var opening := false  # the ending is running and hasn't reached the HR email yet
+var _ending_on := false
+var _news_seen := {}
 
 var _acc := 0.0
 var _save_t := 0.0
@@ -72,6 +80,9 @@ func _fresh() -> void:
 	reserve = true
 	play = 0.0
 	ms = {}
+	ev = {}
+	opening = false
+	_ending_on = false
 	wait_cur = 0.0
 	wait_max = 0.0
 	new_mk = {}
@@ -84,6 +95,10 @@ static func now() -> float:
 
 func _process(delta: float) -> void:
 	var dt := minf(0.1, delta)
+	if ms.is_empty():
+		mark("start")
+	if ms.has("opened") and not ms.has("end") and not _ending_on:
+		_ending()  # also resumes one interrupted by a quit
 	_step_market(now())
 	_acc += dt
 	var ticked := false
@@ -99,6 +114,83 @@ func _process(delta: float) -> void:
 
 
 # ---------------------------------------------------------------- queries
+
+## Newest machine tier owned.
+func newest() -> int:
+	var t := 0
+	for i in own.size():
+		if own[i] > 0:
+			t = i
+	return t
+
+
+## Ticker pool key in Defs.NEWS.
+func stage() -> String:
+	return "after" if ms.has("opened") else ["early", "mid", "mid", "late", "late"][newest()]
+
+
+func title() -> String:
+	var t: String = Defs.TITLES.start
+	for k: String in Defs.TITLES:
+		if ms.has(k) and not (k == "opened" and opening):
+			t = Defs.TITLES[k]
+	return t
+
+
+## Next pooled headline: this stage's lines weigh 3x earlier stages', clue lines weigh more each
+## stage, and nothing repeats until the pool is used up.
+func news_line() -> String:
+	if stage() == "after":
+		return Defs.NEWS.after[0][0]
+	var keys: Array = Defs.NEWS.keys()
+	var s := keys.find(stage())
+	var pool := []
+	var total := 0.0
+	for j in s + 1:
+		for n: Array in Defs.NEWS[keys[j]]:
+			if not _news_seen.has(n[0]):
+				var w := (3.0 if j == s else 1.0) * (1.0 + s if n[1] else 1.0)
+				pool.append([n[0], w])
+				total += w
+	if pool.is_empty():
+		_news_seen.clear()
+		return news_line()
+	var roll := randf() * total
+	for n: Array in pool:
+		roll -= n[1]
+		if roll <= 0.0:
+			_news_seen[n[0]] = true
+			return n[0]
+	_news_seen[pool[-1][0]] = true
+	return pool[-1][0]
+
+
+## Eased fair-price multiplier on box `i` from market events (1.0 when none touch it).
+func ev_mul(i: int) -> float:
+	var m := 1.0
+	for k: String in ev:
+		var pts: Array = Defs.EVENTS[k].fx.get(i, [])
+		var a: float = play - ev[k]
+		if pts.is_empty() or a < 0.0:
+			continue
+		var v: float = pts[-1][1]
+		for j in range(1, pts.size()):
+			if a < pts[j][0]:
+				v = lerpf(pts[j - 1][1], pts[j][1], smoothstep(pts[j - 1][0], pts[j][0], a))
+				break
+		m *= v
+	return m
+
+
+## Your own sales' price impact on box `i` is scaled by an active event's `impact`.
+func impact_mul(i: int) -> float:
+	for k: String in ev:
+		var e: Dictionary = Defs.EVENTS[k]
+		var a: float = play - ev[k]
+		if e.has("impact") and e.fx.has(i) and a >= 0.0 and a < e.fx[i][-1][0]:
+			return e.impact
+	return 1.0
+
 
 func ai(i: int) -> bool: return mx[i].ain and mx[i].in_on
 func ao(i: int) -> bool: return mx[i].aout and mx[i].out_on
@@ -195,7 +287,7 @@ func change_pct(i: int) -> float:
 
 
 func sell_quote(i: int, q: int) -> Dictionary:
-	var imp := minf(0.3, q / Defs.BOXES[i].depth) * (0.5 if up.has("insider") else 1.0)
+	var imp := minf(0.3, q / Defs.BOXES[i].depth) * (0.5 if up.has("insider") else 1.0) * impact_mul(i)
 	var avg: float = market[i].p * (1.0 - imp / 2.0)
 	return {imp = imp, avg = avg, total = q * avg}
 
@@ -287,9 +379,10 @@ func _step_market(t: float) -> void:
 		var base: float = Defs.BOXES[i].base
 		if t >= m.next:
 			var dt := minf(2.0, t - m.upd)
-			var fair := base * (1.0 + 0.28 * sin(play / (70.0 + i * 23.0) + m.ph))
+			var em := ev_mul(i)
+			var fair := base * em * (1.0 + 0.28 * sin(play / (70.0 + i * 23.0) + m.ph))
 			var p: float = m.p + (fair - m.p) * minf(1.0, 0.07 * dt) + m.p * 0.02 * randfn(0.0, 1.0) * sqrt(dt)
-			p = maxf(base * 0.25, p)
+			p = maxf(base * 0.25 * minf(1.0, em), p)  # crashes may dig below the floor while they last
 			m.p = p
 			m.upd = t
 			m.next = t + randf_range(0.25, 1.5)
@@ -305,6 +398,12 @@ func _step_market(t: float) -> void:
 
 func _econ(dt: float) -> void:
 	play += dt
+	for k: String in ev:
+		if play >= ev[k] and not ms.has("ev_" + k):
+			mark("ev_" + k)
+			for i: int in Defs.EVENTS[k].fx:
+				market[i].p *= Defs.EVENTS[k].fx[i][0][1]
+			news.emit(Defs.EVENTS[k].head)
 	for i in Defs.GENS.size():
 		if own[i] == 0:
 			continue
@@ -359,18 +458,18 @@ func _land(i: int, q: int) -> void:
 
 ## Batches of gen `i`'s recipe the warehouse covers, up to `cap`.
 func batches(i: int, cap: int) -> int:
-	var g: Dictionary = Defs.GENS[i]
+	var ins := Defs.inputs(i)
 	var b := cap
-	for k: int in g.inputs:
-		b = mini(b, floori(inv[k] / float(g.inputs[k])))
+	for k: int in ins:
+		b = mini(b, floori(inv[k] / float(ins[k])))
 	return maxi(0, b)
 
 
 ## Consumes up to `cap` batches of gen `i`'s inputs; returns how many were taken.
 func _take(i: int, cap: int) -> int:
 	var b := batches(i, cap)
-	for k: int in Defs.GENS[i].inputs:
-		inv[k] -= b * Defs.GENS[i].inputs[k]
+	for k: int in Defs.inputs(i):
+		inv[k] -= b * Defs.inputs(i)[k]
 	return b
 
 
@@ -415,20 +514,62 @@ func _emit_changed() -> void:
 	changed.emit()
 
 
+## Milestones fire once: they schedule their market event and send their email.
 func mark(key: String) -> void:
-	if not ms.has(key):
-		ms[key] = play
+	if ms.has(key):
+		return
+	ms[key] = play
+	if key == "opened":
+		return  # the ending sequence runs its own event and email
+	if Defs.EVENTS.has(key):
+		ev[key] = play + randf_range(30.0, 90.0)
+	if Defs.EMAILS.has(key):
+		_mail(key)
+
+
+func _mail(key: String) -> void:
+	toast.emit(Defs.EMAILS[key][0], Defs.EMAILS[key][1], true)
+
+
+## The ??? slam (story.md §7). Runs once "opened" is marked; "end" marks it finished.
+func _ending() -> void:
+	_ending_on = true
+	opening = true
+	news.emit(Defs.ENDING.breaking)
+	if not await _beat(ENDING_BEATS[0]):
+		return
+	news.emit(Defs.ENDING.removed)
+	if not await _beat(ENDING_BEATS[1]):
+		return
+	if not ev.has("opened"):
+		ev["opened"] = play  # every market crashes (VIO soars) on the next econ tick
+	if not await _beat(ENDING_BEATS[2]):
+		return
+	_mail("opened")
+	opening = false  # title -> Pending
+	notify_changed()
+	if not await _beat(ENDING_BEATS[3]):
+		return
+	mark("end")
+	_ending_on = false
+	save()
+	ended.emit()
+
+
+## Waits `s`; false if a reset wiped the opened box meanwhile (the sequence then stops).
+func _beat(s: float) -> bool:
+	await get_tree().create_timer(s).timeout
+	return ms.has("opened")
 
 
 # ---------------------------------------------------------------- actions
 
-## Box the press crafts: one tier above the newest machine you own (VIO once you own a Forge).
-## Its recipe is that tier's machine recipe, since GENS[i].out == i.
+## Box the press crafts: one tier above the newest machine you own. Its recipe is that tier's
+## machine recipe, since GENS[i].out == i. With a Forge it's MYSTERY until the box is opened, then VIO.
 func press_target() -> int:
-	var t := 0
-	for i in own.size():
-		if own[i] > 0:
-			t = i
+	var t := newest()
+	if t == Defs.GENS.size() - 1 and not ms.has("opened"):
+		return Defs.MYSTERY
 	return mini(t + 1, Defs.BOXES.size() - 1)
 
 
@@ -439,9 +580,14 @@ func can_press() -> bool:
 ## Called by the press stage per click: consumes inputs now and returns how many target boxes
 ## the slam will eject (0 = not enough inputs, no slam).
 func press() -> int:
-	var b := _take(press_target(), per_press())
+	var t := press_target()
+	var b := _take(t, 1 if t == Defs.MYSTERY else per_press())
 	if b > 0:
 		mark("press1")
+		if t == Defs.MYSTERY:
+			mark("opened")
+			save()
+			_ending()
 		notify_changed()
 	return b
 
@@ -464,7 +610,7 @@ func buy_gen(i: int) -> bool:
 	if first:
 		mark(Defs.GENS[i].id)
 		var t := press_target()
-		var nxt: String = "The press now makes %ses." % Defs.BOXES[t].name if t > i else "Every machine is built."
+		var nxt: String = "The press now makes %ses." % Defs.BOXES[t].name if t > i and t != Defs.MYSTERY else "Every machine is built."
 		toast.emit("%s BUILT" % Defs.GENS[i].name.to_upper(), nxt, true)
 		if fresh:
 			sel = i
@@ -575,7 +721,7 @@ func save() -> void:
 	if f == null:
 		return
 	f.store_string(JSON.stringify({v = 1, money = money, inv = inv, own = own, up = up, trades = trades,
-		mute = mute, buy_mode = buy_mode, reserve = reserve, play = play, ms = ms, wait_max = wait_max,
+		mute = mute, buy_mode = buy_mode, reserve = reserve, play = play, ms = ms, ev = ev, wait_max = wait_max,
 		total_earned = total_earned, sel = sel, chart = chart, quotes = quotes, mx = mx, rtab = rtab}))
 	saved_at = now()
 
@@ -600,6 +746,7 @@ func load_save() -> void:
 	reserve = d.get("reserve", true)
 	play = d.get("play", 0.0)
 	ms = d.get("ms", {})
+	ev = d.get("ev", {})
 	wait_max = d.get("wait_max", 0.0)
 	total_earned = d.get("total_earned", 0.0)
 	sel = int(d.get("sel", 0))

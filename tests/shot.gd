@@ -1,7 +1,8 @@
 extends SceneTree
 
 ## Renders main.tscn and saves a PNG: godot -s res://tests/shot.gd -- out.png [seconds] [setup]
-## setup: "fresh" (default), "mid" (some machines + market open), "modal", "settings", "quotes", "upgrades".
+## setup: "fresh" (default), "mid" (some machines + market open), "modal", "settings", "quotes", "upgrades",
+## "mystery" (Forge owned: the ??? press), "end" (box opened, end card up).
 
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
@@ -23,10 +24,18 @@ func _initialize() -> void:
 		game.inv.assign([140, 23, 4, 0, 0])
 		game.sel = 1
 		game.money = 812.4
+	if setup == "mystery" or setup == "end":
+		game.own.assign([1, 1, 1, 1, 1])
+		for id in ["sell1", "vat", "kiln", "fuse", "forge"]: game.mark(id)
+		game.inv.assign([140, 23, 4, 3, 3])
+	if setup == "end":
+		game.mark("opened")
+		game.mark("end")
 	var main: Node = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	if setup == "modal": main.open_machine(1)
 	if setup == "settings": main.open_settings()
+	if setup == "end": main.open_end()
 	if setup == "quotes": game.set_pref("quotes", true)
 	if setup == "upgrades": game.set_pref("rtab", "upgrades"); game.set_pref("chart", "line")
 	await create_timer(secs).timeout

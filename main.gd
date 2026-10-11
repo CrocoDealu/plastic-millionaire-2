@@ -20,9 +20,14 @@ func _ready() -> void:
 	%MachinesPanel.open_machine.connect(open_machine)
 	%MachineModal.closed.connect(close_modal)
 	%SettingsModal.closed.connect(close_modal)
+	%EndClose.pressed.connect(close_modal)
+	%EndText.text = Defs.ENDING.card
+	%Itch.text = Defs.ITCH_URL
+	%Itch.uri = Defs.ITCH_URL
 	Game.changed.connect(_refresh)
 	Game.sold.connect(_on_sold)
 	Game.toast.connect(_on_toast)
+	Game.ended.connect(open_end)
 	_refresh()
 
 
@@ -43,6 +48,10 @@ func _unhandled_key_input(e: InputEvent) -> void:
 
 
 func _refresh() -> void:
+	var title := Game.title()
+	if %Title.text != title:
+		%Title.text = title
+		Fx.bump(%Title)
 	%WhValue.text = Defs.cash(Game.warehouse_value())
 	%SellSurplus.theme_type_variation = &"BtnCGold" if Game.sell_value() > 0.0 else &"BtnCGrey"
 
@@ -85,10 +94,18 @@ func open_settings() -> void:
 	Sfx.play("tick")
 
 
+func open_end() -> void:
+	Fx.tip_off()
+	close_modal()
+	%EndCard.visible = true
+	%Modals.visible = true
+
+
 func close_modal() -> void:
 	%Modals.visible = false
 	%MachineModal.visible = false
 	%SettingsModal.visible = false
+	%EndCard.visible = false
 
 
 func _on_backdrop_input(e: InputEvent) -> void:

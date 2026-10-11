@@ -13,8 +13,8 @@ const BOXES := [
 ## `inputs` maps box index -> quantity per batch; `out` is a box index.
 const GENS := [
 	{id = "arm", name = "Press Arm", cost = 12.0, inputs = {}, out = 0, cyc = 2.0},
-	{id = "vat", name = "Red Dye Vat", cost = 60.0, inputs = {0: 3}, out = 1, cyc = 3.0},
-	{id = "kiln", name = "Amber Kiln", cost = 300.0, inputs = {1: 2, 0: 3}, out = 2, cyc = 5.0},
+	{id = "vat", name = "Red Stacker", cost = 60.0, inputs = {0: 3}, out = 1, cyc = 3.0},
+	{id = "kiln", name = "Amber Laminator", cost = 300.0, inputs = {1: 2, 0: 3}, out = 2, cyc = 5.0},
 	{id = "fuse", name = "Teal Fuser", cost = 2500.0, inputs = {2: 3, 1: 4}, out = 3, cyc = 8.0},
 	{id = "forge", name = "Violet Forge", cost = 15000.0, inputs = {3: 3, 2: 2}, out = 4, cyc = 12.0},
 ]
@@ -22,13 +22,121 @@ const UPS := [
 	{id = "heavy", tier = 0, name = "Heavy Press", cost = 40.0, desc = "Each slam crafts 2 boxes (uses 2× inputs).", req_t = ""},
 	{id = "sweep", tier = 0, name = "Floor Sweeper", cost = 120.0, desc = "Drives across the press floor every 1.5s, pushing up to 8 boxes off the edge.", req_t = "OWN 1 ARM"},
 	{id = "heavy2", tier = 0, name = "Hydraulic Press", cost = 450.0, desc = "Each slam crafts 4 boxes (uses 4× inputs).", req_t = "HEAVY PRESS"},
-	{id = "broker", tier = 1, name = "Broker Bot", cost = 500.0, desc = "Every 5s, sells surplus of any box trading above its average.", req_t = "OWN 1 VAT"},
-	{id = "insider", tier = 1, name = "Market Maker", cost = 1500.0, desc = "Halves the price drop caused by your own sales.", req_t = "OWN 5 VATS"},
+	{id = "broker", tier = 1, name = "Broker Bot", cost = 500.0, desc = "Every 5s, sells surplus of any box trading above its average.", req_t = "OWN 1 STACKER"},
+	{id = "insider", tier = 1, name = "Market Maker", cost = 1500.0, desc = "Halves the price drop caused by your own sales.", req_t = "OWN 5 STACKERS"},
 ]
 const MILESTONES := [
 	["box1", "Market open"], ["press1", "First press"], ["sell1", "First sale"],
-	["auto", "First Auto-In"], ["vat", "Dye Vat · RED"], ["sweep", "Sweeper"], ["kiln", "Kiln · AMB"],
+	["auto", "First Auto-In"], ["vat", "Stacker · RED"], ["sweep", "Sweeper"], ["kiln", "Laminator · AMB"],
 	["broker", "Broker Bot"], ["fuse", "Fuser · TEA"], ["forge", "Forge · VIO"],
+]
+## Press target past the last box: the one slam that opens a box (design_ref/story.md §7).
+const MYSTERY := 5
+const MYSTERY_INPUTS := {4: 3, 3: 3}
+## TODO: replace with the real itch page before shipping.
+const ITCH_URL := "https://example.itch.io/plastic-millionaire"
+
+# Story text (design_ref/story.md). Keys are milestone ids from Game.ms unless noted.
+## Career title = the last key here that's in Game.ms ("start" is marked on a fresh run).
+const TITLES := {
+	start = "Unpaid Intern, Red Department",
+	sell1 = "Junior Box Associate",
+	vat = "Amber Specialist",
+	kiln = "Director of Teal",
+	broker = "VP of Box Liquidity",
+	fuse = "Owner & Chief Box Officer",
+	forge = "Last Human on the Floor",
+	opened = "Pending",
+}
+## [sender, body], delivered once when the milestone is first marked.
+const EMAILS := {
+	start = ["HR", "Welcome! The Press Arm handles grey. You handle red. Please don't speak to the Arm; it's senior to you."],
+	sell1 = ["Accounting", "Congratulations on your first sale. Please stop high-fiving the customer."],
+	vat = ["HR", "Your red-box duties now belong to the Red Stacker. You've been promoted to amber. Same pay."],
+	kiln = ["Facilities", "Please stop laminating your lunch. The Laminator is doing your old job and needs to concentrate."],
+	broker = ["CEO", "Your bot outperformed the entire finance team. The finance team has been invited to a meeting with your bot."],
+	fuse = ["Former CEO", "I've sold you the company. One thing: never open a box. Also, please let me keep my parking spot."],
+	forge = ["Unknown sender", "Every tier is automated. The press has nothing left to make. Except one thing."],
+	opened = ["HR", "Due to the events of today, the remainder of your career is pending. Please await further instructions."],
+}
+## Ticker pools by stage (Game.stage()). [headline, clue]: clue lines weigh more each stage.
+const NEWS := {
+	early = [
+		["Local box company reports \"a normal amount of boxes\" this quarter.", false],
+		["Intern seen pressing boxes. Supervisors confirm this is the job.", false],
+		["GRY closes flat for 14th straight session. Analysts: \"Good.\"", false],
+		["Breakroom coffee machine replaced with a box. Nobody has noticed.", false],
+		["Red Box debuts. Marketing: \"Three greys, one vision.\"", false],
+		["RED up 6% as consumers rediscover ambition.", false],
+		["HR reminds staff that boxes are not a personality.", false],
+		["Survey: 0% of box owners have opened their box. \"Why would we?\"", true],
+		["Press Arm named Employee of the Month for the 40th month running.", false],
+		["GRY: the only box no human has touched in years.", false],
+	],
+	mid = [
+		["AMB up 30% after influencer unboxes amber box, finds nothing, calls it \"life-changing.\"", false],
+		["Analysts upgrade Amber from \"Buy\" to \"Glow.\"", false],
+		["First Box ETF launches. It is a box made of smaller boxes.", false],
+		["RED falls 12% after audit finds it is \"basically three greys.\"", false],
+		["Company policy update: \"Boxes are for selling, not for looking in.\"", true],
+		["Teal IPO oversubscribed 400x. Nobody can explain what a Teal Box is for.", false],
+		["TEA slides 8% after short seller counts the boxes it's made of.", false],
+		["Central bank cuts rates \"to support the box.\"", false],
+		["Philosophers ask: if a Red is three Greys, what is a Grey?", true],
+		["Man who opened a box declines to discuss it. Moves to the countryside.", true],
+	],
+	late = [
+		["VIO up 900% on no news. Volume described as \"spiritual.\"", false],
+		["Scientists confirm the Violet Box is \"mostly vibe.\"", false],
+		["Poll: 71% want someone to open a box. 0% volunteer.", true],
+		["Experts warn opening a box \"could affect prices.\"", true],
+		["All eyes turn to the owner of the box company.", true],
+	],
+	after = [["Contents: still classified.", false]],
+}
+## Market events: fire once, 30-90s after the milestone (Game.ev). `fx` maps box index ->
+## [[seconds, fair multiplier], ...], eased between points; a first point off 1.0 also hits the
+## price instantly. `impact` scales your own sales' price drop until the last point.
+const EVENTS := {
+	sell1 = {head = "Report: World may have enough grey boxes.", fx = {0: [[0, 1.0], [60, 0.6], [300, 1.0]]}},
+	vat = {head = "Leaked memo: Red Box is \"three greys in a trench coat.\"",
+		fx = {1: [[0, 1.0], [20, 0.5], [150, 1.0]], 2: [[0, 1.0], [20, 1.2], [150, 1.0]]}},
+	kiln = {head = "Influencer sleeps in amber box, wakes up \"different.\"",
+		fx = {2: [[0, 1.0], [120, 3.0], [150, 0.3], [330, 1.0]]}},
+	forge = {head = "Short sellers learn only 8 violet boxes exist.", fx = {4: [[0, 1.0], [5, 5.0], [180, 1.0]]}, impact = 2.0},
+	# Fired by the ending itself, not on a timer.
+	opened = {head = "Purple Hands: whatever it is, we're buying.", fx = {
+		0: [[0, 0.7], [300, 1.0]], 1: [[0, 0.5], [300, 1.0]], 2: [[0, 0.4], [300, 1.0]],
+		3: [[0, 0.2], [300, 1.0]], 4: [[0, 3.0], [300, 1.0]]}},
+}
+const ENDING := {
+	tip = "You were told not to.",
+	breaking = "BREAKING: Box opened. Contains ......",
+	removed = "[This headline has been removed at the request of the Global Box Standard]",
+	card = "End of demo. Follow to find out what's inside.",
+}
+## Keyed by machine id, upgrade id, or machine-upgrade key (ain / aout).
+const FLAVOUR := {
+	arm = "Was here before you. Will be here after you.",
+	vat = "Stacks three greys until they become red. Nobody knows when it happens.",
+	kiln = "Layers boxes onto boxes. The boxes were not consulted.",
+	fuse = "Took your job. Was very gracious about it.",
+	forge = "There is nothing left for your hands to make.",
+	heavy = "Two boxes per slam. Twice the inputs, twice the conviction.",
+	sweep = "Pushes boxes off the edge. Legal calls it \"logistics.\"",
+	heavy2 = "Now with fluid. Don't ask which fluid.",
+	broker = "Sells high on day one. Already beats the analysts.",
+	insider = "Your sales no longer crash the market. Its feelings are another matter.",
+	ain = "Feeds the machine. Lately the machine says thank you.",
+	aout = "Empties the machine so it can go back to feeling nothing.",
+}
+## Market tab tooltips, by box index.
+const REPS := [
+	"The pension fund. The box everything else is made of. Deep, boring, indestructible. \"Nobody ever got fired for buying grey.\"",
+	"Grey's ambitious older sibling. Made of three greys, priced like six.",
+	"The gold bug. Hoarded in bunkers by people who don't trust grey.",
+	"The startup. Built from eleven boxes, does nothing any of them couldn't. Huge growth anyway.",
+	"The meme stock. So many boxes deep that nobody can count them. Thin market, unhinged swings. Holders call themselves \"the Purple Hands.\"",
 ]
 const MU_MAX := 5
 const N_CANDLES := 48
@@ -63,12 +171,20 @@ static func tint(c: Control, name: StringName, col: Color) -> void:
 	if not c.has_theme_color_override(name) or c.get_theme_color(name) != col:
 		c.add_theme_color_override(name, col)
 
-## "2 RED + 3 GRY" for gen `i`'s inputs.
+## Recipe for crafting box tier `i` (GENS[i].out == i); MYSTERY has its own.
+static func inputs(i: int) -> Dictionary:
+	return MYSTERY_INPUTS if i == MYSTERY else GENS[i].inputs
+
+## "2 RED + 3 GRY" for tier `i`'s inputs.
 static func recipe(i: int) -> String:
 	var parts := []
-	for k: int in GENS[i].inputs:
-		parts.append("%d %s" % [GENS[i].inputs[k], BOXES[k].k])
+	for k: int in inputs(i):
+		parts.append("%d %s" % [inputs(i)[k], BOXES[k].k])
 	return " + ".join(parts)
+
+## Ticker / chip label for a press target.
+static func tk(i: int) -> String:
+	return "???" if i == MYSTERY else BOXES[i].k
 
 static func fmt(n: float) -> String:
 	var a := absf(n)
