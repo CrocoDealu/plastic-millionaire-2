@@ -16,19 +16,29 @@ func _ready() -> void:
 		var p := AudioStreamPlayer.new()
 		add_child(p)
 		_players.append(p)
+	# Combo/streak steps each render a pitched variant (~5ms); do it now instead of mid-click-spree.
+	for k in 25:
+		_stream("press", k)
+		_stream("collect", k)
 
 
 ## type: press | collect | sell | buy | deny | unlock | tick. `p` is the combo/streak step.
 func play(type: String, p := 0) -> void:
 	if Game.mute:
 		return
-	var key := "%s%d" % [type, p]
-	if not _cache.has(key):
-		_cache[key] = _render(_tones(type, p))
 	var player := _players[_next]
 	_next = (_next + 1) % VOICES
-	player.stream = _cache[key]
+	player.stream = _stream(type, p)
 	player.play()
+
+
+## Keyed by the tones themselves: steps past the pitch cap reuse the capped sound.
+func _stream(type: String, p: int) -> AudioStreamWAV:
+	var tones := _tones(type, p)
+	var key := str(tones)
+	if not _cache.has(key):
+		_cache[key] = _render(tones)
+	return _cache[key]
 
 
 ## Each tone: [freq, dur, wave, vol, at, slide_to]

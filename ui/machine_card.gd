@@ -55,13 +55,13 @@ func _refresh() -> void:
 	%NoInput.visible = ins.is_empty()
 	%Out.get_node("HBox/Dot").color = ob.color
 	%Out.get_node("HBox/Label").text = "%d %s" % [mul, ob.k]
-	%Out.get_node("HBox/Label").add_theme_color_override(&"font_color", ob.color)
+	Defs.tint(%Out.get_node("HBox/Label"), &"font_color", ob.color)
 	%Every.text = "EVERY %.1fS" % c
 
 	%Bar.value = minf(100.0, x.t / c * 100.0) if x.run else (100.0 if x.held > 0 else 0.0)
 	%Bar.get_theme_stylebox(&"fill").bg_color = Defs.GOLD if x.held > 0 else ob.color
 	%Rate.text = "+%s %s/s" % [Defs.rt(maxi(own, 1) * mul / c), ob.k]
-	%Rate.add_theme_color_override(&"font_color", Defs.SOFT if own else Defs.MUTED)
+	Defs.tint(%Rate, &"font_color", Defs.SOFT if own else Defs.MUTED)
 
 	%Autos.visible = x.ain or x.aout
 	_tag(%InTag, x.ain, Game.ai(index))
@@ -90,22 +90,23 @@ func _refresh() -> void:
 	%Cost.text = Defs.cash(cost)
 	%Buy.theme_type_variation = &"BtnGold" if can else &"BtnGrey"
 	for l: Label in [%Label, %Cost]:
-		l.add_theme_color_override(&"font_color", Defs.GOLD if can else Defs.FAINT)
+		Defs.tint(l, &"font_color", Defs.GOLD if can else Defs.FAINT)
 	Fx.pulse(%Buy, can)
 	theme_type_variation = &"CardHover" if _hover else &"CardAfford" if can or Game.machine_upgrades_affordable(index) else &"Card"
 
 
 func _tag(tag: PanelContainer, owned: bool, on: bool) -> void:
 	tag.visible = owned
-	tag.add_theme_stylebox_override(&"panel", tag_on if on else tag_off)
+	if tag.get_theme_stylebox(&"panel") != (tag_on if on else tag_off):
+		tag.add_theme_stylebox_override(&"panel", tag_on if on else tag_off)
 	tag.get_node("HBox/Dot").color = Defs.UP if on else Defs.DEAD
-	tag.get_node("HBox/Label").add_theme_color_override(&"font_color", Defs.CAUTION if on else Defs.FAINT)
+	Defs.tint(tag.get_node("HBox/Label"), &"font_color", Defs.CAUTION if on else Defs.FAINT)
 	tag.tooltip_text = "Auto-%s %s · click to toggle" % ["In" if tag == %InTag else "Out", "on" if on else "off"]
 
 
 func _fg(b: Button, c: Color) -> void:
 	for s in [&"font_color", &"font_hover_color", &"font_pressed_color", &"font_hover_pressed_color"]:
-		b.add_theme_color_override(s, c)
+		Defs.tint(b, s, c)
 
 
 func _on_tag_input(e: InputEvent, tag: Control, k: String) -> void:

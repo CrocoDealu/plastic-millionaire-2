@@ -42,5 +42,5 @@ func _refresh() -> void:
 
 func _tab(b: Button, selected: bool) -> void:
 	b.theme_type_variation = &"BtnGold" if selected else &"BtnGrey"
-	b.get_node("HBox/Label").add_theme_color_override(&"font_color", Defs.GOLD if selected else Defs.MUTED)
+	Defs.tint(b.get_node("HBox/Label"), &"font_color", Defs.GOLD if selected else Defs.MUTED)
 

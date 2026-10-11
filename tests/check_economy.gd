@@ -12,7 +12,17 @@ func _initialize() -> void:
 	assert(is_equal_approx(g.gen_cost(0, 10), 12.0 * (pow(1.15, 10) - 1.0) / 0.15))
 	assert(not g.market_open())
 	assert(g.press() == 1)
-	g.collect_grey(1, true)
+	g.collect(0, 1, true)
+	assert(g.press_pick() == 0 and g.bundle(0) == 1)
+	g.own[1] = 1
+	g.own[2] = 1
+	assert(g.top_colour() == 2 and g.bundle(0) == 100 and g.bundle(1) == 10 and g.bundle(2) == 1)
+	var picks := [0, 0, 0]
+	for k in 9000:
+		picks[g.press_pick()] += 1
+	assert(picks[0] > picks[1] and picks[1] > picks[2] and picks[2] > 0)  # ~9:3:1
+	g.own[1] = 0
+	g.own[2] = 0
 	assert(g.market_open() and g.inv[0] == 1)
 
 	# Sale impact: price drops by min(0.3, q/depth), avg fill is halfway.

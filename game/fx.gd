@@ -159,7 +159,7 @@ func _render_tip() -> void:
 		l.visible = i < lines.size()
 		if l.visible:
 			l.text = lines[i][0]
-			l.add_theme_color_override(&"font_color", lines[i][1] if lines[i].size() > 1 else Defs.SOFT)
+			Defs.tint(l, &"font_color", lines[i][1] if lines[i].size() > 1 else Defs.SOFT)
 	_tip.visible = true
 	_tip.reset_size()
 	var r := _tip_src.get_global_rect()

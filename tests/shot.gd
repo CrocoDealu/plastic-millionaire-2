@@ -14,7 +14,7 @@ func _initialize() -> void:
 	game.autosave = false
 	game.reset()
 	if setup != "fresh":
-		game.collect_grey(40, false)
+		game.collect(0, 40, false)
 		game.money = 5000.0
 		for i in 3: game.buy_gen(i)
 		for k in 4: game.buy_gen(0)

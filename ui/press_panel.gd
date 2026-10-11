@@ -36,6 +36,7 @@ var _milestone_rows := {}
 
 @onready var stage: Control = %Stage
 @onready var boxes: Control = %Boxes
+@onready var _font: Font = get_theme_font(&"font", &"Silk")
 
 
 func _ready() -> void:
@@ -57,9 +58,16 @@ func _ready() -> void:
 		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		%Milestones.add_child(row)
 		_milestone_rows[m[0]] = [name_l, t]
-	Fx.hover_tip(%PressTitle, "", func(): return ["BOX PRESS", [["%d GRY PER PRESS" % Game.per_press(), Defs.TEXT]]])
+	Fx.hover_tip(%PressTitle, "", _press_tip)
 	Game.changed.connect(_refresh)
 	_refresh()
+
+
+func _press_tip() -> Array:
+	var lines := [["%d BOXES PER PRESS" % Game.per_press(), Defs.TEXT]]
+	for i in Game.top_colour() + 1:
+		lines.append(["%s ×%s" % [Defs.BOXES[i].k, Defs.fmt(Game.bundle(i))], Defs.BOXES[i].color])
+	return ["BOX PRESS", lines]
 
 
 static func _now() -> float:
@@ -79,13 +87,13 @@ func _refresh() -> void:
 		return
 	%Clock.text = "PLAYTEST " + Defs.mmss(Game.play)
 	%Wait.text = "WAIT %dS · MAX %dS" % [floori(Game.wait_cur), floori(Game.wait_max)]
-	%Wait.add_theme_color_override(&"font_color", Defs.WARN if Game.wait_cur > 20.0 else Defs.MUTED)
+	Defs.tint(%Wait, &"font_color", Defs.WARN if Game.wait_cur > 20.0 else Defs.MUTED)
 	for k: String in _milestone_rows:
 		var done := Game.ms.has(k)
 		var c := Defs.TEXT if done else Defs.FAINT
 		_milestone_rows[k][1].text = Defs.mmss(Game.ms[k]) if done else "—"
 		for l: Label in _milestone_rows[k]:
-			l.add_theme_color_override(&"font_color", c)
+			Defs.tint(l, &"font_color", c)
 
 
 func _on_stage_input(e: InputEvent) -> void:
@@ -123,14 +131,16 @@ func _press() -> void:
 func _eject(per: int, combo: int) -> void:
 	var w := stage.size.x
 	for j in per:
-		var s: float = [18.0, 20.0, 22.0, 24.0].pick_random()
+		var c := Game.press_pick()
+		var m := Game.bundle(c)
+		var s: float = 24.0 if m > 1 else [18.0, 20.0, 22.0].pick_random()
 		var dir := -1.0 if randf() < 0.5 else 1.0
 		_drops.append({x = w / 2.0 - s / 2.0 + dir * 62.0, y = 168.0, s = s, vx = dir * randf_range(60, 230),
-			vy = -randf_range(220, 400), rot = 0.0, vr = dir * randf_range(200, 600), rest = false})
+			vy = -randf_range(220, 400), rot = 0.0, vr = dir * randf_range(200, 600), rest = false, c = c, m = m})
 	if _drops.size() > MAX_DROPS:
 		var n := _drops.size() - MAX_DROPS
+		_credit(_drops.slice(0, n))
 		_drops = _drops.slice(n)
-		Game.collect_grey(n)
 	var o := stage.global_position
 	Fx.burst(o + Vector2(w / 2.0 - 70.0, 184.0), 5, SPARKS, 120.0, 300.0)
 	Fx.burst(o + Vector2(w / 2.0 + 70.0, 184.0), 5, SPARKS, 120.0, 300.0)
@@ -144,10 +154,17 @@ func _collect(idx: int) -> void:
 	_last_coll = t
 	var o := stage.global_position
 	var c := o + Vector2(d.x + d.s / 2.0, d.y + d.s / 2.0)
-	Fx.float_text(Vector2(c.x, o.y + d.y - 8.0), "+1", BOX_C, int(13 + mini(_streak, 10) * 0.6))
-	Fx.burst(c, 6, [BOX_C, Defs.CAUTION, Color.WHITE], 150.0, 500.0)
+	var col: Color = Defs.BOXES[d.c].color
+	Fx.float_text(Vector2(c.x, o.y + d.y - 8.0), "+" + Defs.fmt(d.m), col, int(13 + mini(_streak, 10) * 0.6))
+	Fx.burst(c, 6, [col, Defs.CAUTION, Color.WHITE], 150.0, 500.0)
 	Sfx.play("collect", _streak)
-	Game.collect_grey(1, true)
+	Game.collect(d.c, d.m, true)
+
+
+## Banks drops that left the floor without a click (overflow, sweeper).
+func _credit(ds: Array) -> void:
+	for d: Dictionary in ds:
+		Game.collect(d.c, d.m)
 
 
 func _process(delta: float) -> void:
@@ -169,7 +186,9 @@ func _process(delta: float) -> void:
 	%Combo.visible = combo_on
 	if combo_on:
 		%Combo.text = "COMBO ×%d" % _combo
-		%Combo.add_theme_font_size_override(&"font_size", int(minf(22.0, 12.0 + _combo * 0.4)))
+		var fs := int(minf(22.0, 12.0 + _combo * 0.4))
+		if %Combo.get_theme_font_size(&"font_size") != fs:
+			%Combo.add_theme_font_size_override(&"font_size", fs)
 	if _sweeping:
 		_step_sweep(dt)
 	elif Game.up.has("sweep"):
@@ -244,27 +263,33 @@ func _finish_sweep() -> void:
 	var ex := stage.size.x - 16.0 if _sweep_dir > 0.0 else 16.0
 	_sweep_dir = -_sweep_dir
 	var n := _train.size()
-	_train.clear()
 	if n == 0:
 		return
 	var o := stage.global_position
 	Fx.float_text(o + Vector2(ex, FLOOR - 30.0), "+%d" % n, BOX_C, 16)
 	Fx.burst(o + Vector2(ex, FLOOR - 6.0), 8, [Defs.ORANGE, Defs.CAUTION], 140.0, 500.0)
 	Sfx.play("collect", 6)
-	Game.collect_grey(n)
+	_credit(_train)
+	_train.clear()
 
 
 func _draw_boxes() -> void:
 	for d in _drops + _train:
 		var s: float = d.s
-		boxes.draw_set_transform(Vector2(d.x + s / 2.0, d.y + s / 2.0).round(), deg_to_rad(roundf(d.rot)))
-		_draw_box(Rect2(-s / 2.0, -s / 2.0, s, s))
+		var at := Vector2(d.x + s / 2.0, d.y + s / 2.0).round()
+		boxes.draw_set_transform(at, deg_to_rad(roundf(d.rot)))
+		_draw_box(Rect2(-s / 2.0, -s / 2.0, s, s), Defs.BOXES[d.c].color)
+		if d.m > 1:  # bundle count stays upright while the box tumbles
+			boxes.draw_set_transform(at)
+			var t := Defs.fmt(d.m)
+			var tw := _font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x
+			boxes.draw_string(_font, Vector2(-tw / 2.0, 3.0).round(), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Defs.INK)
 	boxes.draw_set_transform(Vector2.ZERO)
 
 
-func _draw_box(r: Rect2) -> void:
+func _draw_box(r: Rect2, col: Color) -> void:
 	var s := r.size.x
-	boxes.draw_rect(r, BOX_C)
+	boxes.draw_rect(r, col)
 	boxes.draw_rect(Rect2(r.position, Vector2(s, 3)), Color(1, 1, 1, 0.35))
 	boxes.draw_rect(Rect2(r.position + Vector2(0, 3), Vector2(3, s - 3)), Color(1, 1, 1, 0.35))
 	boxes.draw_rect(Rect2(r.position + Vector2(s - 4, 0), Vector2(4, s)), Color(0, 0, 0, 0.3))

@@ -57,24 +57,25 @@ func _refresh() -> void:
 	%Name.text = b.name.to_upper()
 	%Price.text = "$" + Defs.px(m.p)
 	%Chg.text = Defs.pct(chg, 2)
-	%Chg.add_theme_color_override(&"font_color", chg_c)
+	Defs.tint(%Chg, &"font_color", chg_c)
 	%HL.text = "H %s · L %s" % [Defs.px(cs.map(func(c): return c.h).max()), Defs.px(cs.map(func(c): return c.l).min())]
 	%Candles.theme_type_variation = &"BtnCGold" if Game.chart == "candles" else &"BtnCGrey"
 	%Line.theme_type_variation = &"BtnCGold" if Game.chart == "line" else &"BtnCGrey"
 	%QuotesBtn.theme_type_variation = &"BtnGold" if Game.quotes else &"BtnGrey"
-	%QuotesBtn.add_theme_color_override(&"font_color", Defs.GOLD if Game.quotes else Defs.TEXT)
-	%QuotesBtn.add_theme_color_override(&"font_hover_color", Defs.GOLD if Game.quotes else Defs.TEXT)
+	Defs.tint(%QuotesBtn, &"font_color", Defs.GOLD if Game.quotes else Defs.TEXT)
+	Defs.tint(%QuotesBtn, &"font_hover_color", Defs.GOLD if Game.quotes else Defs.TEXT)
 
 	# Sell bar
 	var res := Game.reserve_of(i)
 	var sellable := Game.sellable(i)
 	%Count.text = Defs.fmt(Game.inv[i])
 	%Tk.text = b.k
-	%Tk.add_theme_color_override(&"font_color", b.color)
+	Defs.tint(%Tk, &"font_color", b.color)
 	%Sub.text = "%s%s sellable ≈ %s" % ["%s kept for machines · " % Defs.fmt(res) if res and Game.reserve else "",
 		Defs.fmt(sellable), Defs.cash(Game.sell_quote(i, sellable).total)]
-	%Check.add_theme_stylebox_override(&"panel", check_on if Game.reserve else check_off)
-	%ResLabel.add_theme_color_override(&"font_color", Defs.CAUTION if Game.reserve else Defs.FAINT)
+	if %Check.get_theme_stylebox(&"panel") != (check_on if Game.reserve else check_off):
+		%Check.add_theme_stylebox_override(&"panel", check_on if Game.reserve else check_off)
+	Defs.tint(%ResLabel, &"font_color", Defs.CAUTION if Game.reserve else Defs.FAINT)
 	for n: String in SELL_MODES:
 		var mode: String = SELL_MODES[n]
 		var btn: Button = get_node("%" + n)
@@ -86,7 +87,7 @@ func _refresh() -> void:
 		var sub: Label = btn.get_node("VBox/Sub")
 		sub.text = Defs.cash(Game.sell_quote(i, q).total) if ok else "—"
 		for l: Label in [btn.get_node("VBox/Label"), sub]:
-			l.add_theme_color_override(&"font_color", fg)
+			Defs.tint(l, &"font_color", fg)
 
 	# Quotes drawer
 	%Drawer.visible = Game.quotes
@@ -113,7 +114,7 @@ func _refresh_trades() -> void:
 		var b: Dictionary = Defs.BOXES[t.i]
 		r.get_node("HBox/Time").text = Defs.clock(t.t)
 		r.get_node("HBox/Tk").text = b.k
-		r.get_node("HBox/Tk").add_theme_color_override(&"font_color", b.color)
+		Defs.tint(r.get_node("HBox/Tk"), &"font_color", b.color)
 		r.get_node("HBox/Desc").text = "%s %s @ $%s" % ["Bot sold" if t.auto else "Sold", Defs.fmt(t.q), Defs.px(t.avg)]
 		r.get_node("HBox/Total").text = "+" + Defs.cash(t.total)
 

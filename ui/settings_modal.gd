@@ -42,4 +42,4 @@ func _process(_delta: float) -> void:
 	%Reset.text = "SURE?" if armed else "RESET"
 	%Reset.theme_type_variation = &"BtnOrange" if armed else &"BtnGrey"
 	for s in [&"font_color", &"font_hover_color", &"font_pressed_color"]:
-		%Reset.add_theme_color_override(s, Defs.DOWN if armed else Defs.MUTED)
+		Defs.tint(%Reset, s, Defs.DOWN if armed else Defs.MUTED)

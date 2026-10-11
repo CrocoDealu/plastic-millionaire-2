@@ -56,6 +56,13 @@ const LIT_BG := Color("#3a3010")
 
 const _SUF := ["", "K", "M", "B", "T", "Qa", "Qi"]
 
+
+## add_theme_color_override re-themes and relayouts `c` even when the colour is unchanged
+## (~0.1ms each), so refresh paths go through this instead.
+static func tint(c: Control, name: StringName, col: Color) -> void:
+	if not c.has_theme_color_override(name) or c.get_theme_color(name) != col:
+		c.add_theme_color_override(name, col)
+
 static func fmt(n: float) -> String:
 	var a := absf(n)
 	if a < 1000.0:

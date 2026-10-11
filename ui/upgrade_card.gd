@@ -24,7 +24,7 @@ func _refresh() -> void:
 	var locked := not owned and not Game.up_req_met(u.id)
 	var can: bool = not owned and not locked and Game.money >= u.cost
 	%Name.text = u.name.to_upper()
-	%Name.add_theme_color_override(&"font_color", Defs.UP if owned else Defs.MUTED if locked else Defs.TEXT)
+	Defs.tint(%Name, &"font_color", Defs.UP if owned else Defs.MUTED if locked else Defs.TEXT)
 	%Desc.text = u.desc
 	%Btn.text = "OWNED" if owned else u.req_t if locked else Defs.cash(u.cost)
 	%Btn.theme_type_variation = &"BtnGold" if can else &"BtnOwned" if owned else &"BtnGrey"

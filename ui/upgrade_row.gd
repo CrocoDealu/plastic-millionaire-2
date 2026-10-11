@@ -37,7 +37,7 @@ func refresh() -> void:
 	%Name.text = name_desc[0]
 	%Desc.text = name_desc[1]
 	%Eff.text = name_desc[2]
-	%Eff.add_theme_color_override(&"font_color", Defs.UP if maxed else Defs.CAUTION)
+	Defs.tint(%Eff, &"font_color", Defs.UP if maxed else Defs.CAUTION)
 	%Label.text = "LV %d" % lvl if leveled else ("ON" if lvl else "OFF")
 	_badge(lvl > 0)
 	%Pips.visible = leveled
@@ -49,18 +49,18 @@ func refresh() -> void:
 	if not leveled and maxed:
 		var on := lvl > 0
 		btn = ["TURN OFF", &"BtnOrange", Defs.TEXT] if on else ["TURN ON", &"BtnGold", Defs.GOLD]
-		%Eff.add_theme_color_override(&"font_color", Defs.UP if on else Defs.MUTED)
+		Defs.tint(%Eff, &"font_color", Defs.UP if on else Defs.MUTED)
 		pulse = false
 	%Btn.text = btn[0]
 	%Btn.theme_type_variation = btn[1]
 	for s in [&"font_color", &"font_hover_color", &"font_pressed_color", &"font_hover_pressed_color"]:
-		%Btn.add_theme_color_override(s, btn[2])
+		Defs.tint(%Btn, s, btn[2])
 	Fx.pulse(%Btn, pulse)
 
 
 func _badge(lit: bool) -> void:
 	(%Badge.get_theme_stylebox(&"panel") as StyleBoxFlat).bg_color = Defs.LIT_BG if lit else Defs.BG
-	%Label.add_theme_color_override(&"font_color", Defs.CAUTION if lit else Defs.FAINT)
+	Defs.tint(%Label, &"font_color", Defs.CAUTION if lit else Defs.FAINT)
 
 
 func _press() -> void:

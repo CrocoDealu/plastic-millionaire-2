@@ -69,7 +69,7 @@ func _initialize() -> void:
 	game.up["sweep"] = true
 	panel._drops.clear()
 	for k in 12:
-		panel._drops.append({x = 20.0 + k * 18.0, y = 300.0, s = 18.0, vx = 0.0, vy = 0.0, rot = 0.0, vr = 0.0, rest = true})
+		panel._drops.append({x = 20.0 + k * 18.0, y = 300.0, s = 18.0, vx = 0.0, vy = 0.0, rot = 0.0, vr = 0.0, rest = true, c = 0, m = 1})
 	var g0: int = game.inv[0]
 	await create_timer(1.8).timeout
 	assert(panel._sweeping and game.inv[0] == g0)

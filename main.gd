@@ -39,7 +39,7 @@ func _unhandled_key_input(e: InputEvent) -> void:
 	# Debug builds only: F9 grants $1M for testing.
 	if OS.is_debug_build() and e is InputEventKey and e.pressed and e.keycode == KEY_F9:
 		Game.money += 1_000_000.0
-		Game.changed.emit()
+		Game.notify_changed()
 
 
 func _refresh() -> void:

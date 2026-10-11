@@ -32,7 +32,7 @@ func _refresh() -> void:
 		%Rate.text = ("%s%s/s · %s" % ["+" if r > 0.0 else "", Defs.rt(r), value]) if r != 0.0 else value
 	else:
 		%Rate.text = "Build %s" % Defs.GENS[box].name if vis else "Expand the line"
-	%Rate.add_theme_color_override(&"font_color", Defs.FAINT if not un else Defs.UP if r > 0.0 else Defs.WARN if r < 0.0 else Defs.MUTED)
+	Defs.tint(%Rate, &"font_color", Defs.FAINT if not un else Defs.UP if r > 0.0 else Defs.WARN if r < 0.0 else Defs.MUTED)
 	for c: BoxChip in [%A, %B, %C]:
 		c.color = b.color
 		c.locked = not un
@@ -57,7 +57,7 @@ func _process(_delta: float) -> void:
 		%Pop.text = "+" + Defs.fmt(_pop_q)
 		%Pop.position.y = roundf(-4.0 - pa * 26.0)
 		%Pop.modulate.a = maxf(0.0, 1.0 - pa / 0.9)
-		%Pop.add_theme_color_override(&"font_color", Defs.BOXES[box].color)
+		Defs.tint(%Pop, &"font_color", Defs.BOXES[box].color)
 
 
 func _on_input(e: InputEvent) -> void:

@@ -24,9 +24,9 @@ func _refresh() -> void:
 	%Tk.text = b.k if un or vis else "???"
 	%Chip.color = b.color if un else Defs.LINE
 	%Price.text = "$" + Defs.px(Game.market[box].p) if un else ("LOCKED" if vis else "???")
-	%Price.add_theme_color_override(&"font_color", Defs.TEXT if un else Defs.FAINT)
+	Defs.tint(%Price, &"font_color", Defs.TEXT if un else Defs.FAINT)
 	%Chg.text = Defs.pct(cg) if un else ""
-	%Chg.add_theme_color_override(&"font_color", Defs.UP if cg >= 0.0 else Defs.DOWN)
+	Defs.tint(%Chg, &"font_color", Defs.UP if cg >= 0.0 else Defs.DOWN)
 	modulate.a = 1.0 if un else 0.5
 	theme_type_variation = &"TabHover" if _hover else &"TabSel" if Game.sel == box else &"Tab"
 

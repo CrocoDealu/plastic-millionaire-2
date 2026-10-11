@@ -11,6 +11,7 @@ signal toast(title: String, sub: String, chime: bool)
 enum Act { NONE, COLLECTED, STARTED, DENIED }
 
 var save_path := "user://pm-v6-save.json"
+var _dirty := false
 const SAVE_EVERY := 10.0
 const ECON_STEP := 0.1
 const CANDLE_S := 5.0
@@ -94,7 +95,7 @@ func _process(delta: float) -> void:
 	if autosave and _save_t >= SAVE_EVERY:
 		save()
 	if ticked:
-		changed.emit()
+		notify_changed()
 
 
 # ---------------------------------------------------------------- queries
@@ -378,6 +379,19 @@ func _do_sell(i: int, q: int, auto: bool) -> float:
 	return quote.total
 
 
+## Every `changed` listener refreshes its part of the UI (~20ms in total), so state changes are
+## coalesced into at most one emit per frame.
+func notify_changed() -> void:
+	if not _dirty:
+		_dirty = true
+		_emit_changed.call_deferred()
+
+
+func _emit_changed() -> void:
+	_dirty = false
+	changed.emit()
+
+
 func mark(key: String) -> void:
 	if not ms.has(key):
 		ms[key] = play
@@ -391,15 +405,40 @@ func press() -> int:
 	return per_press()
 
 
-## Grey boxes picked up from the press floor (by hand, sweeper, or floor overflow).
-func collect_grey(n: int, by_hand := false) -> void:
+## Newest unlocked colour. Unlocks are contiguous (visible_tier gates each on the one before).
+func top_colour() -> int:
+	var top := 0
+	for i in Defs.BOXES.size():
+		if unlocked(i):
+			top = i
+	return top
+
+
+## Boxes one press drop is worth: x10 per tier the colour sits behind the newest unlocked one.
+func bundle(i: int) -> int:
+	return int(pow(10.0, top_colour() - i))
+
+
+## Colour of one press drop: any unlocked colour, weighted 3:1 per tier toward older ones.
+func press_pick() -> int:
+	var top := top_colour()
+	var r := randf() * (pow(3.0, top + 1) - 1.0) / 2.0  # sum of 3^0..3^top
+	for i in top:
+		r -= pow(3.0, top - i)
+		if r < 0.0:
+			return i
+	return top
+
+
+## `n` boxes of colour `i` picked up from the press floor (by hand, sweeper, or floor overflow).
+func collect(i: int, n: int, by_hand := false) -> void:
 	var first := not ms.has("box1")
 	mark("box1")
-	inv[0] += n
-	produced.emit(0, n)
+	inv[i] += n
+	produced.emit(i, n)
 	if first and by_hand:
 		toast.emit("EXCHANGE OPEN", "Grey boxes now trade on the market. Sell them to buy your first Press Arm.", true)
-	changed.emit()
+	notify_changed()
 
 
 func buy_gen(i: int) -> bool:
@@ -420,7 +459,7 @@ func buy_gen(i: int) -> bool:
 			sel = i
 			new_mk[i] = now()
 	save()
-	changed.emit()
+	notify_changed()
 	return true
 
 
@@ -433,7 +472,7 @@ func buy_up(id: String) -> bool:
 	mark(id)
 	toast.emit(u.name.to_upper(), u.desc, false)
 	save()
-	changed.emit()
+	notify_changed()
 	return true
 
 
@@ -451,7 +490,7 @@ func buy_mu(i: int, k: String) -> bool:
 	if k == "ain":
 		mark("auto")
 	save()
-	changed.emit()
+	notify_changed()
 	return true
 
 
@@ -464,10 +503,10 @@ func gen_act(i: int) -> Act:
 		last_collected = x.held
 		_land(Defs.GENS[i].out, x.held)
 		x.held = 0
-		changed.emit()
+		notify_changed()
 		return Act.COLLECTED
 	if own[i] > 0 and _start_gen(i):
-		changed.emit()
+		notify_changed()
 		return Act.STARTED
 	return Act.DENIED
 
@@ -477,7 +516,7 @@ func toggle_auto(i: int, k: String) -> void:
 		return
 	var f := "in_on" if k == "ain" else "out_on"
 	mx[i][f] = not mx[i][f]
-	changed.emit()
+	notify_changed()
 
 
 ## Sells from the selected market. Returns the total earned (0 if nothing was sellable).
@@ -486,7 +525,7 @@ func sell(mode: String) -> float:
 	if q <= 0:
 		return 0.0
 	var total := _do_sell(sel, q, false)
-	changed.emit()
+	notify_changed()
 	return total
 
 
@@ -497,7 +536,7 @@ func sell_surplus() -> bool:
 		if unlocked(i) and q > 0:
 			_do_sell(i, q, false)
 			any = true
-	changed.emit()
+	notify_changed()
 	return any
 
 
@@ -505,14 +544,14 @@ func select(i: int) -> bool:
 	if not unlocked(i):
 		return false
 	sel = i
-	changed.emit()
+	notify_changed()
 	return true
 
 
 ## View prefs (chart, quotes, rtab, buy_mode, reserve, mute).
 func set_pref(key: String, value: Variant) -> void:
 	set(key, value)
-	changed.emit()
+	notify_changed()
 
 
 # ---------------------------------------------------------------- persistence
@@ -563,4 +602,4 @@ func reset() -> void:
 	var keep_mute := mute
 	_fresh()
 	mute = keep_mute
-	changed.emit()
+	notify_changed()
