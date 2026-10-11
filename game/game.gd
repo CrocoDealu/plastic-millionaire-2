@@ -57,7 +57,7 @@ func _ready() -> void:
 func _fresh() -> void:
 	money = 0.0
 	inv = [0, 0, 0, 0, 0]
-	own = [0, 0, 0, 0, 0]
+	own = [1, 0, 0, 0, 0]  # every run starts with one Press Arm
 	mx.clear()
 	for i in Defs.GENS.size():
 		mx.append({spd = 0, yld = 0, ain = false, aout = false, in_on = true, out_on = true, run = false, t = 0.0, batch = 0, held = 0})
@@ -104,8 +104,10 @@ func ai(i: int) -> bool: return mx[i].ain and mx[i].in_on
 func ao(i: int) -> bool: return mx[i].aout and mx[i].out_on
 func cyc(i: int) -> float: return Defs.GENS[i].cyc * pow(0.8, mx[i].spd)
 func mul(i: int) -> int: return 1 + mx[i].yld
-func unlocked(i: int) -> bool: return i == 0 or own[i] > 0
+## A colour's market opens once you own its machine or first get one into the warehouse.
+func unlocked(i: int) -> bool: return i == 0 or own[i] > 0 or ms.has("got%d" % i)
 func visible_tier(i: int) -> bool: return i == 0 or own[i - 1] > 0
+## Crafts per slam (each craft consumes one recipe of inputs).
 func per_press() -> int: return 1 + (1 if up.has("heavy") else 0) + (2 if up.has("heavy2") else 0)
 func market_open() -> bool: return ms.has("box1") or total_earned > 0.0 or inv[0] > 0
 func modes_on() -> bool: return own.max() >= 5
@@ -341,20 +343,41 @@ func _econ(dt: float) -> void:
 		wait_max = maxf(wait_max, wait_cur)
 
 
+## Every box entering the warehouse goes through here (machines, press floor, sweeper).
 func _land(i: int, q: int) -> void:
+	var fresh := not unlocked(i)
 	inv[i] += q
 	produced.emit(i, q)
+	if not ms.has("box1"):
+		mark("box1")
+		toast.emit("EXCHANGE OPEN", "Grey boxes now trade on the market. Press 3 of them into a Red Box.", true)
+	elif fresh:
+		mark("got%d" % i)
+		new_mk[i] = now()
+		toast.emit("NEW MARKET · %s" % Defs.BOXES[i].k, "%ses now trade on the exchange." % Defs.BOXES[i].name, true)
+
+
+## Batches of gen `i`'s recipe the warehouse covers, up to `cap`.
+func batches(i: int, cap: int) -> int:
+	var g: Dictionary = Defs.GENS[i]
+	var b := cap
+	for k: int in g.inputs:
+		b = mini(b, floori(inv[k] / float(g.inputs[k])))
+	return maxi(0, b)
+
+
+## Consumes up to `cap` batches of gen `i`'s inputs; returns how many were taken.
+func _take(i: int, cap: int) -> int:
+	var b := batches(i, cap)
+	for k: int in Defs.GENS[i].inputs:
+		inv[k] -= b * Defs.GENS[i].inputs[k]
+	return b
 
 
 func _start_gen(i: int) -> bool:
-	var g: Dictionary = Defs.GENS[i]
-	var b := own[i]
-	for k: int in g.inputs:
-		b = mini(b, floori(inv[k] / float(g.inputs[k])))
+	var b := _take(i, own[i])
 	if b <= 0:
 		return false
-	for k: int in g.inputs:
-		inv[k] -= b * g.inputs[k]
 	mx[i].run = true
 	mx[i].t = 0.0
 	mx[i].batch = b
@@ -399,45 +422,33 @@ func mark(key: String) -> void:
 
 # ---------------------------------------------------------------- actions
 
-## Called by the press stage per slam; returns how many grey boxes to spawn.
+## Box the press crafts: one tier above the newest machine you own (VIO once you own a Forge).
+## Its recipe is that tier's machine recipe, since GENS[i].out == i.
+func press_target() -> int:
+	var t := 0
+	for i in own.size():
+		if own[i] > 0:
+			t = i
+	return mini(t + 1, Defs.BOXES.size() - 1)
+
+
+func can_press() -> bool:
+	return batches(press_target(), 1) > 0
+
+
+## Called by the press stage per click: consumes inputs now and returns how many target boxes
+## the slam will eject (0 = not enough inputs, no slam).
 func press() -> int:
-	mark("press1")
-	return per_press()
-
-
-## Newest unlocked colour. Unlocks are contiguous (visible_tier gates each on the one before).
-func top_colour() -> int:
-	var top := 0
-	for i in Defs.BOXES.size():
-		if unlocked(i):
-			top = i
-	return top
-
-
-## Boxes one press drop is worth: x10 per tier the colour sits behind the newest unlocked one.
-func bundle(i: int) -> int:
-	return int(pow(10.0, top_colour() - i))
-
-
-## Colour of one press drop: any unlocked colour, weighted 3:1 per tier toward older ones.
-func press_pick() -> int:
-	var top := top_colour()
-	var r := randf() * (pow(3.0, top + 1) - 1.0) / 2.0  # sum of 3^0..3^top
-	for i in top:
-		r -= pow(3.0, top - i)
-		if r < 0.0:
-			return i
-	return top
+	var b := _take(press_target(), per_press())
+	if b > 0:
+		mark("press1")
+		notify_changed()
+	return b
 
 
 ## `n` boxes of colour `i` picked up from the press floor (by hand, sweeper, or floor overflow).
-func collect(i: int, n: int, by_hand := false) -> void:
-	var first := not ms.has("box1")
-	mark("box1")
-	inv[i] += n
-	produced.emit(i, n)
-	if first and by_hand:
-		toast.emit("EXCHANGE OPEN", "Grey boxes now trade on the market. Sell them to buy your first Press Arm.", true)
+func collect(i: int, n: int) -> void:
+	_land(i, n)
 	notify_changed()
 
 
@@ -447,15 +458,15 @@ func buy_gen(i: int) -> bool:
 	if money < cost or not visible_tier(i):
 		return false
 	var first := own[i] == 0
+	var fresh := not unlocked(i)
 	money -= cost
 	own[i] += q
 	if first:
 		mark(Defs.GENS[i].id)
-		if i == 0:
-			toast.emit("FIRST MACHINE", "Press RUN to start it. Click the card for Auto-In and Auto-Out.", true)
-		else:
-			var nxt: String = "%s is now visible in Machines." % Defs.GENS[i + 1].name if i + 1 < Defs.GENS.size() else "Every machine is built."
-			toast.emit("NEW MARKET · %s" % Defs.BOXES[i].k, "%ses now trade on the exchange. %s" % [Defs.BOXES[i].name, nxt], true)
+		var t := press_target()
+		var nxt: String = "The press now makes %ses." % Defs.BOXES[t].name if t > i else "Every machine is built."
+		toast.emit("%s BUILT" % Defs.GENS[i].name.to_upper(), nxt, true)
+		if fresh:
 			sel = i
 			new_mk[i] = now()
 	save()
@@ -565,7 +576,7 @@ func save() -> void:
 		return
 	f.store_string(JSON.stringify({v = 1, money = money, inv = inv, own = own, up = up, trades = trades,
 		mute = mute, buy_mode = buy_mode, reserve = reserve, play = play, ms = ms, wait_max = wait_max,
-		total_earned = total_earned, sel = sel, chart = chart, mx = mx, rtab = rtab}))
+		total_earned = total_earned, sel = sel, chart = chart, quotes = quotes, mx = mx, rtab = rtab}))
 	saved_at = now()
 
 
@@ -578,7 +589,7 @@ func load_save() -> void:
 	money = d.get("money", 0.0)
 	for i in 5:
 		inv[i] = int(d.inv[i])
-		own[i] = int(d.own[i])
+		own[i] = int(d.own[i]) if i else maxi(1, int(d.own[i]))
 		for key: String in mx[i]:
 			if d.mx[i].has(key):
 				mx[i][key] = type_convert(d.mx[i][key], typeof(mx[i][key]))
@@ -593,6 +604,7 @@ func load_save() -> void:
 	total_earned = d.get("total_earned", 0.0)
 	sel = int(d.get("sel", 0))
 	chart = d.get("chart", "candles")
+	quotes = d.get("quotes", false)
 	rtab = d.get("rtab", "machines")
 	saved_at = now()
 

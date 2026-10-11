@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Drives main.tscn with synthetic mouse input: presses, collects, sells, buys an arm.
+## Drives main.tscn with synthetic mouse input: presses RED, collects, sells, buys an arm.
 ## godot -s res://tests/play.gd -- out.png
 
 func _click(p: Vector2) -> void:
@@ -25,6 +25,9 @@ func _initialize() -> void:
 	await process_frame
 	var stage: Control = main.find_child("Stage", true, false)
 	var press_at := stage.get_global_rect().position + Vector2(128, 120)
+	await _click(press_at)
+	assert(not game.ms.has("press1"))  # no GRY yet: the press is locked
+	game.collect(0, 24)
 	for k in 8:
 		await _click(press_at)
 		await create_timer(0.12).timeout
@@ -37,11 +40,12 @@ func _initialize() -> void:
 		if panel._drops.is_empty(): break
 		var d: Dictionary = panel._drops[-1]
 		await _click(stage.get_global_rect().position + Vector2(d.x + d.s / 2.0, d.y + d.s / 2.0))
-	print("GRY after collect: ", game.inv[0], " market open: ", game.market_open())
-	assert(game.inv[0] > 0 and game.market_open())
+	print("RED after collect: ", game.inv[1], " market open: ", game.unlocked(1))
+	assert(game.inv[1] > 0 and game.unlocked(1))
 	await create_timer(0.4).timeout
 	root.get_texture().get_image().save_png(OS.get_cmdline_user_args()[0])
 	# Sell all via the button, then buy an arm if affordable.
+	game.select(1)
 	var sell_all: Button = main.find_child("SellAll", true, false)
 	await _click(sell_all.get_global_rect().get_center())
 	print("money after sell: ", game.money, " trades: ", game.trades.size())
@@ -51,7 +55,7 @@ func _initialize() -> void:
 	game.money = 100.0
 	var buy: Button = main.find_child("Machine0", true, false).get_node("%Buy")
 	await _click(buy.get_global_rect().get_center())
-	assert(game.own[0] == 1)
+	assert(game.own[0] == 2)
 	var m := InputEventMouseMotion.new()
 	m.position = root.get_final_transform() * (buy.get_global_rect().get_center() + Vector2(4, 0))
 	m.global_position = m.position
@@ -69,7 +73,7 @@ func _initialize() -> void:
 	game.up["sweep"] = true
 	panel._drops.clear()
 	for k in 12:
-		panel._drops.append({x = 20.0 + k * 18.0, y = 300.0, s = 18.0, vx = 0.0, vy = 0.0, rot = 0.0, vr = 0.0, rest = true, c = 0, m = 1})
+		panel._drops.append({x = 20.0 + k * 18.0, y = 300.0, s = 18.0, vx = 0.0, vy = 0.0, rot = 0.0, vr = 0.0, rest = true, c = 0})
 	var g0: int = game.inv[0]
 	await create_timer(1.8).timeout
 	assert(panel._sweeping and game.inv[0] == g0)

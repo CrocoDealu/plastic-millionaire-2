@@ -12,13 +12,16 @@ extends Control
 	set(v): light = v; queue_redraw()
 @export var locked := false:
 	set(v): locked = v; queue_redraw()
+## Dashed outline colour while locked (e.g. a placeholder for a box you still need).
+@export var outline := Color("#4a4a4d"):
+	set(v): outline = v; queue_redraw()
 
 
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
 	if locked:
 		draw_rect(r, Color("#26262a"))
-		_dashed(r, Color("#4a4a4d"), 2.0)
+		_dashed(r, outline, 2.0)
 		return
 	draw_rect(r, color)
 	if light > 0:

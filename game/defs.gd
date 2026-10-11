@@ -19,14 +19,14 @@ const GENS := [
 	{id = "forge", name = "Violet Forge", cost = 15000.0, inputs = {3: 3, 2: 2}, out = 4, cyc = 12.0},
 ]
 const UPS := [
-	{id = "heavy", tier = 0, name = "Heavy Press", cost = 40.0, desc = "+1 grey box per press.", req_t = ""},
+	{id = "heavy", tier = 0, name = "Heavy Press", cost = 40.0, desc = "Each slam crafts 2 boxes (uses 2× inputs).", req_t = ""},
 	{id = "sweep", tier = 0, name = "Floor Sweeper", cost = 120.0, desc = "Drives across the press floor every 1.5s, pushing up to 8 boxes off the edge.", req_t = "OWN 1 ARM"},
-	{id = "heavy2", tier = 0, name = "Hydraulic Press", cost = 450.0, desc = "+2 more grey boxes per press.", req_t = "HEAVY PRESS"},
+	{id = "heavy2", tier = 0, name = "Hydraulic Press", cost = 450.0, desc = "Each slam crafts 4 boxes (uses 4× inputs).", req_t = "HEAVY PRESS"},
 	{id = "broker", tier = 1, name = "Broker Bot", cost = 500.0, desc = "Every 5s, sells surplus of any box trading above its average.", req_t = "OWN 1 VAT"},
 	{id = "insider", tier = 1, name = "Market Maker", cost = 1500.0, desc = "Halves the price drop caused by your own sales.", req_t = "OWN 5 VATS"},
 ]
 const MILESTONES := [
-	["press1", "First press"], ["box1", "Market open"], ["sell1", "First sale"], ["arm", "Press Arm"],
+	["box1", "Market open"], ["press1", "First press"], ["sell1", "First sale"],
 	["auto", "First Auto-In"], ["vat", "Dye Vat · RED"], ["sweep", "Sweeper"], ["kiln", "Kiln · AMB"],
 	["broker", "Broker Bot"], ["fuse", "Fuser · TEA"], ["forge", "Forge · VIO"],
 ]
@@ -62,6 +62,13 @@ const _SUF := ["", "K", "M", "B", "T", "Qa", "Qi"]
 static func tint(c: Control, name: StringName, col: Color) -> void:
 	if not c.has_theme_color_override(name) or c.get_theme_color(name) != col:
 		c.add_theme_color_override(name, col)
+
+## "2 RED + 3 GRY" for gen `i`'s inputs.
+static func recipe(i: int) -> String:
+	var parts := []
+	for k: int in GENS[i].inputs:
+		parts.append("%d %s" % [GENS[i].inputs[k], BOXES[k].k])
+	return " + ".join(parts)
 
 static func fmt(n: float) -> String:
 	var a := absf(n)

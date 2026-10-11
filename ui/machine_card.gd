@@ -78,7 +78,7 @@ func _refresh() -> void:
 	elif Game.ai(index):
 		act = ["WAITING", &"BtnGrey", Defs.WARN, false]
 	elif can_start:
-		act = ["RUN", &"BtnOrange", Defs.TEXT, true]
+		act = ["RUN", &"BtnGold", Defs.GOLD, true]
 	else:
 		act = ["NO INPUT", &"BtnGrey", Defs.FAINT, false]
 	%Act.text = act[0]

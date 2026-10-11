@@ -1,7 +1,7 @@
 extends PanelContainer
 
-## Box Press: click the upper stage to slam the piston, grey boxes fly out and settle on the
-## floor; click or drag across them to collect. Layout lives in press_panel.tscn.
+## Box Press: click the upper stage to slam the piston; it crafts the next box tier from
+## warehouse inputs, the boxes fly out and settle on the floor; click or drag across them to collect. Layout lives in press_panel.tscn.
 
 @export var show_pacing := true
 
@@ -24,7 +24,6 @@ const STREAK_WINDOW := 0.7
 const DIE_TOP := 178.0
 const DIE_W := 150.0
 const BLANK := Vector2(40, 36)
-const BOX_C := Color("#b9b5aa")
 const SPARKS := [Color("#77746c"), Color("#9a968c"), Color("#f5c518")]
 
 var _drops: Array[Dictionary] = []
@@ -47,7 +46,6 @@ var _blank_cols: Array = []
 
 @onready var stage: Control = %Stage
 @onready var boxes: Control = %Boxes
-@onready var _font: Font = get_theme_font(&"font", &"Silk")
 
 
 func _ready() -> void:
@@ -75,10 +73,10 @@ func _ready() -> void:
 
 
 func _press_tip() -> Array:
-	var lines := [["%d BOXES PER PRESS" % Game.per_press(), Defs.TEXT]]
-	for i in Game.top_colour() + 1:
-		lines.append(["%s ×%s" % [Defs.BOXES[i].k, Defs.fmt(Game.bundle(i))], Defs.BOXES[i].color])
-	return ["BOX PRESS", lines]
+	var t := Game.press_target()
+	return ["BOX PRESS", [
+		["%s → 1 %s" % [Defs.recipe(t), Defs.BOXES[t].k], Defs.BOXES[t].color],
+		["UP TO %d PER SLAM" % Game.per_press(), Defs.TEXT]]]
 
 
 static func _now() -> float:
@@ -86,15 +84,19 @@ static func _now() -> float:
 
 
 func _refresh() -> void:
-	# The blank cycles through every box colour unlocked so far.
-	var cols := PackedColorArray()
-	for i in Defs.BOXES.size():
-		if Game.unlocked(i):
-			cols.append(Defs.BOXES[i].color)
-	_blank_cols = Array(cols)
-	%Blank.material.set_shader_parameter(&"n", cols.size())
+	# The blank and recipe show what the next slam crafts; both dim while inputs are short.
+	var t := Game.press_target()
+	var col: Color = Defs.BOXES[t].color
+	var ok := Game.can_press()
+	_blank_cols = [col]
+	var cols := PackedColorArray([col if ok else col.lerp(Defs.BG, 0.65)])  # shader ignores modulate
 	cols.resize(Defs.BOXES.size())
 	%Blank.material.set_shader_parameter(&"cols", cols)
+	%Recipe.text = "%s → %s" % [Defs.recipe(t), Defs.BOXES[t].k]
+	Defs.tint(%Recipe, &"font_color", col if ok else Defs.FAINT)
+	if not ok:
+		%Hover.visible = false
+	_refresh_slots(t)
 	if not show_pacing:
 		return
 	%Clock.text = "PLAYTEST " + Defs.mmss(Game.play)
@@ -106,6 +108,31 @@ func _refresh() -> void:
 			Defs.tint(l, &"font_color", c)
 
 
+## One chip per box the recipe needs, inputs in recipe order: solid if the warehouse has it,
+## a dashed placeholder in that colour if not. ×N = slams' worth of inputs on hand.
+func _refresh_slots(t: int) -> void:
+	var need: Array[int] = []
+	for k: int in Defs.GENS[t].inputs:
+		for j in Defs.GENS[t].inputs[k]:
+			need.append(k)
+	var chips := %Slots.get_children().filter(func(c): return c is BoxChip)
+	var used := {}
+	for j in chips.size():
+		var chip: BoxChip = chips[j]
+		chip.visible = j < need.size()
+		if not chip.visible:
+			continue
+		var k := need[j]
+		used[k] = used.get(k, 0) + 1
+		var col: Color = Defs.BOXES[k].color
+		chip.color = col
+		chip.outline = col.darkened(0.35)
+		chip.locked = Game.inv[k] < used[k]
+	var n := Game.batches(t, 999999)
+	%Ready.text = "×" + Defs.fmt(n)
+	Defs.tint(%Ready, &"font_color", Defs.TEXT if n > 0 else Defs.FAINT)
+
+
 func _on_stage_input(e: InputEvent) -> void:
 	if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 		var hit := _hit(e.position)
@@ -114,7 +141,7 @@ func _on_stage_input(e: InputEvent) -> void:
 		elif e.position.y < PRESS_H:
 			_press()
 	elif e is InputEventMouseMotion:
-		%Hover.visible = e.position.y < PRESS_H
+		%Hover.visible = e.position.y < PRESS_H and Game.can_press()
 		if e.button_mask & MOUSE_BUTTON_MASK_LEFT:
 			var hit := _hit(e.position)
 			if hit >= 0:
@@ -130,8 +157,10 @@ func _hit(p: Vector2) -> int:
 
 
 func _press() -> void:
-	var t := _now()
 	var per := Game.press()
+	if per == 0:
+		return
+	var t := _now()
 	_combo = _combo + 1 if t - _last_press < COMBO_WINDOW else 1
 	_last_press = t
 	# Slam from wherever the head is, so rapid clicks keep it low and hammer down instead of snapping it up.
@@ -139,18 +168,16 @@ func _press() -> void:
 	_from = _f
 	_grow_from = _grow
 	_slam = maxf(SLAM_MIN, SLAM * (1.0 - _from))
-	get_tree().create_timer(_slam).timeout.connect(_eject.bind(per, _combo))
+	get_tree().create_timer(_slam).timeout.connect(_eject.bind(Game.press_target(), per, _combo))
 
 
-func _eject(per: int, combo: int) -> void:
+func _eject(c: int, per: int, combo: int) -> void:
 	var w := stage.size.x
 	for j in per:
-		var c := Game.press_pick()
-		var m := Game.bundle(c)
-		var s: float = 24.0 if m > 1 else [18.0, 20.0, 22.0].pick_random()
+		var s: float = [18.0, 20.0, 22.0].pick_random()
 		var dir := -1.0 if randf() < 0.5 else 1.0
 		_drops.append({x = w / 2.0 - s / 2.0 + dir * 62.0, y = 168.0, s = s, vx = dir * randf_range(60, 230),
-			vy = -randf_range(220, 400), rot = 0.0, vr = dir * randf_range(200, 600), rest = false, c = c, m = m})
+			vy = -randf_range(220, 400), rot = 0.0, vr = dir * randf_range(200, 600), rest = false, c = c})
 	if _drops.size() > MAX_DROPS:
 		var n := _drops.size() - MAX_DROPS
 		_credit(_drops.slice(0, n))
@@ -172,16 +199,16 @@ func _collect(idx: int) -> void:
 	var o := stage.global_position
 	var c := o + Vector2(d.x + d.s / 2.0, d.y + d.s / 2.0)
 	var col: Color = Defs.BOXES[d.c].color
-	Fx.float_text(Vector2(c.x, o.y + d.y - 8.0), "+" + Defs.fmt(d.m), col, int(13 + mini(_streak, 10) * 0.6))
+	Fx.float_text(Vector2(c.x, o.y + d.y - 8.0), "+1", col, int(13 + mini(_streak, 10) * 0.6))
 	Fx.burst(c, 6, [col, Defs.CAUTION, Color.WHITE], 150.0, 500.0)
 	Sfx.play("collect", _streak)
-	Game.collect(d.c, d.m, true)
+	Game.collect(d.c, 1)
 
 
 ## Banks drops that left the floor without a click (overflow, sweeper).
 func _credit(ds: Array) -> void:
 	for d: Dictionary in ds:
-		Game.collect(d.c, d.m)
+		Game.collect(d.c, 1)
 
 
 func _process(delta: float) -> void:
@@ -297,7 +324,7 @@ func _finish_sweep() -> void:
 	if n == 0:
 		return
 	var o := stage.global_position
-	Fx.float_text(o + Vector2(ex, FLOOR - 30.0), "+%d" % n, BOX_C, 16)
+	Fx.float_text(o + Vector2(ex, FLOOR - 30.0), "+%d" % n, Defs.BOXES[_train[0].c].color, 16)
 	Fx.burst(o + Vector2(ex, FLOOR - 6.0), 8, [Defs.ORANGE, Defs.CAUTION], 140.0, 500.0)
 	Sfx.play("collect", 6)
 	_credit(_train)
@@ -310,11 +337,6 @@ func _draw_boxes() -> void:
 		var at := Vector2(d.x + s / 2.0, d.y + s / 2.0).round()
 		boxes.draw_set_transform(at, deg_to_rad(roundf(d.rot)))
 		_draw_box(Rect2(-s / 2.0, -s / 2.0, s, s), Defs.BOXES[d.c].color)
-		if d.m > 1:  # bundle count stays upright while the box tumbles
-			boxes.draw_set_transform(at)
-			var t := Defs.fmt(d.m)
-			var tw := _font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x
-			boxes.draw_string(_font, Vector2(-tw / 2.0, 3.0).round(), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Defs.INK)
 	boxes.draw_set_transform(Vector2.ZERO)
 
 

@@ -8,22 +8,31 @@ func _initialize() -> void:
 	root.add_child(g)  # runs _ready -> fresh state (no save at this path)
 	g.reset()
 
-	assert(is_equal_approx(g.gen_cost(0, 1), 12.0))
-	assert(is_equal_approx(g.gen_cost(0, 10), 12.0 * (pow(1.15, 10) - 1.0) / 0.15))
-	assert(not g.market_open())
-	assert(g.press() == 1)
-	g.collect(0, 1, true)
-	assert(g.press_pick() == 0 and g.bundle(0) == 1)
+	assert(is_equal_approx(g.gen_cost(0, 1), 12.0 * 1.15))  # the free arm counts toward the price
+	assert(is_equal_approx(g.gen_cost(0, 10), 12.0 * 1.15 * (pow(1.15, 10) - 1.0) / 0.15))
+	# Fresh run: one free arm, press locked until it has 3 GRY, then crafts RED.
+	assert(g.own[0] == 1 and not g.market_open())
+	assert(g.press_target() == 1 and not g.can_press() and g.press() == 0)
+	g.collect(0, 7)
+	assert(g.market_open() and not g.unlocked(1))
+	assert(g.press() == 1 and g.inv[0] == 4)
+	g.collect(1, 1)
+	assert(g.unlocked(1) and g.new_mk.has(1))
+	# Heavy + Hydraulic: up to 4 crafts per slam, capped by inputs.
+	g.up["heavy"] = true
+	g.up["heavy2"] = true
+	g.inv[0] = 7
+	assert(g.press() == 2 and g.inv[0] == 1)
+	# Owning a vat moves the press to AMB (kiln recipe: 2 RED + 3 GRY); a forge caps it at VIO.
 	g.own[1] = 1
-	g.own[2] = 1
-	assert(g.top_colour() == 2 and g.bundle(0) == 100 and g.bundle(1) == 10 and g.bundle(2) == 1)
-	var picks := [0, 0, 0]
-	for k in 9000:
-		picks[g.press_pick()] += 1
-	assert(picks[0] > picks[1] and picks[1] > picks[2] and picks[2] > 0)  # ~9:3:1
+	g.inv.assign([9, 5, 0, 0, 0])
+	assert(g.press_target() == 2 and g.press() == 2 and g.inv[0] == 3 and g.inv[1] == 1)
+	g.own[4] = 1
+	assert(g.press_target() == 4)
 	g.own[1] = 0
-	g.own[2] = 0
-	assert(g.market_open() and g.inv[0] == 1)
+	g.own[4] = 0
+	g.up.clear()
+	g.inv.assign([1, 0, 0, 0, 0])
 
 	# Sale impact: price drops by min(0.3, q/depth), avg fill is halfway.
 	g.inv[0] = 300
@@ -35,11 +44,11 @@ func _initialize() -> void:
 
 	# Manual machine: RUN consumes nothing for the arm, output is held until COLLECT.
 	g.money = 1000.0
-	assert(g.buy_gen(0) and g.own[0] == 1)
+	assert(g.buy_gen(0) and g.own[0] == 2)
 	assert(g.gen_act(0) == g.Act.STARTED)
 	for k in 21: g._econ(0.1)
-	assert(g.mx[0].held == 1 and g.inv[0] == 0)
-	assert(g.gen_act(0) == g.Act.COLLECTED and g.inv[0] == 1)
+	assert(g.mx[0].held == 2 and g.inv[0] == 0)
+	assert(g.gen_act(0) == g.Act.COLLECTED and g.inv[0] == 2)
 
 	# Vat consumes 3 GRY per batch; reserve keeps 2 cycles of input.
 	assert(g.buy_gen(1))
@@ -60,11 +69,12 @@ func _initialize() -> void:
 	assert(g.buy_mu(0, "yld") and g.mul(0) == 2)
 
 	# Save / load round trip.
+	g.quotes = true
 	g.save()
 	var m: float = g.money
 	g._fresh()
 	g.load_save()
-	assert(is_equal_approx(g.money, m) and g.own[1] == 1 and g.mx[0].yld == 1 and g.mx[0].in_on == false)
+	assert(is_equal_approx(g.money, m) and g.own[1] == 1 and g.mx[0].yld == 1 and g.mx[0].in_on == false and g.quotes)
 
 	g.reset()
 	print("economy OK")

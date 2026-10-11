@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://ui/press_panel.gd" id="1"]
+[ext_resource type="Script" path="res://ui/box_chip.gd" id="chip"]
 [ext_resource type="Shader" path="res://ui/stripes.gdshader" id="2"]
 [ext_resource type="Shader" path="res://ui/rainbow.gdshader" id="3"]
 [ext_resource type="Texture2D" path="res://assets/press/Housing.png" id="tHousing"]
@@ -44,6 +45,15 @@ theme_type_variation = &"SilkBold"
 theme_override_colors/font_color = Color(0.9608, 0.7725, 0.0941, 1)
 theme_override_font_sizes/font_size = 12
 text = "BOX PRESS"
+
+[node name="Recipe" type="Label" parent="VBox/Title"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Silk"
+theme_override_font_sizes/font_size = 10
+text = "3 GRY → RED"
+horizontal_alignment = 2
 
 
 [node name="Stage" type="PanelContainer" parent="VBox"]
@@ -120,6 +130,79 @@ offset_bottom = 178.0
 mouse_filter = 2
 texture = ExtResource("tBlank")
 expand_mode = 1
+
+[node name="Slots" type="HBoxContainer" parent="VBox/Stage/Area"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = 202.0
+offset_right = 256.0
+offset_bottom = 216.0
+mouse_filter = 2
+theme_override_constants/separation = 3
+alignment = 1
+
+[node name="S0" type="Control" parent="VBox/Stage/Area/Slots"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("chip")
+dark = 2
+light = 2
+
+[node name="S1" type="Control" parent="VBox/Stage/Area/Slots"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("chip")
+dark = 2
+light = 2
+
+[node name="S2" type="Control" parent="VBox/Stage/Area/Slots"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("chip")
+dark = 2
+light = 2
+
+[node name="S3" type="Control" parent="VBox/Stage/Area/Slots"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("chip")
+dark = 2
+light = 2
+
+[node name="S4" type="Control" parent="VBox/Stage/Area/Slots"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("chip")
+dark = 2
+light = 2
+
+[node name="S5" type="Control" parent="VBox/Stage/Area/Slots"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("chip")
+dark = 2
+light = 2
+
+[node name="S6" type="Control" parent="VBox/Stage/Area/Slots"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("chip")
+dark = 2
+light = 2
+
+[node name="Ready" type="Label" parent="VBox/Stage/Area/Slots"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_font_sizes/font_size = 10
+text = "×0"
 
 [node name="Combo" type="Label" parent="VBox/Stage/Area"]
 unique_name_in_owner = true
@@ -219,5 +302,5 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
-text = "Click the press for grey boxes. Click or drag across boxes on the floor to collect them."
+text = "Click the press to craft the next box tier from your warehouse. Click or drag across boxes on the floor to collect them."
 autowrap_mode = 3
