@@ -16,9 +16,7 @@ const RETURN := 0.2
 const REGROW := 0.12  # fresh blank rises out of the die once the head is back at the top
 const QUAKE_BASE := 3.0
 const QUAKE_MAX := 7.0  # combo grows the stage shake up to this many px
-const SWEEP_EVERY := 1.5
 const SWEEP_SPEED := 140.0
-const SWEEP_CARRY := 8
 const STREAK_WINDOW := 0.7
 const DIE_TOP := 178.0
 const DIE_W := 150.0
@@ -240,7 +238,7 @@ func _process(delta: float) -> void:
 		_step_sweep(dt)
 	elif Game.up.has("sweep"):
 		_sweep_t += dt
-		if _sweep_t >= SWEEP_EVERY and _drops.any(func(d): return d.rest):
+		if _sweep_t >= Defs.up("sweep").every and _drops.any(func(d): return d.rest):
 			_sweep_t = 0.0
 			_start_sweep()
 	boxes.queue_redraw()
@@ -283,7 +281,7 @@ func _start_sweep() -> void:
 	_train.clear()
 
 
-## Drives across the floor pushing resting boxes it reaches (up to SWEEP_CARRY; once full it
+## Drives across the floor pushing resting boxes it reaches (up to the upgrade's `carry`; once full it
 ## rolls over the rest). Boxes never collide with each other, so pushed ones all ride against
 ## the sweeper's face, overlapping. Credited only once off the far edge.
 func _step_sweep(dt: float) -> void:
@@ -293,7 +291,7 @@ func _step_sweep(dt: float) -> void:
 	var x1 := x0 + sw.size.x
 	for i in range(_drops.size() - 1, -1, -1):
 		var d := _drops[i]
-		if _train.size() < SWEEP_CARRY and d.rest and d.x < x1 and d.x + d.s > x0:
+		if _train.size() < Defs.up("sweep").carry and d.rest and d.x < x1 and d.x + d.s > x0:
 			_drops.remove_at(i)
 			_train.append(d)
 	for d in _train:

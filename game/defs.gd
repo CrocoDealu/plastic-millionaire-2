@@ -18,16 +18,55 @@ const GENS := [
 	{id = "fuse", name = "Teal Fuser", cost = 2500.0, inputs = {2: 3, 1: 4}, out = 3, cyc = 8.0},
 	{id = "forge", name = "Violet Forge", cost = 15000.0, inputs = {3: 3, 2: 2}, out = 4, cyc = 12.0},
 ]
+## General upgrades. `desc` is formatted with the entry's own fields (Defs.desc), so the text
+## always matches the numbers. Requirements: `req_up` (another upgrade) or `req_gen` x `req_n` owned.
 const UPS := [
-	{id = "heavy", tier = 0, name = "Heavy Press", cost = 40.0, desc = "+1 box per press.", req_t = ""},
-	{id = "sweep", tier = 0, name = "Floor Sweeper", cost = 120.0, desc = "Drives across the press floor every 1.5s, pushing up to 8 boxes off the edge.", req_t = "OWN 1 ARM"},
-	{id = "heavy2", tier = 0, name = "Hydraulic Press", cost = 450.0, desc = "+2 more boxes per press.", req_t = "HEAVY PRESS"},
-	{id = "overdrive", tier = 0, name = "Overdrive", cost = 250.0, desc = "At combo 5+, machines make +2% per combo step (max +40%).", req_t = ""},
-	{id = "overtime", tier = 0, name = "Overtime", cost = 800.0, desc = "At combo 25+, machine output is doubled on top of Overdrive.", req_t = "OVERDRIVE"},
-	{id = "overdrive2", tier = 0, name = "Turbo Overdrive", cost = 1500.0, desc = "Overdrive's bonus caps at +100% instead of +40%.", req_t = "OVERDRIVE"},
-	{id = "broker", tier = 1, name = "Broker Bot", cost = 500.0, desc = "Every 5s, sells surplus of any box trading above its average.", req_t = "OWN 1 STACKER"},
-	{id = "insider", tier = 1, name = "Market Maker", cost = 1500.0, desc = "Halves the price drop caused by your own sales.", req_t = "OWN 5 STACKERS"},
+	{id = "heavy", tier = 0, name = "Heavy Press", cost = 40.0, add = 1, desc = "+{add} box per press.", req_t = ""},
+	{id = "sweep", tier = 0, name = "Floor Sweeper", cost = 120.0, every = 1.5, carry = 8, req_gen = 0, req_n = 1,
+		desc = "Drives across the press floor every {every}s, pushing up to {carry} boxes off the edge.", req_t = "OWN 1 ARM"},
+	{id = "heavy2", tier = 0, name = "Hydraulic Press", cost = 450.0, add = 2, req_up = "heavy", desc = "+{add} more boxes per press.", req_t = "HEAVY PRESS"},
+	{id = "overdrive", tier = 0, name = "Overdrive", cost = 250.0, min = 5, step_pct = 2, cap_pct = 40,
+		desc = "At combo {min}+, machines make +{step_pct}% per combo step (max +{cap_pct}%).", req_t = ""},
+	{id = "overtime", tier = 0, name = "Overtime", cost = 800.0, min = 25, mul = 2, req_up = "overdrive",
+		desc = "At combo {min}+, machine output is ×{mul} on top of Overdrive.", req_t = "OVERDRIVE"},
+	{id = "overdrive2", tier = 0, name = "Turbo Overdrive", cost = 1500.0, cap_pct = 100, req_up = "overdrive",
+		desc = "Overdrive's bonus caps at +{cap_pct}% instead.", req_t = "OVERDRIVE"},
+	{id = "broker", tier = 1, name = "Broker Bot", cost = 500.0, every = 5.0, req_gen = 1, req_n = 1,
+		desc = "Every {every}s, sells surplus of any box trading above its average.", req_t = "OWN 1 STACKER"},
+	{id = "insider", tier = 1, name = "Market Maker", cost = 1500.0, cut_pct = 50, req_gen = 1, req_n = 5,
+		desc = "Your own sales move the price {cut_pct}% less.", req_t = "OWN 5 STACKERS"},
 ]
+
+# Economy tuning. Every balance number the game logic uses lives here.
+const START_OWN := [1, 0, 0, 0, 0]  # every run starts with one Press Arm
+const GEN_GROWTH := 1.15  # machine price x this per one already owned
+## Machine upgrade price = machine cost x `mul` x `growth`^level (spd / yld); auto toggles are flat.
+const MU_COST := {spd = {mul = 1.5, growth = 1.8}, yld = {mul = 3.0, growth = 2.2}, auto = 2.5}
+const MU_MAX := 5
+const SPD_STEP := 0.8  # cycle time x this per speed level
+const YLD_STEP := 1  # boxes added to every batch per yield level
+const RESERVE_CYCLES := 2  # inputs kept back from selling, in machine cycles
+const BUY_MODES_AT := 5  # x10 / MAX buy modes appear once any machine count reaches this
+# Press.
+const BUNDLE := 10  # a drop is worth this many boxes per tier behind the newest colour
+const PRESS_ODDS := 3.0  # each older colour is this much likelier to drop than the next one up
+const COMBO_WINDOW := 0.6  # slams closer than this (s) keep the combo alive
+# Market.
+const MAX_IMPACT := 0.3  # one sale moves the price at most this much
+const CANDLE_S := 5.0
+const N_CANDLES := 48
+## Price walk: pulled toward a fair price that swings ±`swing` around base, plus noise.
+const MARKET := {
+	pull = 0.07, noise = 0.02, swing = 0.28, period = 70.0, period_step = 23.0, floor = 0.25,
+	tick_min = 0.25, tick_max = 1.5,
+	# Pre-generated history on a fresh run.
+	seed_jitter = 0.1, seed_pull = 0.03, seed_noise = 0.022, seed_floor = 0.3,
+}
+const EVENT_DELAY := [30.0, 90.0]  # a milestone's market event fires this many seconds later
+## Seconds between ending steps: breaking headline, removal, crash, HR email, end card.
+const ENDING_BEATS := [2.5, 7.0, 2.5, 3.0]
+const NEWS_STAGE_WEIGHT := 3.0  # current-stage headlines vs earlier ones
+
 const MILESTONES := [
 	["box1", "Market open"], ["press1", "First press"], ["sell1", "First sale"],
 	["auto", "First Auto-In"], ["vat", "Stacker · RED"], ["sweep", "Sweeper"], ["kiln", "Laminator · AMB"],
@@ -146,8 +185,6 @@ const REPS := [
 	"The startup. Built from eleven boxes, does nothing any of them couldn't. Huge growth anyway.",
 	"The meme stock. So many boxes deep that nobody can count them. Thin market, unhinged swings. Holders call themselves \"the Purple Hands.\"",
 ]
-const MU_MAX := 5
-const N_CANDLES := 48
 
 # Design tokens scripts need for state-driven colours; static looks live in ui/theme.tres.
 const INK := Color("#06080f")
@@ -182,6 +219,17 @@ static func tint(c: Control, name: StringName, col: Color) -> void:
 ## Inputs of gen `i`'s recipe; MYSTERY has its own.
 static func inputs(i: int) -> Dictionary:
 	return MYSTERY_INPUTS if i == MYSTERY else GENS[i].inputs
+
+## Upgrade `id`'s entry in UPS.
+static func up(id: String) -> Dictionary:
+	for u: Dictionary in UPS:
+		if u.id == id:
+			return u
+	return {}
+
+## An upgrade's description with its numbers filled in.
+static func desc(u: Dictionary) -> String:
+	return u.desc.format(u)
 
 ## "2 RED + 3 GRY" for recipe `i`'s inputs.
 static func recipe(i: int) -> String:

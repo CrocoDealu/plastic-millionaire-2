@@ -135,7 +135,7 @@ func _initialize() -> void:
 	var p_tea: float = g.market[3].p
 	var p_vio: float = g.market[4].p
 	var total_s := 0.5
-	for b: float in g.ENDING_BEATS: total_s += b
+	for b: float in Defs.ENDING_BEATS: total_s += b
 	await create_timer(total_s).timeout
 	assert(ended[0] and g.ms.has("end") and g.ms.has("ev_opened"))
 	assert(heard == [Defs.ENDING.breaking, Defs.ENDING.removed, Defs.EVENTS.opened.head])

@@ -35,6 +35,7 @@ func _refresh() -> void:
 	%ModeRow.visible = on_m
 	%Modes.visible = Game.modes_on()
 	%Note.visible = not Game.modes_on()
+	%Note.text = "×10 / MAX AT %d OWNED" % Defs.BUY_MODES_AT
 	for n: String in MODES:
 		get_node("%" + n).theme_type_variation = &"BtnCGold" if Game.buy_mode == MODES[n] else &"BtnCGrey"
 	var ti := range(Defs.GENS.size()).filter(func(i): return not Game.visible_tier(i))

@@ -25,10 +25,10 @@ func refresh() -> void:
 	var own: int = Game.own[i]
 	var can := not maxed and own > 0 and Game.money >= cost
 	var name_desc: Array = {
-		spd = ["SPEED", "Each level cuts cycle time by 20%.",
-			"%.1fS CYCLE" % c if maxed else "%.1fS → %.1fS" % [c, c * 0.8]],
-		yld = ["YIELD", "Each level adds +1 box to every batch.",
-			"%d PER BATCH" % mul if maxed else "%d → %d %s PER BATCH" % [mul, mul + 1, ob.k]],
+		spd = ["SPEED", "Each level cuts cycle time by %d%%." % roundi((1.0 - Defs.SPD_STEP) * 100.0),
+			"%.1fS CYCLE" % c if maxed else "%.1fS → %.1fS" % [c, c * Defs.SPD_STEP]],
+		yld = ["YIELD", "Each level adds +%d box to every batch." % Defs.YLD_STEP,
+			"%d PER BATCH" % mul if maxed else "%d → %d %s PER BATCH" % [mul, mul + Defs.YLD_STEP, ob.k]],
 		ain = ["AUTO-IN", "Starts every cycle on its own." if i == 0 else "Pulls inputs from the warehouse and starts cycles on its own.",
 			("ACTIVE" if Game.ai(i) else "PAUSED") if x.ain else "NO MORE RUN CLICKS"],
 		aout = ["AUTO-OUT", "Finished boxes go straight to the warehouse.",

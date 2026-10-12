@@ -25,7 +25,7 @@ func _refresh() -> void:
 	var can: bool = not owned and not locked and Game.money >= u.cost
 	%Name.text = u.name.to_upper()
 	Defs.tint(%Name, &"font_color", Defs.UP if owned else Defs.MUTED if locked else Defs.TEXT)
-	%Desc.text = u.desc
+	%Desc.text = Defs.desc(u)
 	%Btn.text = "OWNED" if owned else u.req_t if locked else Defs.cash(u.cost)
 	%Btn.theme_type_variation = &"BtnGold" if can else &"BtnOwned" if owned else &"BtnGrey"
 	%Btn.add_theme_font_size_override(&"font_size", 9)
@@ -44,7 +44,7 @@ func _buy() -> void:
 
 func _tip() -> Array:
 	var u := _u()
-	var lines := [[u.desc], [Defs.FLAVOUR[u.id], Defs.FAINT]]
+	var lines := [[Defs.desc(u)], [Defs.FLAVOUR[u.id], Defs.FAINT]]
 	if Game.up.has(u.id):
 		lines.append(["Owned", Defs.UP])
 	elif not Game.up_req_met(u.id):

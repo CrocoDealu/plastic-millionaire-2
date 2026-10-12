@@ -17,12 +17,6 @@ var save_path := "user://pm-v6-save.json"
 var _dirty := false
 const SAVE_EVERY := 10.0
 const ECON_STEP := 0.1
-const CANDLE_S := 5.0
-const BROKER_EVERY := 5.0
-## Seconds between ending steps: breaking headline, removal, crash, HR email, end card.
-const ENDING_BEATS := [2.5, 7.0, 2.5, 3.0]
-## Slams closer together than this keep the combo alive; press upgrades only work while it is.
-const COMBO_WINDOW := 0.6
 
 var money := 0.0
 var inv: Array[int] = [0, 0, 0, 0, 0]
@@ -72,7 +66,7 @@ func _ready() -> void:
 func _fresh() -> void:
 	money = 0.0
 	inv = [0, 0, 0, 0, 0]
-	own = [1, 0, 0, 0, 0]  # every run starts with one Press Arm
+	own.assign(Defs.START_OWN)
 	mx.clear()
 	for i in Defs.GENS.size():
 		mx.append({spd = 0, yld = 0, ain = false, aout = false, in_on = true, out_on = true, run = false, t = 0.0, batch = 0, held = 0, frac = 0.0})
@@ -159,7 +153,7 @@ func news_line() -> String:
 	for j in s + 1:
 		for n: Array in Defs.NEWS[keys[j]]:
 			if not _news_seen.has(n[0]):
-				var w := (3.0 if j == s else 1.0) * (1.0 + s if n[1] else 1.0)
+				var w := (Defs.NEWS_STAGE_WEIGHT if j == s else 1.0) * (1.0 + s if n[1] else 1.0)
 				pool.append([n[0], w])
 				total += w
 	if pool.is_empty():
@@ -204,37 +198,40 @@ func impact_mul(i: int) -> float:
 
 func ai(i: int) -> bool: return mx[i].ain and mx[i].in_on
 func ao(i: int) -> bool: return mx[i].aout and mx[i].out_on
-func cyc(i: int) -> float: return Defs.GENS[i].cyc * pow(0.8, mx[i].spd)
-func mul(i: int) -> int: return 1 + mx[i].yld
+func cyc(i: int) -> float: return Defs.GENS[i].cyc * pow(Defs.SPD_STEP, mx[i].spd)
+func mul(i: int) -> int: return 1 + Defs.YLD_STEP * mx[i].yld
 ## A colour's market opens once you own its machine or first get one into the warehouse.
 func unlocked(i: int) -> bool: return i == 0 or own[i] > 0 or ms.has("got%d" % i)
 func visible_tier(i: int) -> bool: return i == 0 or own[i - 1] > 0
 ## Drops per slam.
-func per_press() -> int: return 1 + (1 if up.has("heavy") else 0) + (2 if up.has("heavy2") else 0)
+func per_press() -> int:
+	return 1 + (Defs.up("heavy").add if up.has("heavy") else 0) + (Defs.up("heavy2").add if up.has("heavy2") else 0)
 func market_open() -> bool: return ms.has("box1") or total_earned > 0.0 or inv[0] > 0
-func modes_on() -> bool: return own.max() >= 5
+func modes_on() -> bool: return own.max() >= Defs.BUY_MODES_AT
 
 
 ## Current combo, or 0 once the last slam is older than COMBO_WINDOW.
 func combo_live() -> int:
-	return combo if now() - _last_slam < COMBO_WINDOW else 0
+	return combo if now() - _last_slam < Defs.COMBO_WINDOW else 0
 
 
 ## Machine output multiplier from the press upgrades; 1.0 unless the combo is alive.
 func press_boost() -> float:
 	var c := combo_live()
-	if c < 5 or not up.has("overdrive"):
+	var od := Defs.up("overdrive")
+	if c < od.min or not up.has("overdrive"):
 		return 1.0
-	var b := minf(0.02 * c, 1.0 if up.has("overdrive2") else 0.4)
-	return (1.0 + b) * (2.0 if up.has("overtime") and c >= 25 else 1.0)
+	var cap: float = Defs.up("overdrive2" if up.has("overdrive2") else "overdrive").cap_pct
+	var b := minf(od.step_pct * c, cap) / 100.0
+	var ot := Defs.up("overtime")
+	return (1.0 + b) * (float(ot.mul) if up.has("overtime") and c >= ot.min else 1.0)
 
 
 func mu_cost(i: int, k: String) -> float:
 	var b: float = Defs.GENS[i].cost
 	match k:
-		"spd": return b * 1.5 * pow(1.8, mx[i].spd)
-		"yld": return b * 3.0 * pow(2.2, mx[i].yld)
-	return b * 2.5
+		"spd", "yld": return b * Defs.MU_COST[k].mul * pow(Defs.MU_COST[k].growth, mx[i][k])
+	return b * Defs.MU_COST.auto
 
 
 func mu_maxed(i: int, k: String) -> bool:
@@ -242,19 +239,16 @@ func mu_maxed(i: int, k: String) -> bool:
 
 
 func up_req_met(id: String) -> bool:
-	match id:
-		"sweep": return own[0] >= 1
-		"heavy2": return up.has("heavy")
-		"overdrive2", "overtime": return up.has("overdrive")
-		"broker": return own[1] >= 1
-		"insider": return own[1] >= 5
-	return true
+	var u := Defs.up(id)
+	if u.has("req_up"):
+		return up.has(u.req_up)
+	return own[u.req_gen] >= u.req_n if u.has("req_gen") else true
 
 
 func reserve_of(i: int) -> int:
 	var r := 0
 	for j in Defs.GENS.size():
-		r += Defs.GENS[j].inputs.get(i, 0) * own[j] * 2
+		r += Defs.GENS[j].inputs.get(i, 0) * own[j] * Defs.RESERVE_CYCLES
 	return r
 
 
@@ -276,13 +270,15 @@ func net_rates() -> Array[float]:
 
 
 func gen_cost(i: int, q: int) -> float:
-	var c: float = Defs.GENS[i].cost * pow(1.15, own[i])
-	return c * (pow(1.15, q) - 1.0) / 0.15
+	var g := Defs.GEN_GROWTH
+	var c: float = Defs.GENS[i].cost * pow(g, own[i])
+	return c * (pow(g, q) - 1.0) / (g - 1.0)
 
 
 func max_afford(i: int) -> int:
-	var c: float = Defs.GENS[i].cost * pow(1.15, own[i])
-	return maxi(0, floori(log(money * 0.15 / c + 1.0) / log(1.15)))
+	var g := Defs.GEN_GROWTH
+	var c: float = Defs.GENS[i].cost * pow(g, own[i])
+	return maxi(0, floori(log(money * (g - 1.0) / c + 1.0) / log(g)))
 
 
 func qty_for(i: int) -> int:
@@ -312,7 +308,8 @@ func change_pct(i: int) -> float:
 
 
 func sell_quote(i: int, q: int) -> Dictionary:
-	var imp := minf(0.3, q / Defs.BOXES[i].depth) * (0.5 if up.has("insider") else 1.0) * impact_mul(i)
+	var cut: float = 1.0 - Defs.up("insider").cut_pct / 100.0 if up.has("insider") else 1.0
+	var imp := minf(Defs.MAX_IMPACT, q / Defs.BOXES[i].depth) * cut * impact_mul(i)
 	var avg: float = market[i].p * (1.0 - imp / 2.0)
 	return {imp = imp, avg = avg, total = q * avg}
 
@@ -378,23 +375,24 @@ func machine_upgrades_affordable(i: int) -> int:
 func _seed_market() -> void:
 	market.clear()
 	var t := now()
-	var start := floorf(t / CANDLE_S) * CANDLE_S - Defs.N_CANDLES * CANDLE_S
+	var start := floorf(t / Defs.CANDLE_S) * Defs.CANDLE_S - Defs.N_CANDLES * Defs.CANDLE_S
 	for b: Dictionary in Defs.BOXES:
 		var base: float = b.base
-		var p := base * randf_range(0.9, 1.1)
+		var mk := Defs.MARKET
+		var p := base * randf_range(1.0 - mk.seed_jitter, 1.0 + mk.seed_jitter)
 		var candles := []
 		for j in Defs.N_CANDLES:
 			var o := p
 			var h := o
 			var l := o
 			for s in 6:
-				p += (base - p) * 0.03 + p * 0.022 * randfn(0.0, 1.0)
-				p = maxf(base * 0.3, p)
+				p += (base - p) * mk.seed_pull + p * mk.seed_noise * randfn(0.0, 1.0)
+				p = maxf(base * mk.seed_floor, p)
 				h = maxf(h, p)
 				l = minf(l, p)
-			candles.append({t = start + j * CANDLE_S, o = o, h = h, l = l, c = p, sold = 0})
+			candles.append({t = start + j * Defs.CANDLE_S, o = o, h = h, l = l, c = p, sold = 0})
 		market.append({p = p, ph = randf() * TAU, candles = candles,
-			cur = {t = start + Defs.N_CANDLES * CANDLE_S, o = p, h = p, l = p, c = p, sold = 0},
+			cur = {t = start + Defs.N_CANDLES * Defs.CANDLE_S, o = p, h = p, l = p, c = p, sold = 0},
 			upd = t, next = t + randf_range(0.2, 1.2)})
 
 
@@ -403,22 +401,23 @@ func _step_market(t: float) -> void:
 		var m := market[i]
 		var base: float = Defs.BOXES[i].base
 		if t >= m.next:
+			var mk := Defs.MARKET
 			var dt := minf(2.0, t - m.upd)
 			var em := ev_mul(i)
-			var fair := base * em * (1.0 + 0.28 * sin(play / (70.0 + i * 23.0) + m.ph))
-			var p: float = m.p + (fair - m.p) * minf(1.0, 0.07 * dt) + m.p * 0.02 * randfn(0.0, 1.0) * sqrt(dt)
-			p = maxf(base * 0.25 * minf(1.0, em), p)  # crashes may dig below the floor while they last
+			var fair: float = base * em * (1.0 + mk.swing * sin(play / (mk.period + i * mk.period_step) + m.ph))
+			var p: float = m.p + (fair - m.p) * minf(1.0, mk.pull * dt) + m.p * mk.noise * randfn(0.0, 1.0) * sqrt(dt)
+			p = maxf(base * mk.floor * minf(1.0, em), p)  # crashes may dig below the floor while they last
 			m.p = p
 			m.upd = t
-			m.next = t + randf_range(0.25, 1.5)
+			m.next = t + randf_range(mk.tick_min, mk.tick_max)
 			m.cur.c = p
 			m.cur.h = maxf(m.cur.h, p)
 			m.cur.l = minf(m.cur.l, p)
-		if t >= m.cur.t + CANDLE_S:
+		if t >= m.cur.t + Defs.CANDLE_S:
 			m.candles.append(m.cur)
 			if m.candles.size() > Defs.N_CANDLES:
 				m.candles = m.candles.slice(-Defs.N_CANDLES)
-			m.cur = {t = maxf(m.cur.t + CANDLE_S, floorf(t / CANDLE_S) * CANDLE_S), o = m.p, h = m.p, l = m.p, c = m.p, sold = 0}
+			m.cur = {t = maxf(m.cur.t + Defs.CANDLE_S, floorf(t / Defs.CANDLE_S) * Defs.CANDLE_S), o = m.p, h = m.p, l = m.p, c = m.p, sold = 0}
 
 
 func _econ(dt: float) -> void:
@@ -457,7 +456,7 @@ func _econ(dt: float) -> void:
 			x.held += q
 	if up.has("broker"):
 		_broker_t += dt
-		if _broker_t >= BROKER_EVERY:
+		if _broker_t >= Defs.up("broker").every:
 			_broker_t = 0.0
 			for i in Defs.BOXES.size():
 				var q := sellable(i)
@@ -551,7 +550,7 @@ func mark(key: String) -> void:
 	if key == "opened":
 		return  # the ending sequence runs its own event and email
 	if Defs.EVENTS.has(key):
-		ev[key] = play + randf_range(30.0, 90.0)
+		ev[key] = play + randf_range(Defs.EVENT_DELAY[0], Defs.EVENT_DELAY[1])
 	if Defs.EMAILS.has(key):
 		_mail(key)
 
@@ -573,19 +572,19 @@ func _ending() -> void:
 	_ending_on = true
 	opening = true
 	news.emit(Defs.ENDING.breaking)
-	if not await _beat(ENDING_BEATS[0]):
+	if not await _beat(Defs.ENDING_BEATS[0]):
 		return
 	news.emit(Defs.ENDING.removed)
-	if not await _beat(ENDING_BEATS[1]):
+	if not await _beat(Defs.ENDING_BEATS[1]):
 		return
 	if not ev.has("opened"):
 		ev["opened"] = play  # every market crashes (VIO soars) on the next econ tick
-	if not await _beat(ENDING_BEATS[2]):
+	if not await _beat(Defs.ENDING_BEATS[2]):
 		return
 	_mail("opened")
 	opening = false  # title -> Pending
 	notify_changed()
-	if not await _beat(ENDING_BEATS[3]):
+	if not await _beat(Defs.ENDING_BEATS[3]):
 		return
 	mark("end")
 	_ending_on = false
@@ -612,15 +611,16 @@ func top_colour() -> int:
 
 ## Boxes one press drop is worth: x10 per tier the colour sits behind the newest unlocked one.
 func bundle(i: int) -> int:
-	return int(pow(10.0, top_colour() - i))
+	return int(pow(Defs.BUNDLE, top_colour() - i))
 
 
 ## Colour of one press drop: any unlocked colour, weighted 3:1 per tier toward older ones.
 func press_pick() -> int:
 	var top := top_colour()
-	var r := randf() * (pow(3.0, top + 1) - 1.0) / 2.0  # sum of 3^0..3^top
+	var o := Defs.PRESS_ODDS
+	var r := randf() * (pow(o, top + 1) - 1.0) / (o - 1.0)  # sum of o^0..o^top
 	for i in top:
-		r -= pow(3.0, top - i)
+		r -= pow(o, top - i)
 		if r < 0.0:
 			return i
 	return top
@@ -645,7 +645,7 @@ func toggle_arm() -> void:
 ## empty for the ??? slam, which opens the box instead.
 func press() -> Array:
 	var t := now()
-	combo = combo + 1 if t - _last_slam < COMBO_WINDOW else 1
+	combo = combo + 1 if t - _last_slam < Defs.COMBO_WINDOW else 1
 	_last_slam = t
 	mark("press1")
 	if armed and can_open():
@@ -693,13 +693,13 @@ func buy_gen(i: int) -> bool:
 
 
 func buy_up(id: String) -> bool:
-	var u: Dictionary = Defs.UPS.filter(func(x): return x.id == id)[0]
+	var u := Defs.up(id)
 	if up.has(id) or not up_req_met(id) or money < u.cost:
 		return false
 	money -= u.cost
 	up[id] = true
 	mark(id)
-	toast.emit(u.name.to_upper(), u.desc, false)
+	toast.emit(u.name.to_upper(), Defs.desc(u), false)
 	save()
 	notify_changed()
 	return true
