@@ -10,27 +10,39 @@ func _initialize() -> void:
 
 	assert(is_equal_approx(g.gen_cost(0, 1), 12.0 * 1.15))  # the free arm counts toward the price
 	assert(is_equal_approx(g.gen_cost(0, 10), 12.0 * 1.15 * (pow(1.15, 10) - 1.0) / 0.15))
-	# Fresh run: one free arm, press locked until it has 3 GRY, then crafts RED.
+	# Fresh run: one free arm; the press always slams and makes grey from nothing.
 	assert(g.own[0] == 1 and not g.market_open())
-	assert(g.press_target() == 1 and not g.can_press() and g.press() == 0)
-	g.collect(0, 7)
+	assert(g.press() == [[0, 1]] and g.ms.has("press1"))
+	g.collect(0, 1)
 	assert(g.market_open() and not g.unlocked(1))
-	assert(g.press() == 1 and g.inv[0] == 4)
-	g.collect(1, 1)
-	assert(g.unlocked(1) and g.new_mk.has(1))
-	# Heavy + Hydraulic: up to 4 crafts per slam, capped by inputs.
+	# Heavy + Hydraulic: 4 drops per slam.
 	g.up["heavy"] = true
 	g.up["heavy2"] = true
-	g.inv[0] = 7
-	assert(g.press() == 2 and g.inv[0] == 1)
-	# Owning a Red Stacker moves the press to AMB (Laminator recipe: 2 RED + 3 GRY); a Forge makes it ???.
-	g.own[1] = 1
-	g.inv.assign([9, 5, 0, 0, 0])
-	assert(g.press_target() == 2 and g.press() == 2 and g.inv[0] == 3 and g.inv[1] == 1)
-	g.own[4] = 1
-	assert(g.press_target() == Defs.MYSTERY and Defs.tk(g.press_target()) == "???")
-	g.own[1] = 0
-	g.own[4] = 0
+	assert(g.press().size() == 4)
+	# Every unlocked colour drops, older ones bundled x10 per tier behind the newest.
+	g.own[2] = 1
+	g.mark("got1")
+	assert(g.top_colour() == 2 and g.bundle(0) == 100 and g.bundle(1) == 10 and g.bundle(2) == 1)
+	var seen := {}
+	for k in 300: seen[g.press_pick()] = true
+	assert(seen.size() == 3 and not seen.has(3))
+	# Combo: slams inside the window chain; press upgrades boost machines only while it lives.
+	g.combo = 0
+	for k in 10: g.press()
+	assert(g.combo == 10 and g.combo_live() == 10 and is_equal_approx(g.press_boost(), 1.0))
+	g.up["overdrive"] = true
+	assert(is_equal_approx(g.press_boost(), 1.2))
+	g.combo = 30
+	assert(is_equal_approx(g.press_boost(), 1.4))
+	g.up["overtime"] = true
+	g.up["overdrive2"] = true
+	assert(is_equal_approx(g.press_boost(), 3.2))
+	g._last_slam -= 1.0  # combo broken
+	assert(g.combo_live() == 0 and is_equal_approx(g.press_boost(), 1.0))
+	g.press()
+	assert(g.combo == 1)
+	g.own[2] = 0
+	g.ms.erase("got1")
 	g.up.clear()
 	g.inv.assign([1, 0, 0, 0, 0])
 
@@ -75,6 +87,18 @@ func _initialize() -> void:
 	g.toggle_auto(0, "ain")
 	assert(not g.ai(0))
 
+	# A batch finishing mid-combo gets the boost; fractions carry to the next batch.
+	g.up["overdrive"] = true
+	g.combo = 5
+	g._last_slam = g.now()
+	g.toggle_auto(0, "ain")
+	var b0: int = g.inv[0]
+	for k in 21: g._econ(0.1)  # one 2s cycle of 2 arms: 2 * 1.1 = 2.2
+	assert(g.inv[0] == b0 + 2 and is_equal_approx(g.mx[0].frac, 0.2))
+	g.toggle_auto(0, "ain")
+	g.up.erase("overdrive")
+	g.combo = 0
+
 	# Speed / yield levels.
 	assert(g.buy_mu(0, "spd") and is_equal_approx(g.cyc(0), 1.6))
 	assert(g.buy_mu(0, "yld") and g.mul(0) == 2)
@@ -87,8 +111,8 @@ func _initialize() -> void:
 	g.load_save()
 	assert(is_equal_approx(g.money, m) and g.own[1] == 1 and g.mx[0].yld == 1 and g.mx[0].in_on == false and g.quotes)
 
-	# Ending: the Forge's ??? slam takes one 3 VIO + 3 TEA recipe (no box), runs the sequence,
-	# then the press goes back to VIO.
+	# Ending: once loaded, the Forge's ??? slam takes 3 VIO + 3 TEA (no box), runs the sequence,
+	# then the press goes back to dispensing.
 	await process_frame  # g joins the tree (and gets timers) only once _initialize yields
 	var heard := []
 	var mail := []
@@ -99,11 +123,15 @@ func _initialize() -> void:
 	g.own[4] = 1
 	g.mark("forge")
 	assert(mail.has("Unknown sender") and g.title() == Defs.TITLES.forge)
-	g.up["heavy"] = true
+	g.inv.assign([0, 0, 0, 2, 7])
+	assert(g.mystery_shown() and not g.can_open())
+	g.toggle_arm()
+	assert(not g.armed)  # can't load without 3 VIO + 3 TEA
 	g.inv.assign([0, 0, 0, 7, 7])
-	assert(g.press_target() == Defs.MYSTERY and g.can_press())
-	assert(g.press() == 1 and g.inv[3] == 4 and g.inv[4] == 4 and g.ms.has("opened"))
-	assert(g.press_target() == 4 and g.opening and g.title() == Defs.TITLES.forge)
+	assert(g.press().size() == 1 and g.inv[3] == 7)  # not loaded: a normal slam
+	g.toggle_arm()
+	assert(g.armed and g.press() == [] and g.inv[3] == 4 and g.inv[4] == 4 and g.ms.has("opened"))
+	assert(not g.mystery_shown() and not g.armed and g.opening and g.title() == Defs.TITLES.forge)
 	var p_tea: float = g.market[3].p
 	var p_vio: float = g.market[4].p
 	var total_s := 0.5
@@ -116,8 +144,7 @@ func _initialize() -> void:
 	for i in 5: assert(g.ev_mul(i) < 0.05)  # every market near zero
 	assert(g.inbox()[0] == "opened" and g.inbox().has("forge"))  # newest first
 	assert(g.stage() == "after" and g.news_line() == "Contents: still classified.")
-	g.inv.assign([0, 0, 9, 9, 0])
-	assert(g.press_target() == 4 and g.press() == 2 and g.inv[4] == 0)  # heavy: 2 VIO recipes
+	assert(g.press().size() == 1)  # back to dispensing
 	# The Forge event doubles your VIO sales' impact while it lasts.
 	g.ev["forge"] = g.play
 	assert(g.impact_mul(4) == 2.0 and g.impact_mul(3) == 1.0)
@@ -126,7 +153,7 @@ func _initialize() -> void:
 	g._fresh()
 	g.load_save()
 	assert(g.ms.has("opened") and g.ms.has("end") and g.ms.has("ev_opened") and g.ev.has("opened"))
-	assert(g.ms.has("sell1") and g.ev.has("sell1") and g.press_target() == 4 and g.title() == "Pending")
+	assert(g.ms.has("sell1") and g.ev.has("sell1") and not g.mystery_shown() and g.title() == "Pending")
 
 	g.reset()
 	print("economy OK")

@@ -19,9 +19,12 @@ const GENS := [
 	{id = "forge", name = "Violet Forge", cost = 15000.0, inputs = {3: 3, 2: 2}, out = 4, cyc = 12.0},
 ]
 const UPS := [
-	{id = "heavy", tier = 0, name = "Heavy Press", cost = 40.0, desc = "Each slam crafts 2 boxes (uses 2× inputs).", req_t = ""},
+	{id = "heavy", tier = 0, name = "Heavy Press", cost = 40.0, desc = "+1 box per press.", req_t = ""},
 	{id = "sweep", tier = 0, name = "Floor Sweeper", cost = 120.0, desc = "Drives across the press floor every 1.5s, pushing up to 8 boxes off the edge.", req_t = "OWN 1 ARM"},
-	{id = "heavy2", tier = 0, name = "Hydraulic Press", cost = 450.0, desc = "Each slam crafts 4 boxes (uses 4× inputs).", req_t = "HEAVY PRESS"},
+	{id = "heavy2", tier = 0, name = "Hydraulic Press", cost = 450.0, desc = "+2 more boxes per press.", req_t = "HEAVY PRESS"},
+	{id = "overdrive", tier = 0, name = "Overdrive", cost = 250.0, desc = "At combo 5+, machines make +2% per combo step (max +40%).", req_t = ""},
+	{id = "overtime", tier = 0, name = "Overtime", cost = 800.0, desc = "At combo 25+, machine output is doubled on top of Overdrive.", req_t = "OVERDRIVE"},
+	{id = "overdrive2", tier = 0, name = "Turbo Overdrive", cost = 1500.0, desc = "Overdrive's bonus caps at +100% instead of +40%.", req_t = "OVERDRIVE"},
 	{id = "broker", tier = 1, name = "Broker Bot", cost = 500.0, desc = "Every 5s, sells surplus of any box trading above its average.", req_t = "OWN 1 STACKER"},
 	{id = "insider", tier = 1, name = "Market Maker", cost = 1500.0, desc = "Halves the price drop caused by your own sales.", req_t = "OWN 5 STACKERS"},
 ]
@@ -30,7 +33,7 @@ const MILESTONES := [
 	["auto", "First Auto-In"], ["vat", "Stacker · RED"], ["sweep", "Sweeper"], ["kiln", "Laminator · AMB"],
 	["broker", "Broker Bot"], ["fuse", "Fuser · TEA"], ["forge", "Forge · VIO"],
 ]
-## Press target past the last box: the one slam that opens a box (design_ref/story.md §7).
+## Recipe index past the last box: the one slam that opens a box (design_ref/story.md §7).
 const MYSTERY := 5
 const MYSTERY_INPUTS := {4: 3, 3: 3}
 ## TODO: replace with the real itch page before shipping.
@@ -50,7 +53,7 @@ const TITLES := {
 }
 ## [sender, body], delivered once when the milestone is first marked.
 const EMAILS := {
-	start = ["HR", "Welcome! The Press Arm handles grey. You handle red. Please don't speak to the Arm; it's senior to you."],
+	start = ["HR", "Welcome! You run the press. The Press Arm also runs the press. Please don't speak to the Arm; it's senior to you."],
 	sell1 = ["Accounting", "Congratulations on your first sale. Please stop high-fiving the customer."],
 	vat = ["HR", "Your red-box duties now belong to the Red Stacker. You've been promoted to amber. Same pay."],
 	kiln = ["Facilities", "Please stop laminating your lunch. The Laminator is doing your old job and needs to concentrate."],
@@ -124,9 +127,12 @@ const FLAVOUR := {
 	kiln = "Layers boxes onto boxes. The boxes were not consulted.",
 	fuse = "Took your job. Was very gracious about it.",
 	forge = "There is nothing left for your hands to make.",
-	heavy = "Two boxes per slam. Twice the inputs, twice the conviction.",
+	heavy = "Two boxes per slam. Twice the conviction.",
 	sweep = "Pushes boxes off the edge. Legal calls it \"logistics.\"",
 	heavy2 = "Now with fluid. Don't ask which fluid.",
+	overdrive = "The machines work harder when they hear you working. Nobody told them you're faking it.",
+	overtime = "Unpaid, obviously. The machines get time and a half.",
+	overdrive2 = "Voids the warranty, the lease and one minor treaty.",
 	broker = "Sells high on day one. Already beats the analysts.",
 	insider = "Your sales no longer crash the market. Its feelings are another matter.",
 	ain = "Feeds the machine. Lately the machine says thank you.",
@@ -173,20 +179,16 @@ static func tint(c: Control, name: StringName, col: Color) -> void:
 	if not c.has_theme_color_override(name) or c.get_theme_color(name) != col:
 		c.add_theme_color_override(name, col)
 
-## Recipe for crafting box tier `i` (GENS[i].out == i); MYSTERY has its own.
+## Inputs of gen `i`'s recipe; MYSTERY has its own.
 static func inputs(i: int) -> Dictionary:
 	return MYSTERY_INPUTS if i == MYSTERY else GENS[i].inputs
 
-## "2 RED + 3 GRY" for tier `i`'s inputs.
+## "2 RED + 3 GRY" for recipe `i`'s inputs.
 static func recipe(i: int) -> String:
 	var parts := []
 	for k: int in inputs(i):
 		parts.append("%d %s" % [inputs(i)[k], BOXES[k].k])
 	return " + ".join(parts)
-
-## Ticker / chip label for a press target.
-static func tk(i: int) -> String:
-	return "???" if i == MYSTERY else BOXES[i].k
 
 static func fmt(n: float) -> String:
 	var a := absf(n)

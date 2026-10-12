@@ -35,7 +35,7 @@ theme_override_constants/separation = 8
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
-[node name="Slots" type="HBoxContainer" parent="VBox/Title"]
+[node name="Colours" type="HBoxContainer" parent="VBox/Title"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -43,7 +43,7 @@ mouse_default_cursor_shape = 16
 theme_override_constants/separation = 3
 alignment = 1
 
-[node name="S0" type="Control" parent="VBox/Title/Slots"]
+[node name="C0" type="Control" parent="VBox/Title/Colours"]
 custom_minimum_size = Vector2(14, 14)
 layout_mode = 2
 size_flags_vertical = 4
@@ -52,7 +52,7 @@ script = ExtResource("chip")
 dark = 2
 light = 2
 
-[node name="S1" type="Control" parent="VBox/Title/Slots"]
+[node name="C1" type="Control" parent="VBox/Title/Colours"]
 custom_minimum_size = Vector2(14, 14)
 layout_mode = 2
 size_flags_vertical = 4
@@ -61,7 +61,7 @@ script = ExtResource("chip")
 dark = 2
 light = 2
 
-[node name="S2" type="Control" parent="VBox/Title/Slots"]
+[node name="C2" type="Control" parent="VBox/Title/Colours"]
 custom_minimum_size = Vector2(14, 14)
 layout_mode = 2
 size_flags_vertical = 4
@@ -70,7 +70,7 @@ script = ExtResource("chip")
 dark = 2
 light = 2
 
-[node name="S3" type="Control" parent="VBox/Title/Slots"]
+[node name="C3" type="Control" parent="VBox/Title/Colours"]
 custom_minimum_size = Vector2(14, 14)
 layout_mode = 2
 size_flags_vertical = 4
@@ -79,7 +79,7 @@ script = ExtResource("chip")
 dark = 2
 light = 2
 
-[node name="S4" type="Control" parent="VBox/Title/Slots"]
+[node name="C4" type="Control" parent="VBox/Title/Colours"]
 custom_minimum_size = Vector2(14, 14)
 layout_mode = 2
 size_flags_vertical = 4
@@ -88,54 +88,21 @@ script = ExtResource("chip")
 dark = 2
 light = 2
 
-[node name="S5" type="Control" parent="VBox/Title/Slots"]
-custom_minimum_size = Vector2(14, 14)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_filter = 2
-script = ExtResource("chip")
-dark = 2
-light = 2
-
-[node name="S6" type="Control" parent="VBox/Title/Slots"]
-custom_minimum_size = Vector2(14, 14)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_filter = 2
-script = ExtResource("chip")
-dark = 2
-light = 2
-
-[node name="Recipe" type="Label" parent="VBox/Title/Slots"]
+[node name="PerSlam" type="Label" parent="VBox/Title/Colours"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Silk"
 theme_override_font_sizes/font_size = 10
-text = "→"
+text = "×1"
 
-[node name="Out" type="Control" parent="VBox/Title/Slots"]
+[node name="Open" type="Button" parent="VBox/Title"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(14, 14)
+visible = false
 layout_mode = 2
 size_flags_vertical = 4
-mouse_filter = 2
-script = ExtResource("chip")
-dark = 2
-light = 2
-
-[node name="OutN" type="Label" parent="VBox/Title/Slots"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Silk"
-theme_override_font_sizes/font_size = 10
-text = "×2"
-
-[node name="Ready" type="Label" parent="VBox/Title/Slots"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Silk"
-theme_override_font_sizes/font_size = 10
-text = "(0)"
+theme_type_variation = &"BtnGrey"
+theme_override_font_sizes/font_size = 9
+text = "OPEN ???"
 
 [node name="Stage" type="PanelContainer" parent="VBox"]
 unique_name_in_owner = true
@@ -313,5 +280,5 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
-text = "Click the press to craft the next box tier from your warehouse. Click or drag across boxes on the floor to collect them."
+text = "Click the press to make boxes in every colour you've unlocked. Click or drag across boxes on the floor to collect them."
 autowrap_mode = 3

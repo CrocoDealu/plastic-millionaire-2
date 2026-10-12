@@ -9,6 +9,7 @@ signal produced(i: int, q: int)
 signal toast(title: String, sub: String, chime: bool)
 signal news(text: String)  # priority ticker headline
 signal ended  # the box is opened: show the end card
+signal finished(gen: int, q: int)  # a machine batch finished making `q` boxes
 
 enum Act { NONE, COLLECTED, STARTED, DENIED }
 
@@ -20,6 +21,8 @@ const CANDLE_S := 5.0
 const BROKER_EVERY := 5.0
 ## Seconds between ending steps: breaking headline, removal, crash, HR email, end card.
 const ENDING_BEATS := [2.5, 7.0, 2.5, 3.0]
+## Slams closer together than this keep the combo alive; press upgrades only work while it is.
+const COMBO_WINDOW := 0.6
 
 var money := 0.0
 var inv: Array[int] = [0, 0, 0, 0, 0]
@@ -50,6 +53,9 @@ var saved_at := 0.0
 var autosave := true
 var last_collected := 0
 var opening := false  # the ending is running and hasn't reached the HR email yet
+var armed := false  # the ??? slot is loaded: the next slam opens the box
+var combo := 0
+var _last_slam := -10.0
 var _ending_on := false
 var _news_seen := {}
 
@@ -69,7 +75,7 @@ func _fresh() -> void:
 	own = [1, 0, 0, 0, 0]  # every run starts with one Press Arm
 	mx.clear()
 	for i in Defs.GENS.size():
-		mx.append({spd = 0, yld = 0, ain = false, aout = false, in_on = true, out_on = true, run = false, t = 0.0, batch = 0, held = 0})
+		mx.append({spd = 0, yld = 0, ain = false, aout = false, in_on = true, out_on = true, run = false, t = 0.0, batch = 0, held = 0, frac = 0.0})
 	up = {}
 	trades.clear()
 	total_earned = 0.0
@@ -84,6 +90,8 @@ func _fresh() -> void:
 	ms = {}
 	ev = {}
 	opening = false
+	armed = false
+	combo = 0
 	_ending_on = false
 	wait_cur = 0.0
 	wait_max = 0.0
@@ -201,10 +209,24 @@ func mul(i: int) -> int: return 1 + mx[i].yld
 ## A colour's market opens once you own its machine or first get one into the warehouse.
 func unlocked(i: int) -> bool: return i == 0 or own[i] > 0 or ms.has("got%d" % i)
 func visible_tier(i: int) -> bool: return i == 0 or own[i - 1] > 0
-## Crafts per slam (each craft consumes one recipe of inputs).
+## Drops per slam.
 func per_press() -> int: return 1 + (1 if up.has("heavy") else 0) + (2 if up.has("heavy2") else 0)
 func market_open() -> bool: return ms.has("box1") or total_earned > 0.0 or inv[0] > 0
 func modes_on() -> bool: return own.max() >= 5
+
+
+## Current combo, or 0 once the last slam is older than COMBO_WINDOW.
+func combo_live() -> int:
+	return combo if now() - _last_slam < COMBO_WINDOW else 0
+
+
+## Machine output multiplier from the press upgrades; 1.0 unless the combo is alive.
+func press_boost() -> float:
+	var c := combo_live()
+	if c < 5 or not up.has("overdrive"):
+		return 1.0
+	var b := minf(0.02 * c, 1.0 if up.has("overdrive2") else 0.4)
+	return (1.0 + b) * (2.0 if up.has("overtime") and c >= 25 else 1.0)
 
 
 func mu_cost(i: int, k: String) -> float:
@@ -223,6 +245,7 @@ func up_req_met(id: String) -> bool:
 	match id:
 		"sweep": return own[0] >= 1
 		"heavy2": return up.has("heavy")
+		"overdrive2", "overtime": return up.has("overdrive")
 		"broker": return own[1] >= 1
 		"insider": return own[1] >= 5
 	return true
@@ -423,7 +446,11 @@ func _econ(dt: float) -> void:
 			continue
 		x.run = false
 		x.t = 0.0
-		var q: int = x.batch * mul(i)
+		var boost := press_boost()
+		var f: float = x.batch * mul(i) * boost + x.frac  # fractions carry so small boosts aren't lost
+		var q := floori(f)
+		x.frac = f - q
+		finished.emit(i, q)
 		if ao(i):
 			_land(out, q)
 		else:
@@ -451,7 +478,7 @@ func _land(i: int, q: int) -> void:
 	produced.emit(i, q)
 	if not ms.has("box1"):
 		mark("box1")
-		toast.emit("EXCHANGE OPEN", "Grey boxes now trade on the market. Press 3 of them into a Red Box.", true)
+		toast.emit("EXCHANGE OPEN", "Grey boxes now trade on the market. Sell them to buy a Red Stacker.", true)
 	elif fresh:
 		mark("got%d" % i)
 		new_mk[i] = now()
@@ -574,32 +601,68 @@ func _beat(s: float) -> bool:
 
 # ---------------------------------------------------------------- actions
 
-## Box the press crafts: one tier above the newest machine you own. Its recipe is that tier's
-## machine recipe, since GENS[i].out == i. With a Forge it's MYSTERY until the box is opened, then VIO.
-func press_target() -> int:
-	var t := newest()
-	if t == Defs.GENS.size() - 1 and not ms.has("opened"):
-		return Defs.MYSTERY
-	return mini(t + 1, Defs.BOXES.size() - 1)
+## Newest unlocked colour. Unlocks are contiguous (visible_tier gates each on the one before).
+func top_colour() -> int:
+	var top := 0
+	for i in Defs.BOXES.size():
+		if unlocked(i):
+			top = i
+	return top
 
 
-func can_press() -> bool:
-	return batches(press_target(), 1) > 0
+## Boxes one press drop is worth: x10 per tier the colour sits behind the newest unlocked one.
+func bundle(i: int) -> int:
+	return int(pow(10.0, top_colour() - i))
 
 
-## Called by the press stage per click: consumes inputs now and returns how many target boxes
-## the slam will eject (0 = not enough inputs, no slam).
-func press() -> int:
-	var t := press_target()
-	var b := _take(t, 1 if t == Defs.MYSTERY else per_press())
-	if b > 0:
-		mark("press1")
-		if t == Defs.MYSTERY:
-			mark("opened")
-			save()
-			_ending()
+## Colour of one press drop: any unlocked colour, weighted 3:1 per tier toward older ones.
+func press_pick() -> int:
+	var top := top_colour()
+	var r := randf() * (pow(3.0, top + 1) - 1.0) / 2.0  # sum of 3^0..3^top
+	for i in top:
+		r -= pow(3.0, top - i)
+		if r < 0.0:
+			return i
+	return top
+
+
+## The ??? slot shows once you own a Forge, until the box is opened (design_ref/story.md §7).
+func mystery_shown() -> bool:
+	return own[Defs.GENS.size() - 1] > 0 and not ms.has("opened")
+
+
+func can_open() -> bool:
+	return mystery_shown() and batches(Defs.MYSTERY, 1) > 0
+
+
+## Loads / unloads the ??? slot. Opening is opt-in so combo slams can't open the box by accident.
+func toggle_arm() -> void:
+	armed = not armed and can_open()
+	notify_changed()
+
+
+## Called by the press stage per click. Returns the slam's drops as [colour, boxes] pairs;
+## empty for the ??? slam, which opens the box instead.
+func press() -> Array:
+	var t := now()
+	combo = combo + 1 if t - _last_slam < COMBO_WINDOW else 1
+	_last_slam = t
+	mark("press1")
+	if armed and can_open():
+		armed = false
+		_take(Defs.MYSTERY, 1)
+		mark("opened")
+		save()
+		_ending()
 		notify_changed()
-	return b
+		return []
+	armed = false
+	var drops := []
+	for j in per_press():
+		var c := press_pick()
+		drops.append([c, bundle(c)])
+	notify_changed()
+	return drops
 
 
 ## `n` boxes of colour `i` picked up from the press floor (by hand, sweeper, or floor overflow).
@@ -619,8 +682,7 @@ func buy_gen(i: int) -> bool:
 	own[i] += q
 	if first:
 		mark(Defs.GENS[i].id)
-		var t := press_target()
-		var nxt: String = "The press now makes %ses." % Defs.BOXES[t].name if t > i and t != Defs.MYSTERY else "Every machine is built."
+		var nxt: String = "The press now makes %ses too." % Defs.BOXES[i].name if i < Defs.GENS.size() - 1 else "Every machine is built."
 		toast.emit("%s BUILT" % Defs.GENS[i].name.to_upper(), nxt, true)
 		if fresh:
 			sel = i

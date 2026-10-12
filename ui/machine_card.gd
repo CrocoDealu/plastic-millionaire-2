@@ -25,7 +25,20 @@ func _ready() -> void:
 		var tag: Control = pair[0]
 		tag.gui_input.connect(_on_tag_input.bind(tag, pair[1]))
 	Game.changed.connect(_refresh)
+	Game.finished.connect(_on_finished)
 	_refresh()
+
+
+## A batch finished: float the boxes it made. Only shown while the card's top edge is
+## inside the scroll view, where the popup is drawn.
+func _on_finished(i: int, q: int) -> void:
+	if i != index or q <= 0 or not is_visible_in_tree():
+		return
+	var r := get_global_rect()
+	var view: Control = find_parent("Scroll")
+	if view == null or view.get_global_rect().has_point(r.position + Vector2(r.size.x / 2.0, 4.0)):
+		var b: Dictionary = Defs.BOXES[Defs.GENS[i].out]
+		Fx.float_text(Vector2(r.end.x - 40.0, r.position.y + 4.0), "+%s %s" % [Defs.fmt(q), b.k], b.color, 12)
 
 
 func _refresh() -> void:

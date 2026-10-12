@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Renders main.tscn and saves a PNG: godot -s res://tests/shot.gd -- out.png [seconds] [setup]
 ## setup: "fresh" (default), "mid" (some machines + market open), "modal", "settings", "quotes", "upgrades", "inbox",
-## "mystery" (Forge owned: the ??? press), "end" (box opened, end card up).
+## "mystery" (Forge owned: the OPEN ??? button), "end" (box opened, end card up).
 
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()

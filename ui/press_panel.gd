@@ -1,7 +1,8 @@
 extends PanelContainer
 
-## Box Press: click the upper stage to slam the piston; it crafts the next box tier from
-## warehouse inputs, the boxes fly out and settle on the floor; click or drag across them to collect.
+## Box Press: click the upper stage to slam the piston; boxes in every unlocked colour fly out
+## and settle on the floor; click or drag across them to collect. Once you own a Forge, the
+## OPEN ??? button loads the box-opening slam.
 ## Below it, the news ticker. Layout lives in press_panel.tscn.
 
 const FLOOR := 320.0
@@ -18,7 +19,6 @@ const QUAKE_MAX := 7.0  # combo grows the stage shake up to this many px
 const SWEEP_EVERY := 1.5
 const SWEEP_SPEED := 140.0
 const SWEEP_CARRY := 8
-const COMBO_WINDOW := 0.45
 const STREAK_WINDOW := 0.7
 const DIE_TOP := 178.0
 const DIE_W := 150.0
@@ -34,8 +34,6 @@ var _from := 0.0  # stroke fraction (0 = up, 1 = on the die) the head started th
 var _f := 0.0
 var _grow := BLANK.y  # unsquashed height of the blank on the die; 0 while it's shattered
 var _grow_from := BLANK.y
-var _combo := 0
-var _last_press := -10.0
 var _streak := 0
 var _last_coll := -10.0
 var _sweep_t := 0.0
@@ -48,13 +46,16 @@ var _news_hold := 0.0
 
 @onready var stage: Control = %Stage
 @onready var boxes: Control = %Boxes
+@onready var _font: Font = get_theme_font(&"font", &"Silk")
 
 
 func _ready() -> void:
 	boxes.draw.connect(_draw_boxes)
 	stage.gui_input.connect(_on_stage_input)
 	stage.mouse_exited.connect(func(): %Hover.visible = false)
-	Fx.hover_tip(%Slots, "", _press_tip)
+	Fx.hover_tip(%Colours, "", _press_tip)
+	Fx.hover_tip(%Open, "", _open_tip)
+	%Open.pressed.connect(Game.toggle_arm)
 	Game.changed.connect(_refresh)
 	Game.news.connect(_show_news.bind(true))
 	_show_news(Game.news_line(), false)
@@ -62,12 +63,21 @@ func _ready() -> void:
 
 
 func _press_tip() -> Array:
-	var t := Game.press_target()
-	if t == Defs.MYSTERY:
-		return ["BOX PRESS", [["%s → ???" % Defs.recipe(t), Defs.TEXT], [Defs.ENDING.tip, Defs.WARN]]]
-	return ["BOX PRESS", [
-		["%s → 1 %s" % [Defs.recipe(t), Defs.BOXES[t].k], Defs.BOXES[t].color],
-		["UP TO %d PER SLAM" % Game.per_press(), Defs.TEXT]]]
+	var lines := [["%d BOXES PER PRESS" % Game.per_press(), Defs.TEXT]]
+	for i in Game.top_colour() + 1:
+		lines.append(["%s ×%s" % [Defs.BOXES[i].k, Defs.fmt(Game.bundle(i))], Defs.BOXES[i].color])
+	if Game.up.has("overdrive"):
+		lines.append(["COMBO 5+ BOOSTS MACHINES", Defs.GOLD])
+	return ["BOX PRESS", lines]
+
+
+func _open_tip() -> Array:
+	var lines := [["%s → ???" % Defs.recipe(Defs.MYSTERY), Defs.TEXT], [Defs.ENDING.tip, Defs.WARN]]
+	if Game.armed:
+		lines.append(["Loaded. The next slam opens it.", Defs.GOLD])
+	elif Game.can_open():
+		lines.append(["Click to load it into the press.", Defs.MUTED])
+	return ["???", lines]
 
 
 ## Pool headlines scroll in from the right; priority ones replace the current line at the left edge.
@@ -83,52 +93,26 @@ static func _now() -> float:
 
 
 func _refresh() -> void:
-	# The blank and header recipe show what the next slam crafts; both dim while inputs are short.
-	# The ??? blank has no grade, so no colour: it's black.
-	var t := Game.press_target()
-	var col: Color = Defs.INK if t == Defs.MYSTERY else Defs.BOXES[t].color
-	var ok := Game.can_press()
-	_blank_cols = [col, Defs.DEAD] if t == Defs.MYSTERY else [col]
-	var cols := PackedColorArray([col if ok else col.lerp(Defs.BG, 0.65)])  # shader ignores modulate
+	# The blank cycles through every box colour unlocked so far; a loaded ??? turns it black.
+	var cols := PackedColorArray()
+	for i in Defs.BOXES.size():
+		var chip: BoxChip = %Colours.get_child(i)
+		chip.visible = Game.unlocked(i)
+		if chip.visible:
+			cols.append(Defs.BOXES[i].color)
+			chip.color = Defs.BOXES[i].color
+			chip.outline = Defs.BOXES[i].color.darkened(0.35)
+	if Game.armed:
+		cols = PackedColorArray([Defs.INK, Defs.DEAD])
+	_blank_cols = Array(cols)
+	%Blank.material.set_shader_parameter(&"n", cols.size())
 	cols.resize(Defs.BOXES.size())
 	%Blank.material.set_shader_parameter(&"cols", cols)
-	# Output chip mirrors the inputs; ×N = boxes per slam (Heavy/Hydraulic), ??? for the mystery.
-	var mystery := t == Defs.MYSTERY
-	%Out.color = col if ok else col.lerp(Defs.BG, 0.65)
-	%Out.outline = Defs.DEAD if mystery else col.darkened(0.35)
-	%Out.locked = not ok and not mystery
-	%OutN.text = "???" if mystery else "×%d" % Game.per_press()
-	%OutN.visible = mystery or Game.per_press() > 1
-	Defs.tint(%OutN, &"font_color", (Defs.TEXT if mystery else col) if ok else Defs.FAINT)
-	Defs.tint(%Recipe, &"font_color", Defs.TEXT if ok else Defs.FAINT)
-	if not ok:
-		%Hover.visible = false
-	_refresh_slots(t)
-
-
-## One chip per box the recipe needs, inputs in recipe order: solid if the warehouse has it,
-## a dashed placeholder in that colour if not. (N) = recipes' worth of inputs on hand.
-func _refresh_slots(t: int) -> void:
-	var need: Array[int] = []
-	for k: int in Defs.inputs(t):
-		for j in Defs.inputs(t)[k]:
-			need.append(k)
-	var chips := %Slots.get_children().filter(func(c): return c is BoxChip and c != %Out)
-	var used := {}
-	for j in chips.size():
-		var chip: BoxChip = chips[j]
-		chip.visible = j < need.size()
-		if not chip.visible:
-			continue
-		var k := need[j]
-		used[k] = used.get(k, 0) + 1
-		var col: Color = Defs.BOXES[k].color
-		chip.color = col
-		chip.outline = col.darkened(0.35)
-		chip.locked = Game.inv[k] < used[k]
-	var n := Game.batches(t, 999999)
-	%Ready.text = "(%s)" % Defs.fmt(n)
-	Defs.tint(%Ready, &"font_color", Defs.TEXT if n > 0 else Defs.FAINT)
+	%PerSlam.text = "×%d" % Game.per_press()
+	%Open.visible = Game.mystery_shown()
+	%Open.text = "LOADED ???" if Game.armed else "OPEN ???"
+	%Open.theme_type_variation = &"BtnGold" if Game.can_open() else &"BtnGrey"
+	Fx.pulse(%Open, Game.armed)
 
 
 func _on_stage_input(e: InputEvent) -> void:
@@ -139,7 +123,7 @@ func _on_stage_input(e: InputEvent) -> void:
 		elif e.position.y < PRESS_H:
 			_press()
 	elif e is InputEventMouseMotion:
-		%Hover.visible = e.position.y < PRESS_H and Game.can_press()
+		%Hover.visible = e.position.y < PRESS_H
 		if e.button_mask & MOUSE_BUTTON_MASK_LEFT:
 			var hit := _hit(e.position)
 			if hit >= 0:
@@ -155,28 +139,25 @@ func _hit(p: Vector2) -> int:
 
 
 func _press() -> void:
-	var c := Game.press_target()  # read first: opening the box changes the target
-	var per := Game.press()
-	if per == 0:
-		return
+	var drops := Game.press()
 	var t := _now()
-	_combo = _combo + 1 if t - _last_press < COMBO_WINDOW else 1
-	_last_press = t
 	# Slam from wherever the head is, so rapid clicks keep it low and hammer down instead of snapping it up.
 	_press_at = t
 	_from = _f
 	_grow_from = _grow
 	_slam = maxf(SLAM_MIN, SLAM * (1.0 - _from))
-	get_tree().create_timer(_slam).timeout.connect(_eject.bind(c, per, _combo))
+	get_tree().create_timer(_slam).timeout.connect(_eject.bind(drops, Game.combo))
 
 
-func _eject(c: int, per: int, combo: int) -> void:
+## `drops` is Game.press()'s [colour, boxes] pairs; empty means the ??? slam (no box).
+func _eject(drops: Array, combo: int) -> void:
 	var w := stage.size.x
-	for j in 0 if c == Defs.MYSTERY else per:  # the ??? slam makes no box
-		var s: float = [18.0, 20.0, 22.0].pick_random()
+	for p: Array in drops:
+		var m: int = p[1]
+		var s: float = 24.0 if m > 1 else [18.0, 20.0, 22.0].pick_random()
 		var dir := -1.0 if randf() < 0.5 else 1.0
 		_drops.append({x = w / 2.0 - s / 2.0 + dir * 62.0, y = 168.0, s = s, vx = dir * randf_range(60, 230),
-			vy = -randf_range(220, 400), rot = 0.0, vr = dir * randf_range(200, 600), rest = false, c = c})
+			vy = -randf_range(220, 400), rot = 0.0, vr = dir * randf_range(200, 600), rest = false, c = p[0], m = m})
 	if _drops.size() > MAX_DROPS:
 		var n := _drops.size() - MAX_DROPS
 		_credit(_drops.slice(0, n))
@@ -187,7 +168,7 @@ func _eject(c: int, per: int, combo: int) -> void:
 	if %Blank.visible:  # the blank shatters
 		Fx.burst(o + Vector2(w / 2.0, DIE_TOP - 4.0), 12, _blank_cols, 200.0, 700.0)
 	Sfx.play("press", combo)
-	Fx.quake(stage, QUAKE_MAX if c == Defs.MYSTERY else minf(QUAKE_BASE + combo * 0.5, QUAKE_MAX))
+	Fx.quake(stage, QUAKE_MAX if drops.is_empty() else minf(QUAKE_BASE + combo * 0.5, QUAKE_MAX))
 
 
 func _collect(idx: int) -> void:
@@ -198,16 +179,16 @@ func _collect(idx: int) -> void:
 	var o := stage.global_position
 	var c := o + Vector2(d.x + d.s / 2.0, d.y + d.s / 2.0)
 	var col: Color = Defs.BOXES[d.c].color
-	Fx.float_text(Vector2(c.x, o.y + d.y - 8.0), "+1", col, int(13 + mini(_streak, 10) * 0.6))
+	Fx.float_text(Vector2(c.x, o.y + d.y - 8.0), "+" + Defs.fmt(d.m), col, int(13 + mini(_streak, 10) * 0.6))
 	Fx.burst(c, 6, [col, Defs.CAUTION, Color.WHITE], 150.0, 500.0)
 	Sfx.play("collect", _streak)
-	Game.collect(d.c, 1)
+	Game.collect(d.c, d.m)
 
 
 ## Banks drops that left the floor without a click (overflow, sweeper).
 func _credit(ds: Array) -> void:
 	for d: Dictionary in ds:
-		Game.collect(d.c, 1)
+		Game.collect(d.c, d.m)
 
 
 func _process(delta: float) -> void:
@@ -246,11 +227,13 @@ func _process(delta: float) -> void:
 	var bw := minf(DIE_W, roundf(BLANK.x * _grow / bh)) if pa < _slam and bh > 0.0 else BLANK.x
 	%Blank.size = Vector2(bw, bh)
 	%Blank.position = Vector2(roundf(stage.size.x / 2.0 - bw / 2.0), DIE_TOP - bh)
-	var combo_on := _combo >= 5 and _now() - _last_press < STREAK_WINDOW
-	%Combo.visible = combo_on
-	if combo_on:
-		%Combo.text = "COMBO ×%d" % _combo
-		var fs := int(minf(22.0, 12.0 + _combo * 0.4))
+	var combo := Game.combo_live()
+	%Combo.visible = combo >= 5
+	if %Combo.visible:
+		var boost := Game.press_boost()
+		%Combo.text = "COMBO ×%d" % combo + (" · MACHINES +%d%%" % roundi((boost - 1.0) * 100.0) if boost > 1.0 else "")
+		Defs.tint(%Combo, &"font_color", Defs.GOLD if boost >= 2.0 else Defs.ORANGE)
+		var fs := int(minf(22.0, 12.0 + combo * 0.4))
 		if %Combo.get_theme_font_size(&"font_size") != fs:
 			%Combo.add_theme_font_size_override(&"font_size", fs)
 	if _sweeping:
@@ -343,6 +326,11 @@ func _draw_boxes() -> void:
 		var at := Vector2(d.x + s / 2.0, d.y + s / 2.0).round()
 		boxes.draw_set_transform(at, deg_to_rad(roundf(d.rot)))
 		_draw_box(Rect2(-s / 2.0, -s / 2.0, s, s), Defs.BOXES[d.c].color)
+		if d.m > 1:  # bundle count stays upright while the box tumbles
+			boxes.draw_set_transform(at)
+			var t := Defs.fmt(d.m)
+			var tw := _font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x
+			boxes.draw_string(_font, Vector2(-tw / 2.0, 3.0).round(), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Defs.INK)
 	boxes.draw_set_transform(Vector2.ZERO)
 
 
