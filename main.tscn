@@ -10,7 +10,8 @@
 [ext_resource type="PackedScene" path="res://ui/shelf_slot.tscn" id="8"]
 [ext_resource type="PackedScene" path="res://ui/machine_modal.tscn" id="9"]
 [ext_resource type="PackedScene" path="res://ui/settings_modal.tscn" id="10"]
-[ext_resource type="Texture2D" path="res://assets/ui/x3/buttons_Orange_ButtonCloseA_Highlighted.png" id="close"]
+[ext_resource type="PackedScene" path="res://ui/skill_tree.tscn" id="11"]
+[ext_resource type="Texture2D" uid="uid://c1u1dadb15o5a" path="res://assets/ui/x3/buttons_Orange_ButtonCloseA_Highlighted.png" id="close"]
 
 [sub_resource type="Shader" id="scan_shader"]
 code = "shader_type canvas_item;
@@ -98,19 +99,19 @@ theme_override_constants/h_separation = 8
 text = "SETTINGS"
 icon = ExtResource("4")
 
-[node name="Career" type="VBoxContainer" parent="Layout/Header/HBox"]
+[node name="Career" type="VBoxContainer" parent="Layout/Header/HBox" unique_id=1198420668]
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_constants/separation = 4
 
-[node name="Label" type="Label" parent="Layout/Header/HBox/Career"]
+[node name="Label" type="Label" parent="Layout/Header/HBox/Career" unique_id=1403897906]
 layout_mode = 2
 theme_type_variation = &"Silk"
 theme_override_colors/font_color = Color(0.9098, 0.7686, 0.5412, 1)
 theme_override_font_sizes/font_size = 8
 text = "TITLE"
 
-[node name="Title" type="Label" parent="Layout/Header/HBox/Career"]
+[node name="Title" type="Label" parent="Layout/Header/HBox/Career" unique_id=1185298671]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"SilkBold"
@@ -236,7 +237,7 @@ unique_name_in_owner = true
 layout_mode = 2
 mouse_default_cursor_shape = 2
 theme_type_variation = &"BtnCGrey"
-text = "SELL ALL SURPLUS"
+text = "QUICK SELL · −50%"
 
 [node name="Modals" type="ColorRect" parent="." unique_id=1317393748]
 unique_name_in_owner = true
@@ -268,27 +269,27 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 
-[node name="EndCard" type="PanelContainer" parent="Modals/Center"]
+[node name="EndCard" type="PanelContainer" parent="Modals/Center" unique_id=109669646]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(440, 0)
 layout_mode = 2
 theme_type_variation = &"PanelDigital"
 
-[node name="Body" type="ColorRect" parent="Modals/Center/EndCard"]
+[node name="Body" type="ColorRect" parent="Modals/Center/EndCard" unique_id=1652926428]
 layout_mode = 2
 mouse_filter = 2
 color = Color(0.0784, 0.0784, 0.0863, 1)
 
-[node name="VBox" type="VBoxContainer" parent="Modals/Center/EndCard"]
+[node name="VBox" type="VBoxContainer" parent="Modals/Center/EndCard" unique_id=318127512]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Head" type="HBoxContainer" parent="Modals/Center/EndCard/VBox"]
+[node name="Head" type="HBoxContainer" parent="Modals/Center/EndCard/VBox" unique_id=2049674375]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="EndText" type="Label" parent="Modals/Center/EndCard/VBox/Head"]
+[node name="EndText" type="Label" parent="Modals/Center/EndCard/VBox/Head" unique_id=1201668003]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
@@ -298,14 +299,14 @@ theme_override_font_sizes/font_size = 16
 text = "End of demo."
 autowrap_mode = 3
 
-[node name="EndClose" type="TextureButton" parent="Modals/Center/EndCard/VBox/Head"]
+[node name="EndClose" type="TextureButton" parent="Modals/Center/EndCard/VBox/Head" unique_id=1642224183]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("close")
 
-[node name="Itch" type="LinkButton" parent="Modals/Center/EndCard/VBox"]
+[node name="Itch" type="LinkButton" parent="Modals/Center/EndCard/VBox" unique_id=1849977497]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 0
@@ -313,6 +314,11 @@ theme_override_colors/font_color = Color(0.9608, 0.7725, 0.0941, 1)
 theme_override_colors/font_hover_color = Color(1, 0.8196, 0.4, 1)
 theme_override_font_sizes/font_size = 14
 text = "itch.io"
+
+[node name="SkillTree" parent="Modals" instance=ExtResource("11")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
 
 [node name="Overlay" type="CanvasLayer" parent="." unique_id=230783759]
 layer = 2

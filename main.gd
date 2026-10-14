@@ -16,8 +16,11 @@ func _ready() -> void:
 	_shown = Game.money
 	%Settings.pressed.connect(open_settings)
 	%SellSurplus.pressed.connect(_sell_surplus)
+	Fx.hover_tip(%SellSurplus, "up", _quick_tip)
 	%Modals.gui_input.connect(_on_backdrop_input)
 	%MachinesPanel.open_machine.connect(open_machine)
+	%MachinesPanel.open_tree.connect(open_tree)
+	%SkillTree.closed.connect(close_modal)
 	%MachineModal.closed.connect(close_modal)
 	%SettingsModal.closed.connect(close_modal)
 	%EndClose.pressed.connect(close_modal)
@@ -62,6 +65,13 @@ func _sell_surplus() -> void:
 		Sfx.play("sell")
 
 
+func _quick_tip() -> Array:
+	var full := Game.sell_value()
+	return ["QUICK SELL ALL SURPLUS", [["Sells every sellable box right now at %d%% of market value." % roundi(Defs.QUICK_SELL * 100.0)],
+		["You get %s instead of %s." % [Defs.cash(full * Defs.QUICK_SELL), Defs.cash(full)] if full > 0.0 else "Nothing sellable.", Defs.GOLD],
+		["Place asks on the market for full price.", Defs.MUTED]]]
+
+
 func _on_sold(_i: int, _q: int, total: float, auto: bool) -> void:
 	var m: Control = %Money
 	m.pivot_offset = Vector2(m.size.x, m.size.y / 2.0)
@@ -80,14 +90,24 @@ func _on_toast(title: String, sub: String, chime: bool) -> void:
 
 func open_machine(i: int) -> void:
 	Fx.tip_off()
+	%SkillTree.visible = false
 	%SettingsModal.visible = false
 	%MachineModal.open(i)
 	%Modals.visible = true
 	Sfx.play("tick")
 
 
+func open_tree() -> void:
+	Fx.tip_off()
+	close_modal()
+	%SkillTree.open()
+	%Modals.visible = true
+	Sfx.play("tick")
+
+
 func open_settings() -> void:
 	Fx.tip_off()
+	%SkillTree.visible = false
 	%MachineModal.visible = false
 	%SettingsModal.visible = true
 	%Modals.visible = true
@@ -103,6 +123,7 @@ func open_end() -> void:
 
 func close_modal() -> void:
 	%Modals.visible = false
+	%SkillTree.visible = false
 	%MachineModal.visible = false
 	%SettingsModal.visible = false
 	%EndCard.visible = false

@@ -1,6 +1,7 @@
 extends PanelContainer
 
-## Machine upgrades modal: header, recipe summary and the four upgrade rows.
+## Machine modal: header, recipe summary, and the Hopper / Chute on-off toggles once they're
+## bought in the skill tree (every machine upgrade lives in the tree).
 
 signal closed
 
@@ -14,7 +15,7 @@ func _ready() -> void:
 
 func open(i: int) -> void:
 	machine = i
-	for r in [$VBox/Spd, $VBox/Yld, $VBox/Ain, $VBox/Aout]:
+	for r in [$VBox/Ain, $VBox/Aout]:
 		r.machine = i
 	visible = true
 	_refresh()
@@ -30,8 +31,12 @@ func _refresh() -> void:
 	%Chip.color = ob.color
 	%Kicker.text = "MACHINE %d / %d · ×%s OWNED" % [i + 1, Defs.GENS.size(), Defs.fmt(Game.own[i])]
 	%Name.text = g.name.to_upper()
-	%Summary.text = "%s → %d %s every %.1fs per machine. Upgrades apply to every %s you own." % [
+	%Summary.text = "%s → %d %s every %.1fs per machine. Skill tree upgrades apply to every %s you own." % [
 		recipe if recipe else "No input", Game.mul(i), ob.k, Game.cyc(i), g.name]
 	%Flavour.text = Defs.FLAVOUR[g.id]
-	for r in [$VBox/Spd, $VBox/Yld, $VBox/Ain, $VBox/Aout]:
+	for r in [$VBox/Ain, $VBox/Aout]:
 		r.refresh()
+	var x: Dictionary = Game.mx[i]
+	$VBox/Ain.visible = x.ain
+	$VBox/Aout.visible = x.aout
+	%Note.text = "Speed, Yield, Chute and Hopper for the %s are bought in the Skill Tree." % g.name

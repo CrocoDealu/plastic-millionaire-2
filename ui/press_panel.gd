@@ -51,22 +51,12 @@ func _ready() -> void:
 	boxes.draw.connect(_draw_boxes)
 	stage.gui_input.connect(_on_stage_input)
 	stage.mouse_exited.connect(func(): %Hover.visible = false)
-	Fx.hover_tip(%Colours, "", _press_tip)
 	Fx.hover_tip(%Open, "", _open_tip)
 	%Open.pressed.connect(Game.toggle_arm)
 	Game.changed.connect(_refresh)
 	Game.news.connect(_show_news.bind(true))
 	_show_news(Game.news_line(), false)
 	_refresh()
-
-
-func _press_tip() -> Array:
-	var lines := [["%d BOXES PER PRESS" % Game.per_press(), Defs.TEXT]]
-	for i in Game.top_colour() + 1:
-		lines.append(["%s ×%s" % [Defs.BOXES[i].k, Defs.fmt(Game.bundle(i))], Defs.BOXES[i].color])
-	if Game.up.has("overdrive"):
-		lines.append(["COMBO 5+ BOOSTS MACHINES", Defs.GOLD])
-	return ["BOX PRESS", lines]
 
 
 func _open_tip() -> Array:
@@ -94,19 +84,14 @@ func _refresh() -> void:
 	# The blank cycles through every box colour unlocked so far; a loaded ??? turns it black.
 	var cols := PackedColorArray()
 	for i in Defs.BOXES.size():
-		var chip: BoxChip = %Colours.get_child(i)
-		chip.visible = Game.unlocked(i)
-		if chip.visible:
+		if Game.unlocked(i):
 			cols.append(Defs.BOXES[i].color)
-			chip.color = Defs.BOXES[i].color
-			chip.outline = Defs.BOXES[i].color.darkened(0.35)
 	if Game.armed:
 		cols = PackedColorArray([Defs.INK, Defs.DEAD])
 	_blank_cols = Array(cols)
 	%Blank.material.set_shader_parameter(&"n", cols.size())
 	cols.resize(Defs.BOXES.size())
 	%Blank.material.set_shader_parameter(&"cols", cols)
-	%PerSlam.text = "×%d" % Game.per_press()
 	%Open.visible = Game.mystery_shown()
 	%Open.text = "LOADED ???" if Game.armed else "OPEN ???"
 	%Open.theme_type_variation = &"BtnGold" if Game.can_open() else &"BtnGrey"
@@ -236,9 +221,9 @@ func _process(delta: float) -> void:
 			%Combo.add_theme_font_size_override(&"font_size", fs)
 	if _sweeping:
 		_step_sweep(dt)
-	elif Game.up.has("sweep"):
+	elif Game.sk_own("sweep"):
 		_sweep_t += dt
-		if _sweep_t >= Defs.up("sweep").every and _drops.any(func(d): return d.rest):
+		if _sweep_t >= Game.skv("sweep", "every", 0.0) and _drops.any(func(d): return d.rest):
 			_sweep_t = 0.0
 			_start_sweep()
 	boxes.queue_redraw()
@@ -291,7 +276,7 @@ func _step_sweep(dt: float) -> void:
 	var x1 := x0 + sw.size.x
 	for i in range(_drops.size() - 1, -1, -1):
 		var d := _drops[i]
-		if _train.size() < Defs.up("sweep").carry and d.rest and d.x < x1 and d.x + d.s > x0:
+		if _train.size() < Game.skv("sweep", "carry", 0) and d.rest and d.x < x1 and d.x + d.s > x0:
 			_drops.remove_at(i)
 			_train.append(d)
 	for d in _train:

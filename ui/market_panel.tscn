@@ -171,34 +171,38 @@ axis_style = SubResource("axis")
 layout_mode = 2
 theme_type_variation = &"SellBar"
 
-[node name="HBox" type="HBoxContainer" parent="VBox/SellBar"]
+[node name="VBox" type="VBoxContainer" parent="VBox/SellBar"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Row" type="HBoxContainer" parent="VBox/SellBar/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Info" type="VBoxContainer" parent="VBox/SellBar/HBox"]
+[node name="Info" type="VBoxContainer" parent="VBox/SellBar/VBox/Row"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
 theme_override_constants/separation = 4
 
-[node name="Hold" type="HBoxContainer" parent="VBox/SellBar/HBox/Info"]
+[node name="Hold" type="HBoxContainer" parent="VBox/SellBar/VBox/Row/Info"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Label" type="Label" parent="VBox/SellBar/HBox/Info/Hold"]
+[node name="Label" type="Label" parent="VBox/SellBar/VBox/Row/Info/Hold"]
 layout_mode = 2
 size_flags_vertical = 8
 theme_type_variation = &"Silk"
 text = "YOU HOLD"
 
-[node name="Count" type="Label" parent="VBox/SellBar/HBox/Info/Hold"]
+[node name="Count" type="Label" parent="VBox/SellBar/VBox/Row/Info/Hold"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"SilkBold"
 theme_override_font_sizes/font_size = 18
 text = "0"
 
-[node name="Tk" type="Label" parent="VBox/SellBar/HBox/Info/Hold"]
+[node name="Tk" type="Label" parent="VBox/SellBar/VBox/Row/Info/Hold"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 8
@@ -206,7 +210,7 @@ theme_type_variation = &"Silk"
 theme_override_font_sizes/font_size = 11
 text = "GRY"
 
-[node name="Sub" type="Label" parent="VBox/SellBar/HBox/Info"]
+[node name="Sub" type="Label" parent="VBox/SellBar/VBox/Row/Info"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
@@ -214,7 +218,7 @@ text = "0 sellable ≈ $0.00"
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="Reserve" type="HBoxContainer" parent="VBox/SellBar/HBox/Info"]
+[node name="Reserve" type="HBoxContainer" parent="VBox/SellBar/VBox/Row/Info"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 0
@@ -222,7 +226,7 @@ mouse_filter = 0
 mouse_default_cursor_shape = 2
 theme_override_constants/separation = 6
 
-[node name="Check" type="Panel" parent="VBox/SellBar/HBox/Info/Reserve"]
+[node name="Check" type="Panel" parent="VBox/SellBar/VBox/Row/Info/Reserve"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(10, 10)
 layout_mode = 2
@@ -230,7 +234,7 @@ size_flags_vertical = 4
 mouse_filter = 2
 theme_override_styles/panel = SubResource("check_on")
 
-[node name="ResLabel" type="Label" parent="VBox/SellBar/HBox/Info/Reserve"]
+[node name="ResLabel" type="Label" parent="VBox/SellBar/VBox/Row/Info/Reserve"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
@@ -238,116 +242,177 @@ theme_type_variation = &"Silk"
 theme_override_font_sizes/font_size = 8
 text = "KEEP MACHINE RESERVE"
 
-[node name="Btns" type="HBoxContainer" parent="VBox/SellBar/HBox"]
+[node name="Ask" type="HBoxContainer" parent="VBox/SellBar/VBox/Row"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 8
+
+[node name="Labels" type="VBoxContainer" parent="VBox/SellBar/VBox/Row/Ask"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 3
+
+[node name="Label" type="Label" parent="VBox/SellBar/VBox/Row/Ask/Labels"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
+theme_override_font_sizes/font_size = 8
+text = "ASK PRICE"
+horizontal_alignment = 2
+
+[node name="AskRel" type="Label" parent="VBox/SellBar/VBox/Row/Ask/Labels"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
+theme_override_font_sizes/font_size = 8
+text = "AT LAST PRICE"
+horizontal_alignment = 2
+
+[node name="AskDown" type="Button" parent="VBox/SellBar/VBox/Row/Ask"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"BtnCGrey"
+theme_override_colors/font_color = Color(0.9255, 0.9098, 0.8745, 1)
+theme_override_colors/font_hover_color = Color(0.9255, 0.9098, 0.8745, 1)
+theme_override_colors/font_pressed_color = Color(0.9255, 0.9098, 0.8745, 1)
+theme_override_font_sizes/font_size = 11
+text = "−"
+
+[node name="AskPx" type="Label" parent="VBox/SellBar/VBox/Row/Ask"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_colors/font_color = Color(1, 0.8196, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "$1.00"
+horizontal_alignment = 1
+
+[node name="AskUp" type="Button" parent="VBox/SellBar/VBox/Row/Ask"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"BtnCGrey"
+theme_override_colors/font_color = Color(0.9255, 0.9098, 0.8745, 1)
+theme_override_colors/font_hover_color = Color(0.9255, 0.9098, 0.8745, 1)
+theme_override_colors/font_pressed_color = Color(0.9255, 0.9098, 0.8745, 1)
+theme_override_font_sizes/font_size = 11
+text = "+"
+
+[node name="Btns" type="HBoxContainer" parent="VBox/SellBar/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="Sell1" type="Button" parent="VBox/SellBar/HBox/Btns"]
+[node name="Sell1" type="Button" parent="VBox/SellBar/VBox/Btns"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_vertical = 4
+size_flags_horizontal = 3
 mouse_default_cursor_shape = 2
 theme_type_variation = &"BtnGrey"
 script = ExtResource("cb")
 
-[node name="VBox" type="VBoxContainer" parent="VBox/SellBar/HBox/Btns/Sell1"]
+[node name="VBox" type="VBoxContainer" parent="VBox/SellBar/VBox/Btns/Sell1"]
 custom_minimum_size = Vector2(58, 0)
 layout_mode = 0
 mouse_filter = 2
 theme_override_constants/separation = 3
 
-[node name="Label" type="Label" parent="VBox/SellBar/HBox/Btns/Sell1/VBox"]
+[node name="Label" type="Label" parent="VBox/SellBar/VBox/Btns/Sell1/VBox"]
 layout_mode = 2
 theme_type_variation = &"SilkBold"
 theme_override_font_sizes/font_size = 10
-text = "SELL 1"
+text = "ASK 1"
 horizontal_alignment = 1
 
-[node name="Sub" type="Label" parent="VBox/SellBar/HBox/Btns/Sell1/VBox"]
+[node name="Sub" type="Label" parent="VBox/SellBar/VBox/Btns/Sell1/VBox"]
 layout_mode = 2
 theme_type_variation = &"Silk"
 theme_override_font_sizes/font_size = 8
 text = "—"
 horizontal_alignment = 1
 
-[node name="Sell10" type="Button" parent="VBox/SellBar/HBox/Btns"]
+[node name="Sell10" type="Button" parent="VBox/SellBar/VBox/Btns"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_vertical = 4
+size_flags_horizontal = 3
 mouse_default_cursor_shape = 2
 theme_type_variation = &"BtnGrey"
 script = ExtResource("cb")
 
-[node name="VBox" type="VBoxContainer" parent="VBox/SellBar/HBox/Btns/Sell10"]
+[node name="VBox" type="VBoxContainer" parent="VBox/SellBar/VBox/Btns/Sell10"]
 custom_minimum_size = Vector2(58, 0)
 layout_mode = 0
 mouse_filter = 2
 theme_override_constants/separation = 3
 
-[node name="Label" type="Label" parent="VBox/SellBar/HBox/Btns/Sell10/VBox"]
+[node name="Label" type="Label" parent="VBox/SellBar/VBox/Btns/Sell10/VBox"]
 layout_mode = 2
 theme_type_variation = &"SilkBold"
 theme_override_font_sizes/font_size = 10
-text = "SELL 10"
+text = "ASK 10"
 horizontal_alignment = 1
 
-[node name="Sub" type="Label" parent="VBox/SellBar/HBox/Btns/Sell10/VBox"]
+[node name="Sub" type="Label" parent="VBox/SellBar/VBox/Btns/Sell10/VBox"]
 layout_mode = 2
 theme_type_variation = &"Silk"
 theme_override_font_sizes/font_size = 8
 text = "—"
 horizontal_alignment = 1
 
-[node name="SellHalf" type="Button" parent="VBox/SellBar/HBox/Btns"]
+[node name="SellHalf" type="Button" parent="VBox/SellBar/VBox/Btns"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_vertical = 4
+size_flags_horizontal = 3
 mouse_default_cursor_shape = 2
 theme_type_variation = &"BtnGrey"
 script = ExtResource("cb")
 
-[node name="VBox" type="VBoxContainer" parent="VBox/SellBar/HBox/Btns/SellHalf"]
+[node name="VBox" type="VBoxContainer" parent="VBox/SellBar/VBox/Btns/SellHalf"]
 custom_minimum_size = Vector2(58, 0)
 layout_mode = 0
 mouse_filter = 2
 theme_override_constants/separation = 3
 
-[node name="Label" type="Label" parent="VBox/SellBar/HBox/Btns/SellHalf/VBox"]
+[node name="Label" type="Label" parent="VBox/SellBar/VBox/Btns/SellHalf/VBox"]
 layout_mode = 2
 theme_type_variation = &"SilkBold"
 theme_override_font_sizes/font_size = 10
-text = "SELL 50%"
+text = "ASK 50%"
 horizontal_alignment = 1
 
-[node name="Sub" type="Label" parent="VBox/SellBar/HBox/Btns/SellHalf/VBox"]
+[node name="Sub" type="Label" parent="VBox/SellBar/VBox/Btns/SellHalf/VBox"]
 layout_mode = 2
 theme_type_variation = &"Silk"
 theme_override_font_sizes/font_size = 8
 text = "—"
 horizontal_alignment = 1
 
-[node name="SellAll" type="Button" parent="VBox/SellBar/HBox/Btns"]
+[node name="SellAll" type="Button" parent="VBox/SellBar/VBox/Btns"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_vertical = 4
+size_flags_horizontal = 3
 mouse_default_cursor_shape = 2
 theme_type_variation = &"BtnGrey"
 script = ExtResource("cb")
 
-[node name="VBox" type="VBoxContainer" parent="VBox/SellBar/HBox/Btns/SellAll"]
+[node name="VBox" type="VBoxContainer" parent="VBox/SellBar/VBox/Btns/SellAll"]
 custom_minimum_size = Vector2(58, 0)
 layout_mode = 0
 mouse_filter = 2
 theme_override_constants/separation = 3
 
-[node name="Label" type="Label" parent="VBox/SellBar/HBox/Btns/SellAll/VBox"]
+[node name="Label" type="Label" parent="VBox/SellBar/VBox/Btns/SellAll/VBox"]
 layout_mode = 2
 theme_type_variation = &"SilkBold"
 theme_override_font_sizes/font_size = 10
-text = "SELL ALL"
+text = "ASK ALL"
 horizontal_alignment = 1
 
-[node name="Sub" type="Label" parent="VBox/SellBar/HBox/Btns/SellAll/VBox"]
+[node name="Sub" type="Label" parent="VBox/SellBar/VBox/Btns/SellAll/VBox"]
 layout_mode = 2
 theme_type_variation = &"Silk"
 theme_override_font_sizes/font_size = 8
@@ -538,6 +603,94 @@ box = 3
 [node name="Quote4" parent="DrawerHost/Drawer/VBox/Quotes" instance=ExtResource("qrow")]
 layout_mode = 2
 box = 4
+
+[node name="AsksHead" type="MarginContainer" parent="DrawerHost/Drawer/VBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 6
+
+[node name="HBox" type="HBoxContainer" parent="DrawerHost/Drawer/VBox/AsksHead"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="DrawerHost/Drawer/VBox/AsksHead/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"SilkBold"
+theme_override_colors/font_color = Color(0.9608, 0.7725, 0.0941, 1)
+theme_override_font_sizes/font_size = 11
+text = "OPEN ASKS"
+
+[node name="AskSum" type="Label" parent="DrawerHost/Drawer/VBox/AsksHead/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 8
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
+theme_override_font_sizes/font_size = 8
+
+[node name="AskCols" type="MarginContainer" parent="DrawerHost/Drawer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_right = 6
+
+[node name="HBox" type="HBoxContainer" parent="DrawerHost/Drawer/VBox/AskCols"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TICKER" type="Label" parent="DrawerHost/Drawer/VBox/AskCols/HBox"]
+custom_minimum_size = Vector2(62, 0)
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+theme_override_font_sizes/font_size = 7
+text = "TICKER"
+
+[node name="QTY" type="Label" parent="DrawerHost/Drawer/VBox/AskCols/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+theme_override_font_sizes/font_size = 7
+text = "QTY @ PRICE"
+
+[node name="VALUE" type="Label" parent="DrawerHost/Drawer/VBox/AskCols/HBox"]
+custom_minimum_size = Vector2(54, 0)
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+theme_override_font_sizes/font_size = 7
+text = "VALUE"
+
+[node name="STATUS" type="Label" parent="DrawerHost/Drawer/VBox/AskCols/HBox"]
+custom_minimum_size = Vector2(98, 0)
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+theme_override_font_sizes/font_size = 7
+text = "STATUS"
+
+[node name="AskScroll" type="ScrollContainer" parent="DrawerHost/Drawer/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Asks" type="VBoxContainer" parent="DrawerHost/Drawer/VBox/AskScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="NoAsks" type="Label" parent="DrawerHost/Drawer/VBox/AskScroll/Asks"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+theme_override_font_sizes/font_size = 13
+text = "No open asks. An ask fills when the market trades at or above its price."
+autowrap_mode = 3
 
 [node name="LogHead" type="MarginContainer" parent="DrawerHost/Drawer/VBox"]
 layout_mode = 2

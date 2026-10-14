@@ -105,7 +105,7 @@ func _refresh() -> void:
 	for l: Label in [%Label, %Cost]:
 		Defs.tint(l, &"font_color", Defs.GOLD if can else Defs.FAINT)
 	Fx.pulse(%Buy, can)
-	theme_type_variation = &"CardHover" if _hover else &"CardAfford" if can or Game.machine_upgrades_affordable(index) else &"Card"
+	theme_type_variation = &"CardHover" if _hover else &"CardAfford" if can else &"Card"
 
 
 func _tag(tag: PanelContainer, owned: bool, on: bool) -> void:

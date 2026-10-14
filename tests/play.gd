@@ -42,12 +42,13 @@ func _initialize() -> void:
 	assert(game.inv[0] + game.inv[1] > 0)
 	await create_timer(0.4).timeout
 	root.get_texture().get_image().save_png(OS.get_cmdline_user_args()[0])
-	# Sell all via the button, then buy an arm if affordable.
+	# Ask all via the button: the boxes go on the book.
 	game.select(0 if game.inv[0] > 0 else 1)
+	for k in 3: await process_frame  # ASK buttons stretch: ALL moves once 10 / 50% hide
 	var sell_all: Button = main.find_child("SellAll", true, false)
 	await _click(sell_all.get_global_rect().get_center())
-	print("money after sell: ", game.money, " trades: ", game.trades.size())
-	assert(game.trades.size() == 1)
+	print("open asks: ", game.orders.size(), " fills: ", game.trades.size())
+	assert(game.orders.size() + game.trades.size() == 1)  # an ask at 0% may fill at once
 	assert(main.get_node("Layout/Header").size.y == 64.0)
 	# Buy an arm, hover its BUY button for the tooltip.
 	game.money = 100.0
@@ -67,8 +68,16 @@ func _initialize() -> void:
 	assert(main.get_node("%Modals").visible)
 	await _click(Vector2(20, 400))
 	assert(not main.get_node("%Modals").visible)
+	# SKILL TREE tab opens the tree; clicking a node buys it; the close button shuts it.
+	game.money = 1000.0
+	await _click(main.find_child("TreeTab", true, false).get_global_rect().get_center())
+	var canvas: Control = main.find_child("Canvas", true, false)
+	assert(main.get_node("%SkillTree").visible)
+	await _click(canvas.get_global_transform() * canvas.pos(Defs.SKM.sweep))
+	assert(game.sk_own("sweep") == 1 and canvas.focus == "sweep")
+	await _click(main.find_child("SkillTree", true, false).get_node("%Close").get_global_rect().get_center())
+	assert(not main.get_node("%Modals").visible)
 	# Sweeper: 12 resting boxes, one pass pushes 8 off and credits them only off the far edge.
-	game.up["sweep"] = true
 	panel._drops.clear()
 	for k in 12:
 		panel._drops.append({x = 20.0 + k * 18.0, y = 300.0, s = 18.0, vx = 0.0, vy = 0.0, rot = 0.0, vr = 0.0, rest = true, c = 0, m = 1})

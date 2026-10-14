@@ -18,31 +18,127 @@ const GENS := [
 	{id = "fuse", name = "Teal Fuser", cost = 2500.0, inputs = {2: 3, 1: 4}, out = 3, cyc = 8.0},
 	{id = "forge", name = "Violet Forge", cost = 15000.0, inputs = {3: 3, 2: 2}, out = 4, cyc = 12.0},
 ]
-## General upgrades. `desc` is formatted with the entry's own fields (Defs.desc), so the text
-## always matches the numbers. Requirements: `req_up` (another upgrade) or `req_gen` x `req_n` owned.
-const UPS := [
-	{id = "heavy", tier = 0, name = "Heavy Press", cost = 40.0, add = 1, desc = "+{add} box per press.", req_t = ""},
-	{id = "sweep", tier = 0, name = "Floor Sweeper", cost = 120.0, every = 1.5, carry = 8, req_gen = 0, req_n = 1,
-		desc = "Drives across the press floor every {every}s, pushing up to {carry} boxes off the edge.", req_t = "OWN 1 ARM"},
-	{id = "heavy2", tier = 0, name = "Hydraulic Press", cost = 450.0, add = 2, req_up = "heavy", desc = "+{add} more boxes per press.", req_t = "HEAVY PRESS"},
-	{id = "overdrive", tier = 0, name = "Overdrive", cost = 250.0, min = 5, step_pct = 2, cap_pct = 40,
-		desc = "At combo {min}+, machines make +{step_pct}% per combo step (max +{cap_pct}%).", req_t = ""},
-	{id = "overtime", tier = 0, name = "Overtime", cost = 800.0, min = 25, mul = 2, req_up = "overdrive",
-		desc = "At combo {min}+, machine output is ×{mul} on top of Overdrive.", req_t = "OVERDRIVE"},
-	{id = "overdrive2", tier = 0, name = "Turbo Overdrive", cost = 1500.0, cap_pct = 100, req_up = "overdrive",
-		desc = "Overdrive's bonus caps at +{cap_pct}% instead.", req_t = "OVERDRIVE"},
-	{id = "broker", tier = 1, name = "Broker Bot", cost = 500.0, every = 5.0, req_gen = 1, req_n = 1,
-		desc = "Every {every}s, sells surplus of any box trading above its average.", req_t = "OWN 1 STACKER"},
-	{id = "insider", tier = 1, name = "Market Maker", cost = 1500.0, cut_pct = 50, req_gen = 1, req_n = 5,
-		desc = "Your own sales move the price {cut_pct}% less.", req_t = "OWN 5 STACKERS"},
+## Skill tree (design_ref/skill_tree.md, v8 handoff). Node: `br` branch, `k` slot shape (large /
+## sharp / round), grid `c`,`r`, `par` parents (ALL needed), `d` description formatted with the stage's
+## `e`, `fl` flavour, `st` stages. Stage: `n` name, `c` cost, `e` effect values, `g` [tier, count]
+## machines needed (optional), `need` [node id, stages] owned elsewhere in the tree (optional), `fl`
+## stage flavour (optional). Resource nodes (`tier`) come from TIER: per colour, Chute -> Speed ->
+## Bulk discount and Hopper -> Yield -> Rated Capacity, which gates Speed / Yield past MU_MAX.
+const SK_GLOBAL := [
+	{id = "press", br = "centre", k = "large", c = 2, r = 4, par = [], d = "The press. You slam it.",
+		fl = "The only machine in the building that still needs you.", st = [{n = "Box Press", c = 0.0, e = {}}]},
+	{id = "heavy", br = "press", k = "round", c = 1, r = 2, par = ["press"], d = "+{add} boxes per press.",
+		fl = "Two boxes per slam. Twice the conviction.", st = [
+		{n = "Heavy Press", c = 40.0, e = {add = 1}},
+		{n = "Hydraulic Press", c = 450.0, e = {add = 2}, fl = "Now with fluid. Don't ask which fluid."},
+		{n = "Industrial Press", c = 4000.0, e = {add = 3}, g = [2, 1], fl = "Classified as heavy industry. Weighs about the same as before."}]},
+	{id = "sweep", br = "press", k = "sharp", c = 2, r = 2, par = ["press"],
+		d = "Drives across the press floor every {every}s, pushing up to {carry} boxes off the edge.",
+		fl = "Pushes boxes off the edge. Legal calls it \"logistics.\"", st = [{n = "Floor Sweeper", c = 120.0, e = {every = 1.5, carry = 8}}]},
+	{id = "die", br = "press", k = "round", c = 2, r = 0, par = ["sweep"], d = "Drops up to {reach} grade{s} behind your newest are worth ×10 per grade.",
+		fl = "Stamps old grades in bulk. QC signs off without looking, as is tradition.", st = [
+		{n = "Die · Red", c = 120.0, e = {reach = 1, s = ""}, g = [1, 1]},
+		{n = "Die · Amber", c = 600.0, e = {reach = 2, s = "s"}, g = [2, 1]},
+		{n = "Die · Teal", c = 5000.0, e = {reach = 3, s = "s"}, g = [3, 1]},
+		{n = "Die · Violet", c = 30000.0, e = {reach = 4, s = "s"}, g = [4, 1]}]},
+	{id = "bell", br = "combo", k = "sharp", c = 3, r = 6, par = ["press"], d = "Slams up to {window}s apart keep the combo going.",
+		fl = "Rings whenever you keep up. Has never rung for anyone else.", st = [{n = "Shift Bell", c = 150.0, e = {window = 0.9}}]},
+	{id = "overdrive", br = "combo", k = "round", c = 4, r = 6, par = ["bell", "arm_in"],
+		d = "At combo {min}+, machines make +{step}% per combo step (max +{cap}%).",
+		fl = "The machines work harder when they hear you working. Nobody told them you're faking it.", st = [
+		{n = "Overdrive", c = 250.0, e = {min = 5, step = 2, cap = 40}},
+		{n = "Turbo Overdrive", c = 1500.0, e = {min = 5, step = 2, cap = 100}, fl = "Voids the warranty, the lease and one minor treaty."}]},
+	{id = "overtime", br = "combo", k = "round", c = 3, r = 8, par = ["bell"], d = "At combo {min}+, machine output is ×{mul} on top of Overdrive.",
+		fl = "Unpaid, obviously. The machines get time and a half.", st = [
+		{n = "Overtime", c = 800.0, e = {min = 25, mul = 2}, g = [1, 3]},
+		{n = "Double Shift", c = 9000.0, e = {min = 40, mul = 3}, g = [3, 1], fl = "Second shift starts before the first one ends. HR calls this \"synergy.\""}]},
+	{id = "broker", br = "market", k = "sharp", c = 1, r = 6, par = ["press"], d = "Every {every}s, sells surplus of any box trading above its average.",
+		fl = "Sells high on day one. Already beats the analysts.", st = [{n = "Broker Bot", c = 500.0, e = {every = 5.0}, g = [1, 1]}]},
+	{id = "insider", br = "market", k = "round", c = 0, r = 8, par = ["broker"], d = "Your own sales move the price {cut}% less.",
+		fl = "Your sales no longer crash the market. Its feelings are another matter.", st = [
+		{n = "Market Maker", c = 1500.0, e = {cut = 50}, g = [1, 5]},
+		{n = "Market Whisperer", c = 12000.0, e = {cut = 80}, g = [3, 1], fl = "The market now checks with you before it has feelings."}]},
+	{id = "desk", br = "market", k = "round", c = 1, r = 8, par = ["broker"], d = "Broker Bot trades every {every}s.",
+		fl = "The bot asked for a desk. It has no legs. It got the desk.", st = [
+		{n = "Trading Desk", c = 1200.0, e = {every = 3.0}},
+		{n = "Corner Office", c = 8000.0, e = {every = 1.5}, g = [2, 1], fl = "Window view of the market. The market is also a window."}]},
 ]
+## Per machine tier: [chute, flavour, hopper, flavour, discount, flavour, capacity, flavour].
+const TIER := [
+	["Output Chute", "A hole in the floor, formally recognised as infrastructure.", "Self-Start", "The Arm no longer waits for you. It never really did.",
+		"Bulk Procurement", "Arms now arrive in boxes. The boxes are grey. Nobody comments.", "Rated Capacity", "Re-rated by an inspector who was also, technically, a Press Arm."],
+	["Stacker Chute", "Reds leave the Stacker on their own now. They've earned it.", "Stacker Hopper", "Greys now arrive by conveyor. Your hands have been promoted to amber.",
+		"Stacker Bulk Deal", "The more Stackers you buy, the less each one respects you.", "Red Certification", "Every red now certified as at least three greys. Audit pending."],
+	["Laminator Chute", "Ambers exit single file. The Laminator insists.", "Laminator Hopper", "Facilities has asked it to stop laminating the hopper.",
+		"Amber Futures", "Laminators pre-ordered at today's prices. Today is very confident.", "Gold Standard", "Amber is now officially worth what amber is worth."],
+	["Fuser Chute", "Teals leave with a handshake. The Fuser insists on handshakes.", "Fuser Hopper", "Took over your inputs too. Sent a lovely card.",
+		"Series A", "Investors fund more Fusers. Nobody has asked what a Teal is for.", "Hypergrowth", "Output is up and to the right. Mostly to the right."],
+	["Forge Chute", "Violets come out on their own. Nobody is sure they went in.", "Forge Hopper", "The last input you will ever not touch.",
+		"Purple Hands Discount", "Holders sold you Forges at a loss. They call it \"conviction.\"", "Unrated Capacity", "The inspector declined to rate it, then declined to discuss it."],
+]
+## Resource node costs are multiples of the tier's machine cost.
+const SK_TIER_COST := {out = 2.5, inn = 2.5, disc = [5.0, 20.0], cap = [6.0, 18.0, 54.0]}
+const SK_DISC_GROWTH := [1.13, 1.11]
+const BRANCH := {centre = ["CENTRE", Color("#f5c518")], press = ["PRESS", Color("#f5c518")],
+	combo = ["COMBO", Color("#e2702a")], market = ["MARKET", Color("#7bc96f")]}
+## Every node, global then per tier, built once from SK_GLOBAL and TIER.
+static var SK: Array = _build_sk()
+static var SKM: Dictionary = _index_sk()
+
+
+static func _build_sk() -> Array:
+	var out := SK_GLOBAL.duplicate(true)
+	for t in GENS.size():
+		var g: Dictionary = GENS[t]
+		var tx: Array = TIER[t]
+		var m: float = g.cost
+		var c0 := 3 + 3 * t
+		var cost := SK_TIER_COST
+		out.append({id = g.id + "_out", tier = t, br = "res", k = "sharp", c = c0, r = 4,
+			par = [GENS[t - 1].id + "_in" if t else "press"], d = g.name + " output goes to the warehouse automatically.",
+			fl = tx[1], st = [{n = tx[0], c = cost.out * m, e = {}, g = [t, 1]}]})
+		out.append({id = g.id + "_in", tier = t, br = "res", k = "sharp", c = c0 + 1, r = 4, par = [g.id + "_out"],
+			d = g.name + " pulls its inputs from the warehouse automatically." if t else "The Press Arm starts every cycle on its own.",
+			fl = tx[3], st = [{n = tx[2], c = cost.inn * m, e = {}}]})
+		var spd := []
+		var yld := []
+		for k in MU_STAGES:
+			var gate := {need = [g.id + "_cap", k + 1 - MU_MAX]} if k >= MU_MAX else {}
+			spd.append({n = "Speed " + ROMAN[k], c = m * MU_COST.spd.mul * pow(MU_COST.spd.growth, k),
+				e = {pct = roundi(pow(SPD_STEP, k + 1) * 100.0)}}.merged(gate))
+			yld.append({n = "Yield " + ROMAN[k], c = m * MU_COST.yld.mul * pow(MU_COST.yld.growth, k),
+				e = {n = 1 + YLD_STEP * (k + 1)}}.merged(gate))
+		out.append({id = g.id + "_spd", tier = t, br = "res", k = "round", c = c0, r = 2, par = [g.id + "_out"],
+			d = g.name + " cycles in {pct}% of the base time.", fl = MU_FLAVOUR.spd, st = spd})
+		out.append({id = g.id + "_yld", tier = t, br = "res", k = "round", c = c0 + 1, r = 2, par = [g.id + "_in"],
+			d = g.name + " makes {n} boxes per batch.", fl = MU_FLAVOUR.yld, st = yld})
+		out.append({id = g.id + "_disc", tier = t, br = "res", k = "round", c = c0, r = 0, par = [g.id + "_spd"],
+			d = g.name + " price grows ×{growth} per copy instead of ×%s." % GEN_GROWTH, fl = tx[5],
+			st = [{n = tx[4], c = cost.disc[0] * m, e = {growth = SK_DISC_GROWTH[0]}}, {n = tx[4] + " II", c = cost.disc[1] * m, e = {growth = SK_DISC_GROWTH[1]}}]})
+		var caps := []
+		for j in 3:
+			caps.append({n = tx[6] + ["", " II", " III"][j], c = cost.cap[j] * m, e = {cap = MU_MAX + 1 + j}})
+		out.append({id = g.id + "_cap", tier = t, br = "res", k = "round", c = c0 + 1, r = 0, par = [g.id + "_yld"],
+			d = g.name + " Speed and Yield cap at {cap} levels.", fl = tx[7], st = caps})
+	return out
+
+
+static func _index_sk() -> Dictionary:
+	var d := {}
+	for nd: Dictionary in SK:
+		d[nd.id] = nd
+	return d
 
 # Economy tuning. Every balance number the game logic uses lives here.
 const START_OWN := [1, 0, 0, 0, 0]  # every run starts with one Press Arm
 const GEN_GROWTH := 1.15  # machine price x this per one already owned
-## Machine upgrade price = machine cost x `mul` x `growth`^level (spd / yld); auto toggles are flat.
-const MU_COST := {spd = {mul = 1.5, growth = 1.8}, yld = {mul = 3.0, growth = 2.2}, auto = 2.5}
-const MU_MAX := 5
+## Speed / Yield stage k (from 0) costs machine cost x `mul` x `growth`^k.
+const MU_COST := {spd = {mul = 1.5, growth = 1.8}, yld = {mul = 3.0, growth = 2.2}}
+const MU_MAX := 5  # speed / yield stages before Rated Capacity
+const MU_STAGES := 8  # speed / yield stages with every Rated Capacity stage
+const MU_FLAVOUR := {spd = "Faster. Nobody asked the machine whether it wanted to be faster.",
+	yld = "More boxes out of the same boxes. Accounting has stopped asking how."}
+const ROMAN := ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"]
 const SPD_STEP := 0.8  # cycle time x this per speed level
 const YLD_STEP := 1  # boxes added to every batch per yield level
 const RESERVE_CYCLES := 2  # inputs kept back from selling, in machine cycles
@@ -50,9 +146,14 @@ const BUY_MODES_AT := 5  # x10 / MAX buy modes appear once any machine count rea
 # Press.
 const BUNDLE := 10  # a drop is worth this many boxes per tier behind the newest colour
 const PRESS_ODDS := 3.0  # each older colour is this much likelier to drop than the next one up
-const COMBO_WINDOW := 0.6  # slams closer than this (s) keep the combo alive
+const COMBO_WINDOW := 0.6  # slams closer than this (s) keep the combo alive (Shift Bell raises it)
+const BROKER_EVERY := 5.0  # Broker Bot interval before the Trading Desk
 # Market.
 const MAX_IMPACT := 0.3  # one sale moves the price at most this much
+const QUICK_SELL := 0.5  # QUICK SELL pays this share of the market fill value
+const MAX_ORDERS := 12  # open asks on the book at once
+const ASK_PCT := [-10, 30]  # ask price offset range vs last, in whole percent
+const FILL_NEAR := 0.5  # an ask within this % of last shows as FILLING
 const CANDLE_S := 5.0
 const N_CANDLES := 48
 ## Price walk: pulled toward a fair price that swings ±`swing` around base, plus noise.
@@ -85,7 +186,6 @@ const TITLES := {
 	sell1 = "Junior Box Associate",
 	vat = "Amber Specialist",
 	kiln = "Director of Teal",
-	broker = "VP of Box Liquidity",
 	fuse = "Owner & Chief Box Officer",
 	forge = "Last Human on the Floor",
 	opened = "Pending",
@@ -159,21 +259,13 @@ const ENDING := {
 	removed = "[This headline has been removed at the request of the Global Box Standard]",
 	card = "End of demo. Follow to find out what's inside.",
 }
-## Keyed by machine id, upgrade id, or machine-upgrade key (ain / aout).
+## Keyed by machine id or machine-upgrade key (ain / aout). Tree flavour lives in SK.
 const FLAVOUR := {
 	arm = "Was here before you. Will be here after you.",
 	vat = "Stacks three greys until they become red. Nobody knows when it happens.",
 	kiln = "Layers boxes onto boxes. The boxes were not consulted.",
 	fuse = "Took your job. Was very gracious about it.",
 	forge = "There is nothing left for your hands to make.",
-	heavy = "Two boxes per slam. Twice the conviction.",
-	sweep = "Pushes boxes off the edge. Legal calls it \"logistics.\"",
-	heavy2 = "Now with fluid. Don't ask which fluid.",
-	overdrive = "The machines work harder when they hear you working. Nobody told them you're faking it.",
-	overtime = "Unpaid, obviously. The machines get time and a half.",
-	overdrive2 = "Voids the warranty, the lease and one minor treaty.",
-	broker = "Sells high on day one. Already beats the analysts.",
-	insider = "Your sales no longer crash the market. Its feelings are another matter.",
 	ain = "Feeds the machine. Lately the machine says thank you.",
 	aout = "Empties the machine so it can go back to feeling nothing.",
 }
@@ -220,16 +312,13 @@ static func tint(c: Control, name: StringName, col: Color) -> void:
 static func inputs(i: int) -> Dictionary:
 	return MYSTERY_INPUTS if i == MYSTERY else GENS[i].inputs
 
-## Upgrade `id`'s entry in UPS.
-static func up(id: String) -> Dictionary:
-	for u: Dictionary in UPS:
-		if u.id == id:
-			return u
-	return {}
+## Node `id`'s description for stage `st` (a SK stage dict).
+static func sk_desc(id: String, st: Dictionary) -> String:
+	return SKM[id].d.format(st.e)
 
-## An upgrade's description with its numbers filled in.
-static func desc(u: Dictionary) -> String:
-	return u.desc.format(u)
+## Branch colour of a node: its box colour for resource nodes.
+static func sk_color(nd: Dictionary) -> Color:
+	return BOXES[nd.tier].color if nd.has("tier") else BRANCH[nd.br][1]
 
 ## "2 RED + 3 GRY" for recipe `i`'s inputs.
 static func recipe(i: int) -> String:

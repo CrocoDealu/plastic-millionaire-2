@@ -1,0 +1,78 @@
+[gd_scene format=3]
+
+[sub_resource type="StyleBoxFlat" id="x"]
+bg_color = Color(0.1765, 0.1765, 0.1882, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="x_hover"]
+bg_color = Color(0.2275, 0.102, 0.102, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="AskRow" type="PanelContainer"]
+theme_type_variation = &"QuoteRow"
+
+[node name="HBox" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Tk" type="HBoxContainer" parent="HBox"]
+custom_minimum_size = Vector2(62, 0)
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Chip" type="ColorRect" parent="HBox/Tk"]
+custom_minimum_size = Vector2(9, 9)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="Name" type="Label" parent="HBox/Tk"]
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_font_sizes/font_size = 9
+text = "GRY"
+
+[node name="Desc" type="Label" parent="HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.9255, 0.9098, 0.8745, 1)
+theme_override_font_sizes/font_size = 9
+text = "1 @ 1.00"
+clip_text = true
+
+[node name="Value" type="Label" parent="HBox"]
+custom_minimum_size = Vector2(54, 0)
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(1, 0.8196, 0.4, 1)
+theme_override_font_sizes/font_size = 9
+text = "$1.00"
+
+[node name="Status" type="Label" parent="HBox"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
+theme_override_font_sizes/font_size = 8
+text = "+0.0% AWAY"
+
+[node name="Cancel" type="Button" parent="HBox"]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 0.6039, 0.5412, 1)
+theme_override_colors/font_hover_color = Color(1, 0.6039, 0.5412, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.6039, 0.5412, 1)
+theme_override_font_sizes/font_size = 9
+theme_override_styles/normal = SubResource("x")
+theme_override_styles/hover = SubResource("x_hover")
+theme_override_styles/pressed = SubResource("x_hover")
+theme_override_styles/focus = SubResource("x")
+text = "×"

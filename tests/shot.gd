@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Renders main.tscn and saves a PNG: godot -s res://tests/shot.gd -- out.png [seconds] [setup]
-## setup: "fresh" (default), "mid" (some machines + market open), "modal", "settings", "quotes", "upgrades", "inbox",
+## setup: "fresh" (default), "mid" (some machines + market open), "modal", "settings", "quotes", "tree", "inbox",
 ## "mystery" (Forge owned: the OPEN ??? button), "end" (box opened, end card up).
 
 func _initialize() -> void:
@@ -19,8 +19,7 @@ func _initialize() -> void:
 		game.money = 5000.0
 		for i in 3: game.buy_gen(i)
 		for k in 4: game.buy_gen(0)
-		game.buy_mu(0, "ain"); game.buy_mu(0, "aout")
-		game.buy_up("heavy"); game.buy_up("sweep")
+		for id in ["arm_out", "arm_in", "heavy", "sweep"]: game.buy_sk(id)
 		game.inv.assign([140, 23, 4, 0, 0])
 		game.sel = 1
 		game.money = 812.4
@@ -36,8 +35,14 @@ func _initialize() -> void:
 	if setup == "modal": main.open_machine(1)
 	if setup == "settings": main.open_settings()
 	if setup == "end": main.open_end()
-	if setup == "quotes": game.set_pref("quotes", true)
-	if setup == "upgrades": game.set_pref("rtab", "upgrades"); game.set_pref("chart", "line")
+	if setup == "quotes":
+		game.set_pref("quotes", true)
+		game.ask_pct = 6
+		game.place_ask("10")
+		game.sel = 0
+		game.ask_pct = 3
+		game.place_ask("half")
+	if setup == "tree": main.open_tree()
 	if setup == "inbox": game.set_pref("rtab", "inbox")
 	await create_timer(secs).timeout
 	await process_frame

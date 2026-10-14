@@ -3,10 +3,20 @@
 [ext_resource type="Script" path="res://ui/machines_panel.gd" id="1"]
 [ext_resource type="Script" path="res://ui/content_button.gd" id="cb"]
 [ext_resource type="PackedScene" path="res://ui/machine_card.tscn" id="card"]
-[ext_resource type="PackedScene" path="res://ui/upgrade_card.tscn" id="up"]
 [ext_resource type="Script" path="res://ui/box_chip.gd" id="chip"]
 [ext_resource type="Script" path="res://ui/dashed_panel.gd" id="dash"]
 [ext_resource type="PackedScene" path="res://ui/mail_row.tscn" id="mail"]
+
+[sub_resource type="StyleBoxFlat" id="badge"]
+content_margin_left = 5.0
+content_margin_top = 2.0
+content_margin_right = 5.0
+content_margin_bottom = 2.0
+bg_color = Color(0.8863, 0.4392, 0.1647, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
 
 [node name="MachinesPanel" type="PanelContainer"]
 custom_minimum_size = Vector2(316, 0)
@@ -42,7 +52,7 @@ theme_override_font_sizes/font_size = 10
 text = "MACHINES"
 
 
-[node name="UpgradesTab" type="Button" parent="VBox/Tabs"]
+[node name="TreeTab" type="Button" parent="VBox/Tabs"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -50,17 +60,29 @@ mouse_default_cursor_shape = 2
 theme_type_variation = &"BtnGrey"
 script = ExtResource("cb")
 
-[node name="HBox" type="HBoxContainer" parent="VBox/Tabs/UpgradesTab"]
+[node name="HBox" type="HBoxContainer" parent="VBox/Tabs/TreeTab"]
 layout_mode = 0
 mouse_filter = 2
 alignment = 1
 theme_override_constants/separation = 6
 
-[node name="Label" type="Label" parent="VBox/Tabs/UpgradesTab/HBox"]
+[node name="Label" type="Label" parent="VBox/Tabs/TreeTab/HBox"]
 layout_mode = 2
 theme_type_variation = &"SilkBold"
 theme_override_font_sizes/font_size = 10
-text = "UPGRADES"
+text = "SKILL TREE"
+
+[node name="Badge" type="Label" parent="VBox/Tabs/TreeTab/HBox"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(12, 0)
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.0784, 0.0784, 0.0863, 1)
+theme_override_font_sizes/font_size = 8
+theme_override_styles/normal = SubResource("badge")
+text = "0"
+horizontal_alignment = 1
 
 
 [node name="InboxTab" type="Button" parent="VBox/Tabs"]
@@ -196,38 +218,6 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
 text = "Buy your first Press Arm to reveal the next machine."
 autowrap_mode = 3
-
-[node name="Up0" parent="VBox/Scroll/List" instance=ExtResource("up")]
-layout_mode = 2
-index = 0
-
-[node name="Up1" parent="VBox/Scroll/List" instance=ExtResource("up")]
-layout_mode = 2
-index = 1
-
-[node name="Up2" parent="VBox/Scroll/List" instance=ExtResource("up")]
-layout_mode = 2
-index = 2
-
-[node name="Up3" parent="VBox/Scroll/List" instance=ExtResource("up")]
-layout_mode = 2
-index = 3
-
-[node name="Up4" parent="VBox/Scroll/List" instance=ExtResource("up")]
-layout_mode = 2
-index = 4
-
-[node name="Up5" parent="VBox/Scroll/List" instance=ExtResource("up")]
-layout_mode = 2
-index = 5
-
-[node name="Up6" parent="VBox/Scroll/List" instance=ExtResource("up")]
-layout_mode = 2
-index = 6
-
-[node name="Up7" parent="VBox/Scroll/List" instance=ExtResource("up")]
-layout_mode = 2
-index = 7
 
 [node name="Mail0" parent="VBox/Scroll/List" instance=ExtResource("mail")]
 layout_mode = 2

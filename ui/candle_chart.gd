@@ -1,7 +1,7 @@
 extends Control
 
 ## 48-candle chart for the selected market: gridlines + right price axis, AVG and current-price
-## lines, sale diamonds, candles or a close-price line, and time labels every 12 candles.
+## lines, open ask lines, sale diamonds, candles or a close-price line, and time labels every 12 candles.
 ## Backgrounds come from the StyleBoxes set in market_panel.tscn.
 
 const AXIS_W := 58.0
@@ -27,7 +27,10 @@ func _draw() -> void:
 	draw_style_box(plot_style, plot)
 	draw_style_box(axis_style, axis)
 
+	var asks := Game.orders.filter(func(o): return o.i == i)
 	var hi: float = cs.map(func(c): return c.h).max()
+	for o in asks:
+		hi = maxf(hi, o.px)  # asks above the range stay visible
 	var lo: float = cs.map(func(c): return c.l).min()
 	var pad: float = (hi - lo) * 0.12 if hi > lo else m.p * 0.05
 	hi += pad
@@ -68,6 +71,13 @@ func _draw() -> void:
 		for j in cs.size():
 			pts.append(Vector2((j + 0.5) * slot, y.call(cs[j].c)))
 		draw_polyline(pts, chg_c, 3.0)
+
+	for o in asks:
+		var oy: float = y.call(o.px)
+		var ac := Color(Defs.CAUTION, 0.85)
+		draw_dashed_line(Vector2(0, oy), Vector2(plot.size.x, oy), ac, 2.0, 5.0)
+		var t := "ASK %s @ %s" % [Defs.fmt(o.q), Defs.px(o.px)]
+		_text(Vector2(plot.size.x - 6.0 - _font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x, oy - 15.0), t, Defs.CAUTION)
 
 	var cy: float = y.call(m.p)
 	draw_dashed_line(Vector2(0, cy), Vector2(plot.size.x, cy), chg_c, 2.0, 5.0)

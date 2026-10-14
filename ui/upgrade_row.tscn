@@ -78,36 +78,6 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
 autowrap_mode = 3
 
-[node name="Pips" type="HBoxContainer" parent="HBox/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/separation = 3
-
-[node name="P0" type="ColorRect" parent="HBox/VBox/Pips"]
-custom_minimum_size = Vector2(20, 5)
-layout_mode = 2
-color = Color(0.2275, 0.2275, 0.2392, 1)
-
-[node name="P1" type="ColorRect" parent="HBox/VBox/Pips"]
-custom_minimum_size = Vector2(20, 5)
-layout_mode = 2
-color = Color(0.2275, 0.2275, 0.2392, 1)
-
-[node name="P2" type="ColorRect" parent="HBox/VBox/Pips"]
-custom_minimum_size = Vector2(20, 5)
-layout_mode = 2
-color = Color(0.2275, 0.2275, 0.2392, 1)
-
-[node name="P3" type="ColorRect" parent="HBox/VBox/Pips"]
-custom_minimum_size = Vector2(20, 5)
-layout_mode = 2
-color = Color(0.2275, 0.2275, 0.2392, 1)
-
-[node name="P4" type="ColorRect" parent="HBox/VBox/Pips"]
-custom_minimum_size = Vector2(20, 5)
-layout_mode = 2
-color = Color(0.2275, 0.2275, 0.2392, 1)
-
 [node name="Btn" type="Button" parent="HBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(140, 0)

@@ -1,16 +1,17 @@
 extends PanelContainer
 
-## Right column: MACHINES | UPGRADES | INBOX selector, buy mode, the machine cards with a
-## "??? MACHINE" teaser, the general upgrades list, and received emails (newest first).
+## Right column: MACHINES | SKILL TREE | INBOX selector, buy mode, the machine cards with a
+## "??? MACHINE" teaser, and received emails (newest first). SKILL TREE opens the tree overlay.
 
 signal open_machine(i: int)
+signal open_tree
 
 const MODES := {"X1": "x1", "X10": "x10", "Max": "max"}
 
 
 func _ready() -> void:
 	%MachinesTab.pressed.connect(_set_tab.bind("machines"))
-	%UpgradesTab.pressed.connect(_set_tab.bind("upgrades"))
+	%TreeTab.pressed.connect(func(): Fx.tip_off(); open_tree.emit())
 	%InboxTab.pressed.connect(_set_tab.bind("inbox"))
 	for n: String in MODES:
 		get_node("%" + n).pressed.connect(func(): Game.set_pref("buy_mode", MODES[n]); Sfx.play("tick"))
@@ -26,10 +27,20 @@ func _set_tab(t: String) -> void:
 	Sfx.play("tick")
 
 
+func _process(_delta: float) -> void:
+	if %Badge.visible:
+		%Badge.modulate.a = 1.0 if fmod(Time.get_ticks_msec() / 1000.0, 1.2) < 0.6 else 0.55
+
+
 func _refresh() -> void:
+	if Game.rtab == "upgrades":
+		Game.rtab = "machines"  # pre-tree saves
 	var on_m := Game.rtab == "machines"
 	_tab(%MachinesTab, on_m)
-	_tab(%UpgradesTab, Game.rtab == "upgrades")
+	_tab(%TreeTab, false)
+	var aff := Game.tree_affordable()
+	%Badge.visible = aff > 0
+	%Badge.text = str(aff)
 	_tab(%InboxTab, Game.rtab == "inbox")
 	_refresh_inbox()
 	%ModeRow.visible = on_m

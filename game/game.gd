@@ -1,6 +1,6 @@
 extends Node
 
-## Single source of truth for Box Exchange: money, inventory, machines, upgrades and the
+## Single source of truth for Box Exchange: money, inventory, machines, the skill tree and the
 ## simulated market. UI reads state and calls the action methods; it never writes state.
 
 signal changed
@@ -22,9 +22,11 @@ var money := 0.0
 var inv: Array[int] = [0, 0, 0, 0, 0]
 var own: Array[int] = [0, 0, 0, 0, 0]
 var mx: Array[Dictionary] = []
-var up := {}
+var sk := {}  # skill tree: node id -> stages owned (Defs.SK)
 var market: Array[Dictionary] = []
-var trades: Array[Dictionary] = []
+var trades: Array[Dictionary] = []  # {t, i, q, avg, total, kind: ask | quick | bot}
+var orders: Array[Dictionary] = []  # open asks {id, i, q, px, t}; their boxes are off the warehouse
+var ask_pct := 0
 var total_earned := 0.0
 # Persisted view prefs.
 var sel := 0
@@ -69,9 +71,11 @@ func _fresh() -> void:
 	own.assign(Defs.START_OWN)
 	mx.clear()
 	for i in Defs.GENS.size():
-		mx.append({spd = 0, yld = 0, ain = false, aout = false, in_on = true, out_on = true, run = false, t = 0.0, batch = 0, held = 0, frac = 0.0})
-	up = {}
+		mx.append({ain = false, aout = false, in_on = true, out_on = true, run = false, t = 0.0, batch = 0, held = 0, frac = 0.0})
+	sk = {"press": 1}
 	trades.clear()
+	orders.clear()
+	ask_pct = 0
 	total_earned = 0.0
 	sel = 0
 	chart = "candles"
@@ -104,6 +108,7 @@ func _process(delta: float) -> void:
 	if ms.has("opened") and not ms.has("end") and not _ending_on:
 		_ending()  # also resumes one interrupted by a quit
 	_step_market(now())
+	_fill_orders()
 	_acc += dt
 	var ticked := false
 	while _acc >= ECON_STEP:
@@ -198,51 +203,79 @@ func impact_mul(i: int) -> float:
 
 func ai(i: int) -> bool: return mx[i].ain and mx[i].in_on
 func ao(i: int) -> bool: return mx[i].aout and mx[i].out_on
-func cyc(i: int) -> float: return Defs.GENS[i].cyc * pow(Defs.SPD_STEP, mx[i].spd)
-func mul(i: int) -> int: return 1 + Defs.YLD_STEP * mx[i].yld
+func cyc(i: int) -> float: return Defs.GENS[i].cyc * pow(Defs.SPD_STEP, sk_own(Defs.GENS[i].id + "_spd"))
+func mul(i: int) -> int: return 1 + Defs.YLD_STEP * sk_own(Defs.GENS[i].id + "_yld")
 ## A colour's market opens once you own its machine or first get one into the warehouse.
 func unlocked(i: int) -> bool: return i == 0 or own[i] > 0 or ms.has("got%d" % i)
 func visible_tier(i: int) -> bool: return i == 0 or own[i - 1] > 0
-## Drops per slam.
+## Drops per slam: 1 + every owned Heavy Press stage's `add`.
 func per_press() -> int:
-	return 1 + (Defs.up("heavy").add if up.has("heavy") else 0) + (Defs.up("heavy2").add if up.has("heavy2") else 0)
+	var n := 1
+	for k in sk_own("heavy"):
+		n += Defs.SKM.heavy.st[k].e.add
+	return n
 func market_open() -> bool: return ms.has("box1") or total_earned > 0.0 or inv[0] > 0
 func modes_on() -> bool: return own.max() >= Defs.BUY_MODES_AT
 
 
-## Current combo, or 0 once the last slam is older than COMBO_WINDOW.
+func combo_window() -> float:
+	return skv("bell", "window", Defs.COMBO_WINDOW)
+
+
+## Current combo, or 0 once the last slam is older than the combo window.
 func combo_live() -> int:
-	return combo if now() - _last_slam < Defs.COMBO_WINDOW else 0
+	return combo if now() - _last_slam < combo_window() else 0
 
 
-## Machine output multiplier from the press upgrades; 1.0 unless the combo is alive.
+## Machine output multiplier from Overdrive / Overtime; 1.0 unless the combo is alive.
 func press_boost() -> float:
 	var c := combo_live()
-	var od := Defs.up("overdrive")
-	if c < od.min or not up.has("overdrive"):
-		return 1.0
-	var cap: float = Defs.up("overdrive2" if up.has("overdrive2") else "overdrive").cap_pct
-	var b := minf(od.step_pct * c, cap) / 100.0
-	var ot := Defs.up("overtime")
-	return (1.0 + b) * (float(ot.mul) if up.has("overtime") and c >= ot.min else 1.0)
+	var m := 1.0
+	if sk_own("overdrive") and c >= skv("overdrive", "min", 0):
+		m *= 1.0 + minf(skv("overdrive", "step", 0) * c, skv("overdrive", "cap", 0)) / 100.0
+	if sk_own("overtime") and c >= skv("overtime", "min", 0):
+		m *= skv("overtime", "mul", 1)
+	return m
 
 
-func mu_cost(i: int, k: String) -> float:
-	var b: float = Defs.GENS[i].cost
-	match k:
-		"spd", "yld": return b * Defs.MU_COST[k].mul * pow(Defs.MU_COST[k].growth, mx[i][k])
-	return b * Defs.MU_COST.auto
+# ---------------------------------------------------------------- skill tree
+
+func sk_own(id: String) -> int:
+	return sk.get(id, 0)
 
 
-func mu_maxed(i: int, k: String) -> bool:
-	return mx[i][k] >= Defs.MU_MAX if k == "spd" or k == "yld" else bool(mx[i][k])
+## Effect `key` of node `id`'s highest owned stage, or `def` when none is owned.
+func skv(id: String, key: String, def: Variant) -> Variant:
+	var k := sk_own(id)
+	return Defs.SKM[id].st[k - 1].e[key] if k else def
 
 
-func up_req_met(id: String) -> bool:
-	var u := Defs.up(id)
-	if u.has("req_up"):
-		return up.has(u.req_up)
-	return own[u.req_gen] >= u.req_n if u.has("req_gen") else true
+## Machine price growth per copy owned (Bulk Procurement and friends lower it).
+func gro(i: int) -> float:
+	return skv(Defs.GENS[i].id + "_disc", "growth", Defs.GEN_GROWTH)
+
+
+## Everything the tree UI needs about node `id`: `own` stages of `n`, `done`, next stage `nx`,
+## current stage `cur`, missing parents `mp`, next-stage gate met `g_ok`, unlockable `ok`,
+## affordable `can`, `hidden` (a resource node whose tier isn't revealed yet), and `shown`: the
+## tree only reveals owned nodes and the ones one step past them (any parent owned).
+func node_info(id: String) -> Dictionary:
+	var nd: Dictionary = Defs.SKM[id]
+	var k := sk_own(id)
+	var n: int = nd.st.size()
+	var done := k >= n
+	var nx: Dictionary = {} if done else nd.st[k]
+	var mp: Array = nd.par.filter(func(p): return not sk.has(p))
+	var g_ok: bool = done or ((not nx.has("g") or own[nx.g[0]] >= nx.g[1]) and (not nx.has("need") or sk_own(nx.need[0]) >= nx.need[1]))
+	var ok: bool = not done and mp.is_empty() and g_ok
+	return {nd = nd, own = k, n = n, done = done, nx = nx, cur = nd.st[k - 1] if k else {}, mp = mp, g_ok = g_ok,
+		ok = ok, can = ok and money >= nx.c, hidden = nd.has("tier") and k == 0 and not visible_tier(nd.tier),
+		shown = k > 0 or nd.par.any(func(p): return sk.has(p))}
+
+
+## Nodes you could buy right now (the SKILL TREE tab badge).
+func tree_affordable() -> int:
+	return Defs.SK.filter(func(nd): var f := node_info(nd.id); return f.can and not f.hidden).size()
 
 
 func reserve_of(i: int) -> int:
@@ -270,13 +303,13 @@ func net_rates() -> Array[float]:
 
 
 func gen_cost(i: int, q: int) -> float:
-	var g := Defs.GEN_GROWTH
+	var g := gro(i)
 	var c: float = Defs.GENS[i].cost * pow(g, own[i])
 	return c * (pow(g, q) - 1.0) / (g - 1.0)
 
 
 func max_afford(i: int) -> int:
-	var g := Defs.GEN_GROWTH
+	var g := gro(i)
 	var c: float = Defs.GENS[i].cost * pow(g, own[i])
 	return maxi(0, floori(log(money * (g - 1.0) / c + 1.0) / log(g)))
 
@@ -307,11 +340,32 @@ func change_pct(i: int) -> float:
 	return (market[i].p - o) / o * 100.0
 
 
+## Price drop from selling `q` of box `i`.
+func impact(i: int, q: int) -> float:
+	var cut: float = 1.0 - skv("insider", "cut", 0) / 100.0
+	return minf(Defs.MAX_IMPACT, q / Defs.BOXES[i].depth) * cut * impact_mul(i)
+
+
+## Instant market sale: the fill walks the price down, so the average is halfway.
 func sell_quote(i: int, q: int) -> Dictionary:
-	var cut: float = 1.0 - Defs.up("insider").cut_pct / 100.0 if up.has("insider") else 1.0
-	var imp := minf(Defs.MAX_IMPACT, q / Defs.BOXES[i].depth) * cut * impact_mul(i)
+	var imp := impact(i, q)
 	var avg: float = market[i].p * (1.0 - imp / 2.0)
 	return {imp = imp, avg = avg, total = q * avg}
+
+
+## Limit price for a new ask on box `i`: last x (1 + ask_pct%), rounded like the tape.
+func ask_price(i: int) -> float:
+	var p: float = market[i].p * (1.0 + ask_pct / 100.0)
+	return snappedf(p, 0.01 if p < 10.0 else 0.1)
+
+
+## Boxes of `i` sitting in open asks.
+func on_book(i: int) -> int:
+	var n := 0
+	for o in orders:
+		if o.i == i:
+			n += o.q
+	return n
 
 
 func sell_qty(mode: String, i: int) -> int:
@@ -323,11 +377,12 @@ func sell_qty(mode: String, i: int) -> int:
 	return a
 
 
+## Full market fill value of every sellable box (QUICK SELL pays Defs.QUICK_SELL of this).
 func sell_value() -> float:
 	var v := 0.0
 	for i in Defs.BOXES.size():
-		if unlocked(i):
-			v += sellable(i) * market[i].p
+		if unlocked(i) and sellable(i) > 0:
+			v += sell_quote(i, sellable(i)).total
 	return v
 
 
@@ -338,36 +393,18 @@ func warehouse_value() -> float:
 	return v
 
 
-func up_visible(u: Dictionary) -> bool:
-	return visible_tier(u.tier)
-
-
 ## Everything purchasable right now (ignoring money): [{name, cost}], cheapest first.
 func shop_items() -> Array[Dictionary]:
 	var items: Array[Dictionary] = []
 	for i in Defs.GENS.size():
 		if visible_tier(i):
 			items.append({name = Defs.GENS[i].name, cost = gen_cost(i, 1)})
-	for u: Dictionary in Defs.UPS:
-		if not up.has(u.id) and up_visible(u) and up_req_met(u.id):
-			items.append({name = u.name, cost = u.cost})
-	for i in Defs.GENS.size():
-		if own[i] > 0:
-			for k in ["spd", "yld", "ain", "aout"]:
-				if not mu_maxed(i, k):
-					items.append({name = Defs.GENS[i].name, cost = mu_cost(i, k)})
+	for nd: Dictionary in Defs.SK:
+		var f := node_info(nd.id)
+		if f.ok and not f.hidden:
+			items.append({name = f.nx.n, cost = f.nx.c})
 	items.sort_custom(func(a, b): return a.cost < b.cost)
 	return items
-
-
-func machine_upgrades_affordable(i: int) -> int:
-	if own[i] == 0:
-		return 0
-	var n := 0
-	for k in ["spd", "yld", "ain", "aout"]:
-		if not mu_maxed(i, k) and money >= mu_cost(i, k):
-			n += 1
-	return n
 
 
 # ---------------------------------------------------------------- simulation
@@ -454,9 +491,9 @@ func _econ(dt: float) -> void:
 			_land(out, q)
 		else:
 			x.held += q
-	if up.has("broker"):
+	if sk_own("broker"):
 		_broker_t += dt
-		if _broker_t >= Defs.up("broker").every:
+		if _broker_t >= skv("desk", "every", Defs.BROKER_EVERY):
 			_broker_t = 0.0
 			for i in Defs.BOXES.size():
 				var q := sellable(i)
@@ -511,22 +548,39 @@ func _start_gen(i: int) -> bool:
 	return true
 
 
-func _do_sell(i: int, q: int, auto: bool) -> float:
+## Instant sale from the warehouse at the market (Broker Bot, QUICK SELL at `f` of the fill).
+func _do_sell(i: int, q: int, auto: bool, f := 1.0) -> float:
 	var quote := sell_quote(i, q)
+	inv[i] -= q
+	_book(i, q, quote.imp, quote.avg * f, "bot" if auto else "quick", auto)
+	return q * quote.avg * f
+
+
+## Asks whose price the market has reached fill whole, at exactly their price.
+func _fill_orders() -> void:
+	for o in orders.duplicate():
+		if market[o.i].p >= o.px:
+			orders.erase(o)
+			_book(o.i, o.q, impact(o.i, o.q), o.px, "ask", false)
+			save()
+			notify_changed()
+
+
+## Pays out a sale of `q` boxes of `i` at `avg` each and moves the price down by `imp`.
+func _book(i: int, q: int, imp: float, avg: float, kind: String, auto: bool) -> void:
 	var m := market[i]
-	m.p *= 1.0 - quote.imp
+	m.p *= 1.0 - imp
 	m.upd = now()
 	m.cur.c = m.p
 	m.cur.l = minf(m.cur.l, m.p)
 	m.cur.sold += q
-	inv[i] -= q
-	money += quote.total
-	total_earned += quote.total
-	trades.push_front({t = now(), i = i, q = q, avg = quote.avg, total = quote.total, auto = auto})
+	var total := q * avg
+	money += total
+	total_earned += total
+	trades.push_front({t = now(), i = i, q = q, avg = avg, total = total, kind = kind})
 	trades.resize(mini(trades.size(), 20))
 	mark("sell1")
-	sold.emit(i, q, quote.total, auto)
-	return quote.total
+	sold.emit(i, q, total, auto)
 
 
 ## Every `changed` listener refreshes its part of the UI (~20ms in total), so state changes are
@@ -609,9 +663,10 @@ func top_colour() -> int:
 	return top
 
 
-## Boxes one press drop is worth: x10 per tier the colour sits behind the newest unlocked one.
+## Boxes one press drop is worth: x10 per tier the colour sits behind the newest unlocked one,
+## up to the Press Die's reach (no Die: 1 box).
 func bundle(i: int) -> int:
-	return int(pow(Defs.BUNDLE, top_colour() - i))
+	return int(pow(Defs.BUNDLE, mini(top_colour() - i, skv("die", "reach", 0))))
 
 
 ## Colour of one press drop: any unlocked colour, weighted 3:1 per tier toward older ones.
@@ -645,7 +700,7 @@ func toggle_arm() -> void:
 ## empty for the ??? slam, which opens the box instead.
 func press() -> Array:
 	var t := now()
-	combo = combo + 1 if t - _last_slam < Defs.COMBO_WINDOW else 1
+	combo = combo + 1 if t - _last_slam < combo_window() else 1
 	_last_slam = t
 	mark("press1")
 	if armed and can_open():
@@ -692,32 +747,22 @@ func buy_gen(i: int) -> bool:
 	return true
 
 
-func buy_up(id: String) -> bool:
-	var u := Defs.up(id)
-	if up.has(id) or not up_req_met(id) or money < u.cost:
+## Buys the next stage of tree node `id`. Chute / Hopper nodes switch on the machine's auto-out / in.
+func buy_sk(id: String) -> bool:
+	var f := node_info(id)
+	if not f.can or f.hidden:
 		return false
-	money -= u.cost
-	up[id] = true
+	money -= f.nx.c
+	sk[id] = f.own + 1
 	mark(id)
-	toast.emit(u.name.to_upper(), Defs.desc(u), false)
-	save()
-	notify_changed()
-	return true
-
-
-func buy_mu(i: int, k: String) -> bool:
-	if mu_maxed(i, k):
-		return false
-	var cost := mu_cost(i, k)
-	if own[i] == 0 or money < cost:
-		return false
-	money -= cost
-	if k == "spd" or k == "yld":
-		mx[i][k] += 1
-	else:
-		mx[i][k] = true
-	if k == "ain":
-		mark("auto")
+	var nd: Dictionary = f.nd
+	if nd.has("tier"):
+		if id.ends_with("_in"):
+			mx[nd.tier].ain = true
+			mark("auto")
+		elif id.ends_with("_out"):
+			mx[nd.tier].aout = true
+	toast.emit(f.nx.n.to_upper(), Defs.sk_desc(id, f.nx), false)
 	save()
 	notify_changed()
 	return true
@@ -748,22 +793,42 @@ func toggle_auto(i: int, k: String) -> void:
 	notify_changed()
 
 
-## Sells from the selected market. Returns the total earned (0 if nothing was sellable).
-func sell(mode: String) -> float:
+## Puts `mode` (1 / 10 / half / all) of the selected box's sellable stock on the book at
+## ask_price. Returns the placed order, or {} if nothing was sellable or the book is full.
+func place_ask(mode: String) -> Dictionary:
 	var q := sell_qty(mode, sel)
-	if q <= 0:
-		return 0.0
-	var total := _do_sell(sel, q, false)
+	if q <= 0 or orders.size() >= Defs.MAX_ORDERS:
+		return {}
+	inv[sel] -= q
+	var o := {id = int(orders.reduce(func(a, x): return maxi(a, x.id), 0)) + 1, i = sel, q = q, px = ask_price(sel), t = now()}
+	orders.append(o)
+	save()
 	notify_changed()
-	return total
+	return o
 
 
+func cancel_ask(id: int) -> void:
+	for o in orders:
+		if o.id == id:
+			orders.erase(o)
+			inv[o.i] += o.q
+			save()
+			notify_changed()
+			return
+
+
+func ask_step(d: int) -> void:
+	ask_pct = clampi(ask_pct + d, Defs.ASK_PCT[0], Defs.ASK_PCT[1])
+	notify_changed()
+
+
+## QUICK SELL: every sellable box right now at Defs.QUICK_SELL of its market fill.
 func sell_surplus() -> bool:
 	var any := false
 	for i in Defs.BOXES.size():
 		var q := sellable(i)
 		if unlocked(i) and q > 0:
-			_do_sell(i, q, false)
+			_do_sell(i, q, false, Defs.QUICK_SELL)
 			any = true
 	notify_changed()
 	return any
@@ -792,7 +857,7 @@ func save() -> void:
 	var f := FileAccess.open(save_path, FileAccess.WRITE)
 	if f == null:
 		return
-	f.store_string(JSON.stringify({v = 1, money = money, inv = inv, own = own, up = up, trades = trades,
+	f.store_string(JSON.stringify({v = 1, money = money, inv = inv, own = own, sk = sk, trades = trades, orders = orders, ask_pct = ask_pct,
 		mute = mute, buy_mode = buy_mode, reserve = reserve, play = play, ms = ms, ev = ev, wait_max = wait_max,
 		total_earned = total_earned, sel = sel, chart = chart, quotes = quotes, mx = mx, rtab = rtab, mail_seen = mail_seen}))
 	saved_at = now()
@@ -811,8 +876,20 @@ func load_save() -> void:
 		for key: String in mx[i]:
 			if d.mx[i].has(key):
 				mx[i][key] = type_convert(d.mx[i][key], typeof(mx[i][key]))
-	up = d.get("up", {})
+	sk = {"press": 1}
+	for k: String in d.get("sk", {}):
+		if Defs.SKM.has(k):
+			sk[k] = int(d.sk[k])
+	if not d.has("sk"):
+		_migrate_up(d.get("up", {}))
+	for i in Defs.GENS.size():  # machine-modal Speed / Yield levels became tree stages
+		for k in ["spd", "yld"]:
+			var lvl := int(d.mx[i].get(k, 0))
+			if lvl > sk_own(Defs.GENS[i].id + "_" + k):
+				sk[Defs.GENS[i].id + "_" + k] = lvl
 	trades.assign(d.get("trades", []).map(func(t): t.i = int(t.i); t.q = int(t.q); return t))
+	orders.assign(d.get("orders", []).map(func(o): o.id = int(o.id); o.i = int(o.i); o.q = int(o.q); return o))
+	ask_pct = int(d.get("ask_pct", 0))
 	mute = d.get("mute", false)
 	buy_mode = d.get("buy_mode", "x1")
 	reserve = d.get("reserve", true)
@@ -827,6 +904,23 @@ func load_save() -> void:
 	rtab = d.get("rtab", "machines")
 	mail_seen = int(d.get("mail_seen", 0))
 	saved_at = now()
+
+
+## Pre-tree saves: flat upgrades and bought Auto-In / Auto-Out become tree stages (parents aren't
+## granted; a migrated node keeps its effect but can't buy further stages until they are).
+func _migrate_up(old: Dictionary) -> void:
+	if old.has("heavy") or old.has("heavy2"):
+		sk["heavy"] = 2 if old.has("heavy2") else 1
+	for k in ["sweep", "broker", "insider", "overtime"]:
+		if old.has(k):
+			sk[k] = 1
+	if old.has("overdrive") or old.has("overdrive2"):
+		sk["overdrive"] = 2 if old.has("overdrive2") else 1
+	for i in Defs.GENS.size():
+		if mx[i].aout:
+			sk[Defs.GENS[i].id + "_out"] = 1
+		if mx[i].ain:
+			sk[Defs.GENS[i].id + "_in"] = 1
 
 
 func reset() -> void:
