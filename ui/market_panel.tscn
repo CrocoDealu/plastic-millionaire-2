@@ -8,6 +8,38 @@
 [ext_resource type="PackedScene" path="res://ui/quote_row.tscn" id="qrow"]
 [ext_resource type="Texture2D" path="res://assets/ui/x3/buttons_Orange_ButtonCloseA_Highlighted.png" id="close"]
 
+[sub_resource type="StyleBoxFlat" id="ask_px"]
+bg_color = Color(0.0784, 0.0784, 0.0863, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2275, 0.2275, 0.2392, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+content_margin_left = 6.0
+content_margin_top = 4.0
+content_margin_right = 6.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxFlat" id="ask_px_focus"]
+bg_color = Color(0.0784, 0.0784, 0.0863, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.8196, 0.4, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+content_margin_left = 6.0
+content_margin_top = 4.0
+content_margin_right = 6.0
+content_margin_bottom = 4.0
+
 [sub_resource type="StyleBoxFlat" id="plot"]
 bg_color = Color(0.0784, 0.0784, 0.0863, 1)
 corner_radius_top_left = 6
@@ -281,15 +313,22 @@ theme_override_colors/font_pressed_color = Color(0.9255, 0.9098, 0.8745, 1)
 theme_override_font_sizes/font_size = 11
 text = "−"
 
-[node name="AskPx" type="Label" parent="VBox/SellBar/VBox/Row/Ask"]
+[node name="AskPx" type="LineEdit" parent="VBox/SellBar/VBox/Row/Ask"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(70, 0)
+custom_minimum_size = Vector2(84, 0)
 layout_mode = 2
+size_flags_vertical = 4
+tooltip_text = "Type any ask price. Clear it to follow the last price."
 theme_type_variation = &"SilkBold"
 theme_override_colors/font_color = Color(1, 0.8196, 0.4, 1)
+theme_override_colors/caret_color = Color(1, 0.8196, 0.4, 1)
+theme_override_colors/font_placeholder_color = Color(0.4667, 0.4549, 0.4235, 1)
 theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("ask_px")
+theme_override_styles/focus = SubResource("ask_px_focus")
 text = "$1.00"
-horizontal_alignment = 1
+alignment = 1
+select_all_on_focus = true
 
 [node name="AskUp" type="Button" parent="VBox/SellBar/VBox/Row/Ask"]
 unique_name_in_owner = true

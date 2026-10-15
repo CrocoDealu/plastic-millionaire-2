@@ -26,6 +26,8 @@ func _ready() -> void:
 		Fx.hover_tip(b, "up", _ask_tip.bind(SELL_MODES[n]))
 	%AskDown.pressed.connect(func(): Game.ask_step(-1); Sfx.play("tick"))
 	%AskUp.pressed.connect(func(): Game.ask_step(1); Sfx.play("tick"))
+	%AskPx.text_submitted.connect(func(_t): %AskPx.release_focus())
+	%AskPx.focus_exited.connect(func(): Game.set_ask(%AskPx.text.lstrip("$ ").to_float()); _refresh())
 	Game.changed.connect(_refresh)
 	_refresh()
 
@@ -82,10 +84,11 @@ func _refresh() -> void:
 	Defs.tint(%Tk, &"font_color", b.color)
 	%Sub.text = "%s%s sellable%s" % ["%s kept for machines · " % Defs.fmt(res) if res and Game.reserve else "",
 		Defs.fmt(sellable), " · %s on the book" % Defs.fmt(book) if book else ""]
-	%AskPx.text = "$" + Defs.px(ap)
-	var ask_pct := Game.ask_pct
-	%AskRel.text = "AT LAST PRICE" if ask_pct == 0 else "%s%d%% VS LAST" % ["+" if ask_pct > 0 else "−", absi(ask_pct)]
-	Defs.tint(%AskRel, &"font_color", Defs.UP if ask_pct > 0 else Defs.WARN if ask_pct < 0 else Defs.MUTED)
+	if not %AskPx.has_focus():  # don't overwrite what's being typed
+		%AskPx.text = "$" + Defs.px(ap)
+	var d: float = (ap / m.p - 1.0) * 100.0
+	%AskRel.text = "AT LAST PRICE" if Game.ask_px[i] == 0.0 else "%s%.1f%% VS LAST" % ["+" if d >= 0.0 else "−", absf(d)]
+	Defs.tint(%AskRel, &"font_color", Defs.MUTED if Game.ask_px[i] == 0.0 else Defs.UP if d >= 0.0 else Defs.WARN)
 	if %Check.get_theme_stylebox(&"panel") != (check_on if Game.reserve else check_off):
 		%Check.add_theme_stylebox_override(&"panel", check_on if Game.reserve else check_off)
 	Defs.tint(%ResLabel, &"font_color", Defs.CAUTION if Game.reserve else Defs.FAINT)

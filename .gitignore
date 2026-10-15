@@ -9,3 +9,5 @@
 # design handoff reference
 design_ref/
 *.swp
+
+tools/

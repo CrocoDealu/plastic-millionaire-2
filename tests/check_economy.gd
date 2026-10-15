@@ -61,10 +61,10 @@ func _initialize() -> void:
 	# Asks: boxes leave the warehouse onto the book and fill whole at exactly their price once
 	# the market reaches it; the price then drops by min(0.3, q/depth).
 	g.inv[0] = 300
-	g.ask_step(5)
+	g.set_ask(g.market[0].p * 3.0)  # any price, way above the market
 	var o: Dictionary = g.place_ask("all")
 	assert(g.inv[0] == 0 and g.orders.size() == 1 and g.on_book(0) == 300 and g.sell_qty("1", 0) == 0)
-	assert(is_equal_approx(o.px, snappedf(g.market[0].p * 1.05, 0.01)))
+	assert(is_equal_approx(o.px, snappedf(g.market[0].p * 3.0, 0.01)))
 	g._fill_orders()
 	assert(g.orders.size() == 1 and g.trades.is_empty())  # not reached yet
 	g.cancel_ask(o.id)
@@ -74,9 +74,11 @@ func _initialize() -> void:
 	g._fill_orders()
 	assert(g.orders.is_empty() and is_equal_approx(g.market[0].p, o.px * 0.7))
 	assert(is_equal_approx(g.money, 300 * o.px) and g.trades[0].kind == "ask")
-	g.ask_step(-100)
-	assert(g.ask_pct == Defs.ASK_PCT[0])
-	g.ask_pct = 0
+	g.set_ask(0.12)
+	g.ask_step(1)
+	assert(is_equal_approx(g.ask_price(0), 0.13))
+	g.set_ask(0.0)
+	assert(g.ask_price(0) == snappedf(g.market[0].p, 0.01))  # cleared: follows the last price again
 	# Book holds at most MAX_ORDERS asks.
 	g.inv[0] = 100
 	for k in Defs.MAX_ORDERS: g.place_ask("1")
@@ -171,16 +173,16 @@ func _initialize() -> void:
 	g.sel = 0  # buying the first Stacker selected RED
 	g.inv[0] = 50  # above the machine reserve
 	g.place_ask("1")
-	g.ask_pct = 7
+	g.set_ask(7.5)
 	g.save()
 	var m: float = g.money
 	g._fresh()
 	g.load_save()
 	assert(is_equal_approx(g.money, m) and g.own[1] == 1 and g.mul(0) == 2 and g.mx[0].in_on == false and g.quotes)
-	assert(g.orders.size() == 1 and g.orders[0].q == 1 and g.ask_pct == 7)
+	assert(g.orders.size() == 1 and g.orders[0].q == 1 and is_equal_approx(g.ask_px[0], 7.5))
 	assert(g.sk_own("arm_in") == 1 and g.sk_own("press") == 1)
 	g.cancel_ask(g.orders[0].id)
-	g.ask_pct = 0
+	g.set_ask(0.0)
 
 	# Pre-tree save: flat upgrades and bought auto toggles become tree stages.
 	var tree_sk: Dictionary = g.sk.duplicate()

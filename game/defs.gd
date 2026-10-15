@@ -152,7 +152,6 @@ const BROKER_EVERY := 5.0  # Broker Bot interval before the Trading Desk
 const MAX_IMPACT := 0.3  # one sale moves the price at most this much
 const QUICK_SELL := 0.5  # QUICK SELL pays this share of the market fill value
 const MAX_ORDERS := 12  # open asks on the book at once
-const ASK_PCT := [-10, 30]  # ask price offset range vs last, in whole percent
 const FILL_NEAR := 0.5  # an ask within this % of last shows as FILLING
 const CANDLE_S := 5.0
 const N_CANDLES := 48

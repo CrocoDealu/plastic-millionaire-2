@@ -25,7 +25,7 @@ var sk := {}  # skill tree: node id -> stages owned (Defs.SK)
 var market: Array[Dictionary] = []
 var trades: Array[Dictionary] = []  # {t, i, q, avg, total, kind: ask | quick | bot}
 var orders: Array[Dictionary] = []  # open asks {id, i, q, px, t}; their boxes are off the warehouse
-var ask_pct := 0
+var ask_px: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0]  # typed ask price per box; 0 = follow the last price
 var total_earned := 0.0
 # Persisted view prefs.
 var sel := 0
@@ -74,7 +74,7 @@ func _fresh() -> void:
 	sk = {"press": 1}
 	trades.clear()
 	orders.clear()
-	ask_pct = 0
+	ask_px.fill(0.0)
 	total_earned = 0.0
 	sel = 0
 	chart = "candles"
@@ -360,9 +360,11 @@ func sell_quote(i: int, q: int) -> Dictionary:
 	return {imp = imp, avg = avg, total = q * avg}
 
 
-## Limit price for a new ask on box `i`: last x (1 + ask_pct%), rounded like the tape.
+## Limit price for a new ask on box `i`: the price typed in, else the last price rounded like the tape.
 func ask_price(i: int) -> float:
-	var p: float = market[i].p * (1.0 + ask_pct / 100.0)
+	if ask_px[i] > 0.0:
+		return ask_px[i]
+	var p: float = market[i].p
 	return snappedf(p, 0.01 if p < 10.0 else 0.1)
 
 
@@ -825,9 +827,16 @@ func cancel_ask(id: int) -> void:
 			return
 
 
-func ask_step(d: int) -> void:
-	ask_pct = clampi(ask_pct + d, Defs.ASK_PCT[0], Defs.ASK_PCT[1])
+## Sets the selected box's ask price; 0 or less goes back to following the last price.
+func set_ask(v: float) -> void:
+	ask_px[sel] = maxf(0.01, snappedf(v, 0.01)) if v > 0.0 else 0.0
 	notify_changed()
+
+
+## Nudges the ask price by `d` ticks ($0.01, or $0.10 from $10 up).
+func ask_step(d: int) -> void:
+	var p := ask_price(sel)
+	set_ask(maxf(0.01, p + d * (0.01 if p < 10.0 else 0.1)))
 
 
 ## QUICK SELL: every sellable box right now at Defs.QUICK_SELL of its market fill.
@@ -865,7 +874,7 @@ func save() -> void:
 	var f := FileAccess.open(save_path, FileAccess.WRITE)
 	if f == null:
 		return
-	f.store_string(JSON.stringify({v = 1, money = money, inv = inv, own = own, sk = sk, trades = trades, orders = orders, ask_pct = ask_pct,
+	f.store_string(JSON.stringify({v = 1, money = money, inv = inv, own = own, sk = sk, trades = trades, orders = orders, ask_px = ask_px,
 		mute = mute, buy_mode = buy_mode, reserve = reserve, play = play, ms = ms, ev = ev, wait_max = wait_max,
 		total_earned = total_earned, sel = sel, chart = chart, quotes = quotes, mx = mx, rtab = rtab, mail_seen = mail_seen}))
 	saved_at = now()
@@ -897,7 +906,8 @@ func load_save() -> void:
 				sk[Defs.GENS[i].id + "_" + k] = lvl
 	trades.assign(d.get("trades", []).map(func(t): t.i = int(t.i); t.q = int(t.q); return t))
 	orders.assign(d.get("orders", []).map(func(o): o.id = int(o.id); o.i = int(o.i); o.q = int(o.q); return o))
-	ask_pct = int(d.get("ask_pct", 0))
+	for i in 5:
+		ask_px[i] = float(d.get("ask_px", ask_px)[i])
 	mute = d.get("mute", false)
 	buy_mode = d.get("buy_mode", "x1")
 	reserve = d.get("reserve", true)

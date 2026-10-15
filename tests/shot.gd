@@ -38,10 +38,10 @@ func _initialize() -> void:
 	if setup == "end": main.open_end()
 	if setup == "quotes":
 		game.set_pref("quotes", true)
-		game.ask_pct = 6
+		game.ask_step(6)
 		game.place_ask("10")
 		game.sel = 0
-		game.ask_pct = 3
+		game.ask_step(3)
 		game.place_ask("half")
 	if setup == "tree": main.open_tree()
 	if setup == "inbox": game.set_pref("rtab", "inbox")
