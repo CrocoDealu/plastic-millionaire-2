@@ -7,7 +7,7 @@ extends PanelContainer
 
 const FLOOR := 320.0
 const GRAV := 1400.0
-const MAX_DROPS := 40
+const MAX_DROPS := 40  # resting boxes on the floor
 const PRESS_H := 260.0
 const SLAM := 0.1  # full downstroke seconds; boxes eject when the head bottoms out
 const SLAM_MIN := 0.03  # a click with the head already down still gets a short, audible hit
@@ -113,10 +113,12 @@ func _on_stage_input(e: InputEvent) -> void:
 				_collect(hit)
 
 
+## Only boxes resting on the floor: airborne ones fly through the press area, where fast
+## clicks would otherwise snatch them mid-air instead of slamming.
 func _hit(p: Vector2) -> int:
 	for i in range(_drops.size() - 1, -1, -1):
 		var d := _drops[i]
-		if Rect2(d.x, d.y, d.s, d.s).grow(2.0).has_point(p):
+		if d.rest and Rect2(d.x, d.y, d.s, d.s).grow(2.0).has_point(p):
 			return i
 	return -1
 
@@ -141,10 +143,6 @@ func _eject(drops: Array, combo: int) -> void:
 		var dir := -1.0 if randf() < 0.5 else 1.0
 		_drops.append({x = w / 2.0 - s / 2.0 + dir * 62.0, y = 168.0, s = s, vx = dir * randf_range(60, 230),
 			vy = -randf_range(220, 400), rot = 0.0, vr = dir * randf_range(200, 600), rest = false, c = p[0], m = m})
-	if _drops.size() > MAX_DROPS:
-		var n := _drops.size() - MAX_DROPS
-		_credit(_drops.slice(0, n))
-		_drops = _drops.slice(n)
 	var o := stage.global_position
 	Fx.burst(o + Vector2(w / 2.0 - 70.0, 184.0), 5, SPARKS, 120.0, 300.0)
 	Fx.burst(o + Vector2(w / 2.0 + 70.0, 184.0), 5, SPARKS, 120.0, 300.0)
@@ -230,6 +228,13 @@ func _process(delta: float) -> void:
 
 
 func _step_drops(dt: float) -> void:
+	# Only resting boxes count toward the cap (oldest banked first): culling airborne ones made
+	# fast slams look like boxes vanished halfway down. Airborne count is bounded by click speed.
+	var resting := _drops.filter(func(d): return d.rest)
+	if resting.size() > MAX_DROPS:
+		var gone := resting.slice(0, resting.size() - MAX_DROPS)
+		_credit(gone)
+		_drops = _drops.filter(func(d): return not gone.any(func(g): return is_same(g, d)))  # by identity: equal dicts are distinct boxes
 	var w := stage.size.x
 	for d in _drops:
 		if d.rest:

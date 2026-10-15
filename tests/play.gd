@@ -34,6 +34,7 @@ func _initialize() -> void:
 	var panel: Node = main.find_child("PressPanel", true, false)
 	var n0: int = panel._drops.size()
 	print("drops on floor: ", n0, " resting: ", panel._drops.filter(func(d): return d.rest).size())
+	assert(n0 == 8, "fast presses must not snatch boxes mid-air")
 	for k in 6:
 		if panel._drops.is_empty(): break
 		var d: Dictionary = panel._drops[-1]
@@ -88,5 +89,16 @@ func _initialize() -> void:
 	await create_timer(2.2).timeout
 	print("sweep: floor ", panel._drops.size(), " GRY +", game.inv[0] - g0)
 	assert(panel._drops.size() == 4 and game.inv[0] == g0 + 8 and panel._sweep_dir < 0.0)
+	# Fast slams with Industrial Press: more boxes in the air than MAX_DROPS, and none may vanish mid-fall.
+	game.sk.erase("sweep")
+	game.sk["heavy"] = 3
+	var lost := 0
+	for k in 40:
+		panel._press()
+		var air: Array = panel._drops.filter(func(d): return not d.rest)
+		await create_timer(0.06).timeout
+		lost += air.filter(func(d): return not panel._drops.any(func(x): return is_same(x, d))).size()
+	print("fast slams: airborne boxes lost ", lost)
+	assert(lost == 0)
 	print("play OK")
 	quit()
