@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://ui/machine_card.gd" id="1"]
 [ext_resource type="Script" path="res://ui/box_chip.gd" id="chip"]
 [ext_resource type="Script" path="res://ui/content_button.gd" id="cb"]
+[ext_resource type="Shader" path="res://ui/chevrons.gdshader" id="chev"]
 
 [sub_resource type="StyleBoxFlat" id="bar_bg"]
 bg_color = Color(0.0784, 0.0784, 0.0863, 1)
@@ -18,6 +19,10 @@ corner_radius_top_left = 99
 corner_radius_top_right = 99
 corner_radius_bottom_right = 99
 corner_radius_bottom_left = 99
+
+[sub_resource type="ShaderMaterial" id="flow_mat"]
+resource_local_to_scene = true
+shader = ExtResource("chev")
 
 [sub_resource type="StyleBoxFlat" id="tag_on"]
 content_margin_left = 5.0
@@ -186,6 +191,17 @@ mouse_filter = 2
 theme_override_styles/background = SubResource("bar_bg")
 theme_override_styles/fill = SubResource("bar_fill")
 show_percentage = false
+
+[node name="Flow" type="ColorRect" parent="VBox/Bar"]
+unique_name_in_owner = true
+visible = false
+material = SubResource("flow_mat")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Rate" type="Label" parent="VBox"]
 unique_name_in_owner = true

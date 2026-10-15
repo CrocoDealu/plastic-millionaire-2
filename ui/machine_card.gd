@@ -25,20 +25,7 @@ func _ready() -> void:
 		var tag: Control = pair[0]
 		tag.gui_input.connect(_on_tag_input.bind(tag, pair[1]))
 	Game.changed.connect(_refresh)
-	Game.finished.connect(_on_finished)
 	_refresh()
-
-
-## A batch finished: float the boxes it made. Only shown while the card's top edge is
-## inside the scroll view, where the popup is drawn.
-func _on_finished(i: int, q: int) -> void:
-	if i != index or q <= 0 or not is_visible_in_tree():
-		return
-	var r := get_global_rect()
-	var view: Control = find_parent("Scroll")
-	if view == null or view.get_global_rect().has_point(r.position + Vector2(r.size.x / 2.0, 4.0)):
-		var b: Dictionary = Defs.BOXES[Defs.GENS[i].out]
-		Fx.float_text(Vector2(r.end.x - 40.0, r.position.y + 4.0), "+%s %s" % [Defs.fmt(q), b.k], b.color, 12)
 
 
 func _refresh() -> void:
@@ -71,7 +58,10 @@ func _refresh() -> void:
 	Defs.tint(%Out.get_node("HBox/Label"), &"font_color", ob.color)
 	%Every.text = "EVERY %.1fS" % c
 
-	%Bar.value = minf(100.0, x.t / c * 100.0) if x.run else (100.0 if x.held > 0 else 0.0)
+	# Maxed speed: the bar would just flicker, so it sits full under scrolling chevrons instead.
+	%Flow.visible = x.run and Game.node_info(g.id + "_spd").done
+	%Flow.material.set_shader_parameter(&"color", ob.color)
+	%Bar.value = 100.0 if %Flow.visible else minf(100.0, x.t / c * 100.0) if x.run else (100.0 if x.held > 0 else 0.0)
 	%Bar.get_theme_stylebox(&"fill").bg_color = Defs.GOLD if x.held > 0 else ob.color
 	%Rate.text = "+%s %s/s" % [Defs.rt(maxi(own, 1) * mul / c), ob.k]
 	Defs.tint(%Rate, &"font_color", Defs.SOFT if own else Defs.MUTED)
@@ -84,6 +74,8 @@ func _refresh() -> void:
 	var act: Array
 	if x.held > 0:
 		act = ["COLLECT " + Defs.fmt(x.held), &"BtnGold", Defs.GOLD, true]
+	elif %Flow.visible:
+		act = ["MAX SPEED", &"BtnGrey", Defs.SOFT, false]
 	elif x.run:
 		act = ["%.1fS" % maxf(0.0, c - x.t), &"BtnGrey", Defs.SOFT, false]
 	elif not own:
@@ -96,6 +88,7 @@ func _refresh() -> void:
 		act = ["NO INPUT", &"BtnGrey", Defs.FAINT, false]
 	%Act.text = act[0]
 	%Act.theme_type_variation = act[1]
+	%Act.disabled = %Flow.visible
 	_fg(%Act, act[2])
 	Fx.pulse(%Act, act[3])
 

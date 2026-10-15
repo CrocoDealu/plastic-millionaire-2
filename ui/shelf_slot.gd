@@ -4,8 +4,6 @@ extends PanelContainer
 
 @export var box := 0
 
-var _pop_q := 0
-var _pop_at := -10.0
 var _hover := false
 
 
@@ -42,22 +40,10 @@ func _refresh() -> void:
 	theme_type_variation = &"SlotHover" if _hover else &"SlotSel" if Game.sel == box else &"Slot"
 
 
+## One float per landing, so two +1s in a row show as two +1s. %Pop only marks where they start.
 func _on_produced(i: int, q: int) -> void:
-	if i != box:
-		return
-	var t := Time.get_ticks_msec() / 1000.0
-	_pop_q = _pop_q + q if t - _pop_at < 0.6 else q
-	_pop_at = t
-
-
-func _process(_delta: float) -> void:
-	var pa := Time.get_ticks_msec() / 1000.0 - _pop_at
-	%Pop.visible = pa < 0.9
-	if %Pop.visible:
-		%Pop.text = "+" + Defs.fmt(_pop_q)
-		%Pop.position.y = roundf(-4.0 - pa * 26.0)
-		%Pop.modulate.a = maxf(0.0, 1.0 - pa / 0.9)
-		Defs.tint(%Pop, &"font_color", Defs.BOXES[box].color)
+	if i == box and is_visible_in_tree():
+		Fx.float_text(%Pop.global_position, "+" + Defs.fmt(q), Defs.BOXES[box].color, 12)
 
 
 func _on_input(e: InputEvent) -> void:
@@ -71,11 +57,13 @@ func _tip() -> Array:
 		if Game.visible_tier(box):
 			return [b.name.to_upper(), [["Build a %s to start producing these and open the %s market." % [Defs.GENS[box].name, b.k]]]]
 		return ["???", [["Keep expanding the line to reveal this box."]]]
-	var r: float = Game.net_rates()[box]
+	var f: Vector2 = Game.flows()[box]
+	var r := f.x - f.y
 	var res := Game.reserve_of(box)
 	var cnt: int = Game.inv[box]
 	return ["%s · $%s" % [b.name.to_upper(), Defs.px(Game.market[box].p)], [
 		["%s in stock · %s" % [Defs.fmt(cnt), Defs.cash(cnt * Game.market[box].p)], Defs.GOLD],
+		["Made +%s/s · used −%s/s" % [Defs.rt(f.x), Defs.rt(f.y)]] if f.y > 0.0 else ["Made +%s/s" % Defs.rt(f.x)],
 		["Net %s%s/s" % ["+" if r >= 0.0 else "", Defs.rt(r)], Defs.UP if r >= 0.0 else Defs.WARN],
 		["%s reserved for machines" % Defs.fmt(res) if res else "No machines use this box"],
 		["Click to open its market."]]]

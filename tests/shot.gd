@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Renders main.tscn and saves a PNG: godot -s res://tests/shot.gd -- out.png [seconds] [setup]
 ## setup: "fresh" (default), "mid" (some machines + market open), "modal", "settings", "quotes", "tree", "inbox",
-## "mystery" (Forge owned: the OPEN ??? button), "end" (box opened, end card up).
+## "maxspd" (mid with Press Arm speed maxed), "mystery" (Forge owned: the OPEN ??? button), "end" (box opened, end card up).
 
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
@@ -23,6 +23,7 @@ func _initialize() -> void:
 		game.inv.assign([140, 23, 4, 0, 0])
 		game.sel = 1
 		game.money = 812.4
+	if setup == "maxspd": game.sk["arm_spd"] = Defs.MU_STAGES
 	if setup == "mystery" or setup == "end":
 		game.own.assign([1, 1, 1, 1, 1])
 		for id in ["sell1", "vat", "kiln", "fuse", "forge"]: game.mark(id)

@@ -9,7 +9,6 @@ signal produced(i: int, q: int)
 signal toast(title: String, sub: String, chime: bool)
 signal news(text: String)  # priority ticker headline
 signal ended  # the box is opened: show the end card
-signal finished(gen: int, q: int)  # a machine batch finished making `q` boxes
 
 enum Act { NONE, COLLECTED, STARTED, DENIED }
 
@@ -290,15 +289,23 @@ func sellable(i: int) -> int:
 
 
 func net_rates() -> Array[float]:
-	var r: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0]
+	var r: Array[float] = []
+	for v: Vector2 in flows():
+		r.append(v.x - v.y)
+	return r
+
+
+## Per box: x = made per second, y = used per second by the machines that eat it.
+func flows() -> Array[Vector2]:
+	var r: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]
 	for i in Defs.GENS.size():
 		if own[i] == 0:
 			continue
 		var g: Dictionary = Defs.GENS[i]
 		var c := cyc(i)
-		r[g.out] += own[i] * mul(i) / c
+		r[g.out].x += own[i] * mul(i) / c
 		for k: int in g.inputs:
-			r[k] -= own[i] * g.inputs[k] / c
+			r[k].y += own[i] * g.inputs[k] / c
 	return r
 
 
@@ -486,11 +493,12 @@ func _econ(dt: float) -> void:
 		var f: float = x.batch * mul(i) * boost + x.frac  # fractions carry so small boosts aren't lost
 		var q := floori(f)
 		x.frac = f - q
-		finished.emit(i, q)
 		if ao(i):
 			_land(out, q)
 		else:
 			x.held += q
+		if ai(i) and (ao(i) or x.held == 0):
+			_start_gen(i)  # same tick, so an auto machine never shows a stopped frame
 	if sk_own("broker"):
 		_broker_t += dt
 		if _broker_t >= skv("desk", "every", Defs.BROKER_EVERY):
