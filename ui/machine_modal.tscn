@@ -64,7 +64,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7412, 0.7216, 0.6784, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 12
 text = "No input → 1 GRY every 2.0s per machine."
 autowrap_mode = 3
 
@@ -73,7 +73,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 11
 text = "Was here before you. Will be here after you."
 autowrap_mode = 3
 
@@ -90,6 +90,6 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(500, 28)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 10
 text = "Chute and Hopper automation is bought in the Skill Tree."
 autowrap_mode = 3

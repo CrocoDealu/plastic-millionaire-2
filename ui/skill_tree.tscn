@@ -4,17 +4,6 @@
 [ext_resource type="Script" path="res://ui/tree_canvas.gd" id="canvas"]
 [ext_resource type="Texture2D" path="res://assets/ui/x3/buttons_Orange_ButtonCloseA_Highlighted.png" id="close"]
 
-[sub_resource type="StyleBoxFlat" id="pill"]
-content_margin_left = 8.0
-content_margin_top = 4.0
-content_margin_right = 8.0
-content_margin_bottom = 4.0
-bg_color = Color(0.2275, 0.1882, 0.0627, 1)
-corner_radius_top_left = 99
-corner_radius_top_right = 99
-corner_radius_bottom_right = 99
-corner_radius_bottom_left = 99
-
 [sub_resource type="StyleBoxFlat" id="tree_bg"]
 bg_color = Color(0.0549, 0.0549, 0.0627, 1)
 corner_radius_top_left = 8
@@ -51,61 +40,49 @@ layout_mode = 2
 mouse_filter = 2
 color = Color(0.0784, 0.0784, 0.0863, 1)
 
-[node name="VBox" type="VBoxContainer" parent="."]
+[node name="Pad" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="Pad"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Head" type="HBoxContainer" parent="VBox"]
+[node name="Head" type="HBoxContainer" parent="Pad/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Titles" type="VBoxContainer" parent="VBox/Head"]
+[node name="Titles" type="VBoxContainer" parent="Pad/VBox/Head"]
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_constants/separation = 3
 
-[node name="Kicker" type="Label" parent="VBox/Head/Titles"]
+[node name="Kicker" type="Label" parent="Pad/VBox/Head/Titles"]
 layout_mode = 2
 theme_type_variation = &"Silk"
 theme_override_colors/font_color = Color(0.9608, 0.7725, 0.0941, 1)
 theme_override_font_sizes/font_size = 9
 text = "BOX EXCHANGE · R&D"
 
-[node name="Title" type="Label" parent="VBox/Head/Titles"]
+[node name="Title" type="Label" parent="Pad/VBox/Head/Titles"]
 layout_mode = 2
 theme_type_variation = &"SilkBold"
 theme_override_font_sizes/font_size = 18
 text = "SKILL TREE"
 
-[node name="Pill" type="PanelContainer" parent="VBox/Head"]
-unique_name_in_owner = true
+[node name="Spacer" type="Control" parent="Pad/VBox/Head"]
 layout_mode = 2
-size_flags_vertical = 4
-theme_override_styles/panel = SubResource("pill")
-
-[node name="Aff" type="Label" parent="VBox/Head/Pill"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Silk"
-theme_override_colors/font_color = Color(0.9608, 0.7725, 0.0941, 1)
-theme_override_font_sizes/font_size = 9
-text = "0 AFFORDABLE"
-
-[node name="Owned" type="Label" parent="VBox/Head"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Silk"
-theme_override_colors/font_color = Color(0.6039, 0.5882, 0.5490, 1)
-theme_override_font_sizes/font_size = 9
 size_flags_horizontal = 3
-text = "1 / 30 OWNED"
 
-[node name="MoneyBox" type="VBoxContainer" parent="VBox/Head"]
+[node name="MoneyBox" type="VBoxContainer" parent="Pad/VBox/Head"]
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_constants/separation = 3
 
-[node name="Label" type="Label" parent="VBox/Head/MoneyBox"]
+[node name="Label" type="Label" parent="Pad/VBox/Head/MoneyBox"]
 layout_mode = 2
 theme_type_variation = &"Silk"
 theme_override_colors/font_color = Color(0.9098, 0.7686, 0.5412, 1)
@@ -113,7 +90,7 @@ theme_override_font_sizes/font_size = 8
 horizontal_alignment = 2
 text = "MONEY"
 
-[node name="Money" type="Label" parent="VBox/Head/MoneyBox"]
+[node name="Money" type="Label" parent="Pad/VBox/Head/MoneyBox"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"SilkBold"
@@ -122,101 +99,93 @@ theme_override_font_sizes/font_size = 16
 horizontal_alignment = 2
 text = "$0.00"
 
-[node name="Close" type="TextureButton" parent="VBox/Head"]
+[node name="Close" type="TextureButton" parent="Pad/VBox/Head"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 4
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("close")
 
-[node name="TreeBox" type="PanelContainer" parent="VBox"]
+[node name="TreeBox" type="PanelContainer" parent="Pad/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("tree_bg")
 
-[node name="Scroll" type="ScrollContainer" parent="VBox/TreeBox"]
-layout_mode = 2
-
-[node name="Center" type="CenterContainer" parent="VBox/TreeBox/Scroll"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="Canvas" type="Control" parent="VBox/TreeBox/Scroll/Center"]
+[node name="Canvas" type="Control" parent="Pad/VBox/TreeBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(1192, 590)
+clip_contents = true
 layout_mode = 2
 script = ExtResource("canvas")
 
-[node name="Detail" type="PanelContainer" parent="VBox"]
+[node name="Detail" type="PanelContainer" parent="Pad/VBox"]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 theme_override_styles/panel = SubResource("detail")
 
-[node name="HBox" type="HBoxContainer" parent="VBox/Detail"]
+[node name="HBox" type="HBoxContainer" parent="Pad/VBox/Detail"]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="Icon" type="Control" parent="VBox/Detail/HBox"]
+[node name="Icon" type="Control" parent="Pad/VBox/Detail/HBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
 
-[node name="Info" type="VBoxContainer" parent="VBox/Detail/HBox"]
+[node name="Info" type="VBoxContainer" parent="Pad/VBox/Detail/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
 theme_override_constants/separation = 4
 
-[node name="DKicker" type="Label" parent="VBox/Detail/HBox/Info"]
+[node name="DKicker" type="Label" parent="Pad/VBox/Detail/HBox/Info"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Silk"
 theme_override_font_sizes/font_size = 8
 text = "CENTRE"
 
-[node name="DTitle" type="Label" parent="VBox/Detail/HBox/Info"]
+[node name="DTitle" type="Label" parent="Pad/VBox/Detail/HBox/Info"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"SilkBold"
 theme_override_font_sizes/font_size = 14
 text = "BOX PRESS"
 
-[node name="Line0" type="Label" parent="VBox/Detail/HBox/Info"]
+[node name="Line0" type="Label" parent="Pad/VBox/Detail/HBox/Info"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 11
 autowrap_mode = 3
 text = ""
 
-[node name="Line1" type="Label" parent="VBox/Detail/HBox/Info"]
+[node name="Line1" type="Label" parent="Pad/VBox/Detail/HBox/Info"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 11
 autowrap_mode = 3
 text = ""
 
-[node name="Line2" type="Label" parent="VBox/Detail/HBox/Info"]
+[node name="Line2" type="Label" parent="Pad/VBox/Detail/HBox/Info"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 11
 autowrap_mode = 3
 text = ""
 
-[node name="Line3" type="Label" parent="VBox/Detail/HBox/Info"]
+[node name="Line3" type="Label" parent="Pad/VBox/Detail/HBox/Info"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 11
 autowrap_mode = 3
 text = ""
 
-[node name="DFlavour" type="Label" parent="VBox/Detail/HBox/Info"]
+[node name="DFlavour" type="Label" parent="Pad/VBox/Detail/HBox/Info"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 10
 autowrap_mode = 3
 text = ""
 
-[node name="Buy" type="Button" parent="VBox/Detail/HBox"]
+[node name="Buy" type="Button" parent="Pad/VBox/Detail/HBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(180, 0)
 layout_mode = 2

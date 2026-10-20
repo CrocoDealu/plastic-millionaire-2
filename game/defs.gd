@@ -4,19 +4,19 @@ extends RefCounted
 ## Economy constants and number formatting from the Box Exchange v6 handoff.
 
 const BOXES := [
-	{k = "GRY", name = "Grey Box", color = Color("#b9b5aa"), base = 1.0, depth = 300.0},
-	{k = "RED", name = "Red Box", color = Color("#e0504a"), base = 6.0, depth = 120.0},
-	{k = "AMB", name = "Amber Box", color = Color("#f0a422"), base = 30.0, depth = 50.0},
-	{k = "TEA", name = "Teal Box", color = Color("#34b7a2"), base = 220.0, depth = 20.0},
-	{k = "VIO", name = "Violet Box", color = Color("#9563de"), base = 1500.0, depth = 8.0},
+	{k = "GRY", name = "Grey Box", color = Color("#b9b5aa"), base = 0.02, depth = 300.0},
+	{k = "RED", name = "Red Box", color = Color("#e0504a"), base = 0.12, depth = 120.0},
+	{k = "AMB", name = "Amber Box", color = Color("#f0a422"), base = 2.0, depth = 50.0},
+	{k = "TEA", name = "Teal Box", color = Color("#34b7a2"), base = 15.0, depth = 20.0},
+	{k = "VIO", name = "Violet Box", color = Color("#9563de"), base = 200.0, depth = 8.0},
 ]
 ## `inputs` maps box index -> quantity per batch; `out` is a box index.
 const GENS := [
 	{id = "arm", name = "Press Arm", cost = 12.0, inputs = {}, out = 0, cyc = 2.0},
-	{id = "vat", name = "Red Stacker", cost = 60.0, inputs = {0: 3}, out = 1, cyc = 3.0},
-	{id = "kiln", name = "Amber Laminator", cost = 300.0, inputs = {1: 2, 0: 3}, out = 2, cyc = 5.0},
-	{id = "fuse", name = "Teal Fuser", cost = 2500.0, inputs = {2: 3, 1: 4}, out = 3, cyc = 8.0},
-	{id = "forge", name = "Violet Forge", cost = 15000.0, inputs = {3: 3, 2: 2}, out = 4, cyc = 12.0},
+	{id = "vat", name = "Red Stacker", cost = 60.0, inputs = {0: 3}, out = 1, cyc = 0.5},
+	{id = "kiln", name = "Amber Laminator", cost = 300.0, inputs = {1: 2, 0: 3}, out = 2, cyc = 2.0},
+	{id = "fuse", name = "Teal Fuser", cost = 2500.0, inputs = {2: 3, 1: 4}, out = 3, cyc = 4.0},
+	{id = "forge", name = "Violet Forge", cost = 15000.0, inputs = {3: 3, 2: 2}, out = 4, cyc = 4.0},
 ]
 ## Skill tree (design_ref/skill_tree.md, v8 handoff). Node: `br` branch, `k` slot shape (large /
 ## sharp / round), grid `c`,`r`, `par` parents (ALL needed), `d` description formatted with the stage's
@@ -35,7 +35,7 @@ const SK_GLOBAL := [
 	{id = "sweep", br = "press", k = "sharp", c = 2, r = 2, par = ["press"],
 		d = "Drives across the press floor every {every}s, pushing up to {carry} boxes off the edge.",
 		fl = "Pushes boxes off the edge. Legal calls it \"logistics.\"", st = [{n = "Floor Sweeper", c = 120.0, e = {every = 1.5, carry = 8}}]},
-	{id = "die", br = "press", k = "round", c = 2, r = 0, par = ["sweep"], d = "Drops up to {reach} grade{s} behind your newest are worth ×10 per grade.",
+	{id = "die", br = "press", k = "round", c = 2, r = 0, par = ["sweep"], d = "Drops up to {reach} grade{s} behind your newest are worth ×%d per grade." % BUNDLE,
 		fl = "Stamps old grades in bulk. QC signs off without looking, as is tradition.", st = [
 		{n = "Die · Red", c = 120.0, e = {reach = 1, s = ""}, g = [1, 1]},
 		{n = "Die · Amber", c = 600.0, e = {reach = 2, s = "s"}, g = [2, 1]},
@@ -46,8 +46,8 @@ const SK_GLOBAL := [
 	{id = "overdrive", br = "combo", k = "round", c = 4, r = 6, par = ["bell", "arm_in"],
 		d = "At combo {min}+, machines make +{step}% per combo step (max +{cap}%).",
 		fl = "The machines work harder when they hear you working. Nobody told them you're faking it.", st = [
-		{n = "Overdrive", c = 250.0, e = {min = 5, step = 2, cap = 40}},
-		{n = "Turbo Overdrive", c = 1500.0, e = {min = 5, step = 2, cap = 100}, fl = "Voids the warranty, the lease and one minor treaty."}]},
+		{n = "Overdrive", c = 250.0, e = {min = 5, step = 2, cap = 60}},
+		{n = "Turbo Overdrive", c = 1500.0, e = {min = 5, step = 2, cap = 150}, fl = "Voids the warranty, the lease and one minor treaty."}]},
 	{id = "overtime", br = "combo", k = "round", c = 3, r = 8, par = ["bell"], d = "At combo {min}+, machine output is ×{mul} on top of Overdrive.",
 		fl = "Unpaid, obviously. The machines get time and a half.", st = [
 		{n = "Overtime", c = 800.0, e = {min = 25, mul = 2}, g = [1, 3]},
@@ -141,17 +141,16 @@ const MU_FLAVOUR := {spd = "Faster. Nobody asked the machine whether it wanted t
 const ROMAN := ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"]
 const SPD_STEP := 0.8  # cycle time x this per speed level
 const YLD_STEP := 1  # boxes added to every batch per yield level
-const RESERVE_CYCLES := 2  # inputs kept back from selling, in machine cycles
 const BUY_MODES_AT := 5  # x10 / MAX buy modes appear once any machine count reaches this
 # Press.
-const BUNDLE := 10  # a drop is worth this many boxes per tier behind the newest colour
-const PRESS_ODDS := 3.0  # each older colour is this much likelier to drop than the next one up
+const BUNDLE := 2  # a drop is worth this many boxes per tier behind the newest colour
+const PRESS_ODDS := 20.0  # each older colour is this much likelier to drop than the next one up
 const COMBO_WINDOW := 0.6  # slams closer than this (s) keep the combo alive (Shift Bell raises it)
 const BROKER_EVERY := 5.0  # Broker Bot interval before the Trading Desk
 # Market.
 const MAX_IMPACT := 0.3  # one sale moves the price at most this much
-const QUICK_SELL := 0.5  # QUICK SELL pays this share of the market fill value
 const MAX_ORDERS := 12  # open asks on the book at once
+const ASK_PCT := [-10, 200]  # ask price offset range vs last, in whole percent
 const FILL_NEAR := 0.5  # an ask within this % of last shows as FILLING
 const CANDLE_S := 5.0
 const N_CANDLES := 48
@@ -167,21 +166,16 @@ const EVENT_DELAY := [30.0, 90.0]  # a milestone's market event fires this many 
 const ENDING_BEATS := [2.5, 7.0, 2.5, 3.0]
 const NEWS_STAGE_WEIGHT := 3.0  # current-stage headlines vs earlier ones
 
-const MILESTONES := [
-	["box1", "Market open"], ["press1", "First press"], ["sell1", "First sale"],
-	["auto", "First Auto-In"], ["vat", "Stacker · RED"], ["sweep", "Sweeper"], ["kiln", "Laminator · AMB"],
-	["broker", "Broker Bot"], ["fuse", "Fuser · TEA"], ["forge", "Forge · VIO"],
-]
 ## Recipe index past the last box: the one slam that opens a box (design_ref/story.md §7).
 const MYSTERY := 5
-const MYSTERY_INPUTS := {4: 3, 3: 3}
+const MYSTERY_INPUTS := {4: 500, 3: 500}
 ## TODO: replace with the real itch page before shipping.
 const ITCH_URL := "https://example.itch.io/plastic-millionaire"
 
 # Story text (design_ref/story.md). Keys are milestone ids from Game.ms unless noted.
 ## Career title = the last key here that's in Game.ms ("start" is marked on a fresh run).
 const TITLES := {
-	start = "Unpaid Intern, Red Department",
+	start = "Unpaid Intern, Grey Department",
 	sell1 = "Junior Box Associate",
 	vat = "Amber Specialist",
 	kiln = "Director of Teal",
@@ -280,7 +274,6 @@ const REPS := [
 # Design tokens scripts need for state-driven colours; static looks live in ui/theme.tres.
 const INK := Color("#06080f")
 const BG := Color("#141416")
-const CARD := Color("#202023")
 const LINE := Color("#3a3a3d")
 const DIM_LINE := Color("#2d2d30")
 const TEXT := Color("#ece8df")
@@ -291,11 +284,9 @@ const DEAD := Color("#4a4a4d")
 const CAUTION := Color("#f5c518")
 const ORANGE := Color("#e2702a")
 const GOLD := Color("#ffd166")
-const GOLD_LABEL := Color("#e8c48a")
 const UP := Color("#7bc96f")
 const DOWN := Color("#e0504a")
 const WARN := Color("#ff9a8a")
-const AFFORD_BORDER := Color("#5a4a14")
 const LIT_BG := Color("#3a3010")
 
 const _SUF := ["", "K", "M", "B", "T", "Qa", "Qi"]
@@ -341,8 +332,12 @@ static func fmt(n: float) -> String:
 static func cash(n: float) -> String:
 	return "$" + ("%.2f" % n if absf(n) < 100.0 else fmt(n))
 
+## Price step on the tape: a tenth of a cent for sub-dollar boxes (greys trade for cents).
+static func tick(p: float) -> float:
+	return 0.001 if p < 1.0 else 0.01 if p < 10.0 else 0.1
+
 static func px(p: float) -> String:
-	return "%.2f" % p if p < 10.0 else "%.1f" % p if p < 1000.0 else fmt(p)
+	return "%.3f" % p if p < 1.0 else "%.2f" % p if p < 10.0 else "%.1f" % p if p < 1000.0 else fmt(p)
 
 static func rt(r: float) -> String:
 	return "%.2f" % r if absf(r) < 1.0 else "%.1f" % r if absf(r) < 10.0 else fmt(r)
@@ -354,9 +349,6 @@ static func pct(v: float, digits := 1) -> String:
 static func clock(t: float) -> String:
 	var d := Time.get_datetime_dict_from_unix_time(int(t) + _tz_bias())
 	return "%02d:%02d:%02d" % [d.hour, d.minute, d.second]
-
-static func mmss(s: float) -> String:
-	return "%02d:%02d" % [floori(s / 60.0), floori(fmod(s, 60.0))]
 
 static func _tz_bias() -> int:
 	return int(Time.get_time_zone_from_system().bias) * 60

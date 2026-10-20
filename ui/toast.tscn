@@ -41,6 +41,6 @@ unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(380, 0)
 theme_override_colors/font_color = Color(0.9098, 0.7686, 0.5412, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 11
 text = "Sub"
 autowrap_mode = 3

@@ -28,8 +28,9 @@ func _set_tab(t: String) -> void:
 
 
 func _process(_delta: float) -> void:
-	if %Badge.visible:
-		%Badge.modulate.a = 1.0 if fmod(Time.get_ticks_msec() / 1000.0, 1.2) < 0.6 else 0.55
+	var a := 1.0 if fmod(Time.get_ticks_msec() / 1000.0, 1.2) < 0.6 else 0.55
+	%Badge.modulate.a = a
+	%InboxBadge.modulate.a = a
 
 
 func _refresh() -> void:
@@ -43,10 +44,7 @@ func _refresh() -> void:
 	%Badge.text = str(aff)
 	_tab(%InboxTab, Game.rtab == "inbox")
 	_refresh_inbox()
-	%ModeRow.visible = on_m
-	%Modes.visible = Game.modes_on()
-	%Note.visible = not Game.modes_on()
-	%Note.text = "×10 / MAX AT %d OWNED" % Defs.BUY_MODES_AT
+	%ModeRow.visible = on_m and Game.modes_on()
 	for n: String in MODES:
 		get_node("%" + n).theme_type_variation = &"BtnCGold" if Game.buy_mode == MODES[n] else &"BtnCGrey"
 	var ti := range(Defs.GENS.size()).filter(func(i): return not Game.visible_tier(i))
@@ -60,14 +58,15 @@ func _tab(b: Button, selected: bool) -> void:
 	Defs.tint(b.get_node("HBox/Label"), &"font_color", Defs.GOLD if selected else Defs.MUTED)
 
 
-## Rows Mail0..7 show the inbox while its tab is open; the tab shows an unread count otherwise.
+## Rows Mail0..7 show the inbox while its tab is open; the tab badge shows the unread count otherwise.
 func _refresh_inbox() -> void:
 	var mails := Game.inbox()
 	var open := Game.rtab == "inbox"
 	if open:
 		Game.mail_seen = mails.size()
 	var unread := mails.size() - Game.mail_seen
-	%InboxTab.get_node("HBox/Label").text = "INBOX (%d)" % unread if unread > 0 else "INBOX"
+	%InboxBadge.visible = unread > 0
+	%InboxBadge.text = str(unread)
 	for j in 8:
 		var row: Control = get_node("VBox/Scroll/List/Mail%d" % j)
 		row.visible = open and j < mails.size()

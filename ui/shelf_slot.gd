@@ -59,11 +59,9 @@ func _tip() -> Array:
 		return ["???", [["Keep expanding the line to reveal this box."]]]
 	var f: Vector2 = Game.flows()[box]
 	var r := f.x - f.y
-	var res := Game.reserve_of(box)
 	var cnt: int = Game.inv[box]
 	return ["%s · $%s" % [b.name.to_upper(), Defs.px(Game.market[box].p)], [
 		["%s in stock · %s" % [Defs.fmt(cnt), Defs.cash(cnt * Game.market[box].p)], Defs.GOLD],
 		["Made +%s/s · used −%s/s" % [Defs.rt(f.x), Defs.rt(f.y)]] if f.y > 0.0 else ["Made +%s/s" % Defs.rt(f.x)],
 		["Net %s%s/s" % ["+" if r >= 0.0 else "", Defs.rt(r)], Defs.UP if r >= 0.0 else Defs.WARN],
-		["%s reserved for machines" % Defs.fmt(res) if res else "No machines use this box"],
 		["Click to open its market."]]]

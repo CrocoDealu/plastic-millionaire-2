@@ -1,6 +1,5 @@
 [gd_resource type="Theme" format=3 uid="uid://cr2lqrnk22gh3"]
 
-[ext_resource type="FontFile" uid="uid://blct6av7tmb43" path="res://assets/fonts/PixelifySans.ttf" id="1"]
 [ext_resource type="FontFile" uid="uid://ci0t3lvbq2gmv" path="res://assets/fonts/Silkscreen-Regular.ttf" id="2"]
 [ext_resource type="FontFile" uid="uid://bta4tp2ecv02p" path="res://assets/fonts/Silkscreen-Bold.ttf" id="3"]
 [ext_resource type="Texture2D" uid="uid://bo08byoa7r074" path="res://assets/ui/x3/buttons_Blue_ButtonA_Unpressed.png" id="4"]
@@ -503,22 +502,6 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_53"]
-content_margin_left = 12.0
-content_margin_top = 12.0
-content_margin_right = 12.0
-content_margin_bottom = 12.0
-bg_color = Color(0.1255, 0.1255, 0.1373, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.3529, 0.2902, 0.0784, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_62"]
 content_margin_left = 14.0
 content_margin_top = 14.0
@@ -557,13 +540,6 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_67"]
-content_margin_left = 0.0
-content_margin_top = 0.0
-content_margin_right = 0.0
-content_margin_bottom = 0.0
-bg_color = Color(0.0784, 0.0784, 0.0863, 1)
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_41"]
 content_margin_left = 12.0
@@ -841,13 +817,9 @@ corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
-[sub_resource type="FontVariation" id="FontVariation_1"]
-base_font = ExtResource("1")
-variation_embolden = 0.6
-
 [resource]
-default_font = SubResource("FontVariation_1")
-default_font_size = 13
+default_font = SubResource("FontVariation_2")
+default_font_size = 10
 Badge/base_type = &"PanelContainer"
 Badge/styles/panel = SubResource("StyleBoxFlat_66")
 BtnCGold/base_type = &"Button"
@@ -963,8 +935,6 @@ CardHover/base_type = &"PanelContainer"
 CardHover/styles/panel = SubResource("StyleBoxFlat_51")
 CardLarge/base_type = &"PanelContainer"
 CardLarge/styles/panel = SubResource("StyleBoxFlat_52")
-CardLargeAfford/base_type = &"PanelContainer"
-CardLargeAfford/styles/panel = SubResource("StyleBoxFlat_53")
 Drawer/base_type = &"PanelContainer"
 Drawer/styles/panel = SubResource("StyleBoxFlat_62")
 Header/base_type = &"PanelContainer"
@@ -973,8 +943,6 @@ Inset/base_type = &"PanelContainer"
 Inset/styles/panel = SubResource("StyleBoxFlat_47")
 Label/colors/font_color = Color(0.9255, 0.9098, 0.8745, 1)
 Label/colors/font_shadow_color = Color(0.0235, 0.0314, 0.0588, 0)
-ModalBody/base_type = &"PanelContainer"
-ModalBody/styles/panel = SubResource("StyleBoxFlat_67")
 PanelBlack/base_type = &"PanelContainer"
 PanelBlack/styles/panel = SubResource("StyleBoxTexture_41")
 PanelDigital/base_type = &"PanelContainer"

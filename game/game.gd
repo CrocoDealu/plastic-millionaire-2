@@ -23,9 +23,11 @@ var own: Array[int] = [0, 0, 0, 0, 0]
 var mx: Array[Dictionary] = []
 var sk := {}  # skill tree: node id -> stages owned (Defs.SK)
 var market: Array[Dictionary] = []
-var trades: Array[Dictionary] = []  # {t, i, q, avg, total, kind: ask | quick | bot}
+var trades: Array[Dictionary] = []  # {t, i, q, avg, total, kind: ask | bot}
 var orders: Array[Dictionary] = []  # open asks {id, i, q, px, t}; their boxes are off the warehouse
-var ask_px: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0]  # typed ask price per box; 0 = follow the last price
+# Per box: last price frozen by the first -/+ (0 = follow the last price), and the offset on it.
+var ask_base: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0]
+var ask_pct: Array[int] = [0, 0, 0, 0, 0]
 var total_earned := 0.0
 # Persisted view prefs.
 var sel := 0
@@ -34,7 +36,6 @@ var quotes := false
 var rtab := "machines"
 var mail_seen := 0  # inbox size when the INBOX tab was last open
 var buy_mode := "x1"
-var reserve := true
 var mute := false
 # Playtest stats.
 var play := 0.0
@@ -74,7 +75,8 @@ func _fresh() -> void:
 	sk = {"press": 1}
 	trades.clear()
 	orders.clear()
-	ask_px.fill(0.0)
+	ask_base.fill(0.0)
+	ask_pct.fill(0)
 	total_earned = 0.0
 	sel = 0
 	chart = "candles"
@@ -82,7 +84,6 @@ func _fresh() -> void:
 	rtab = "machines"
 	mail_seen = 0
 	buy_mode = "x1"
-	reserve = true
 	play = 0.0
 	ms = {}
 	ev = {}
@@ -277,17 +278,6 @@ func tree_affordable() -> int:
 	return Defs.SK.filter(func(nd): var f := node_info(nd.id); return f.can and not f.hidden).size()
 
 
-func reserve_of(i: int) -> int:
-	var r := 0
-	for j in Defs.GENS.size():
-		r += Defs.GENS[j].inputs.get(i, 0) * own[j] * Defs.RESERVE_CYCLES
-	return r
-
-
-func sellable(i: int) -> int:
-	return maxi(0, inv[i] - (reserve_of(i) if reserve else 0))
-
-
 func net_rates() -> Array[float]:
 	var r: Array[float] = []
 	for v: Vector2 in flows():
@@ -360,12 +350,10 @@ func sell_quote(i: int, q: int) -> Dictionary:
 	return {imp = imp, avg = avg, total = q * avg}
 
 
-## Limit price for a new ask on box `i`: the price typed in, else the last price rounded like the tape.
+## Limit price for a new ask on box `i`: frozen (else live) last x (1 + ask_pct%), rounded like the tape.
 func ask_price(i: int) -> float:
-	if ask_px[i] > 0.0:
-		return ask_px[i]
-	var p: float = market[i].p
-	return snappedf(p, 0.01 if p < 10.0 else 0.1)
+	var p: float = (ask_base[i] if ask_base[i] > 0.0 else market[i].p) * (1.0 + ask_pct[i] / 100.0)
+	return snappedf(p, Defs.tick(p))
 
 
 ## Boxes of `i` sitting in open asks.
@@ -378,20 +366,20 @@ func on_book(i: int) -> int:
 
 
 func sell_qty(mode: String, i: int) -> int:
-	var a := sellable(i)
+	var a := inv[i]
 	match mode:
 		"1": return mini(1, a)
-		"10": return mini(10, a)
+		"10": return 10 if a >= 10 else 0
 		"half": return floori(a / 2.0)
 	return a
 
 
-## Full market fill value of every sellable box (QUICK SELL pays Defs.QUICK_SELL of this).
+## Full market fill value of every sellable box.
 func sell_value() -> float:
 	var v := 0.0
 	for i in Defs.BOXES.size():
-		if unlocked(i) and sellable(i) > 0:
-			v += sell_quote(i, sellable(i)).total
+		if unlocked(i) and inv[i] > 0:
+			v += sell_quote(i, inv[i]).total
 	return v
 
 
@@ -506,9 +494,9 @@ func _econ(dt: float) -> void:
 		if _broker_t >= skv("desk", "every", Defs.BROKER_EVERY):
 			_broker_t = 0.0
 			for i in Defs.BOXES.size():
-				var q := sellable(i)
+				var q := inv[i]
 				if unlocked(i) and q > 0 and market[i].p >= avg_of(i):
-					_do_sell(i, q, true)
+					_do_sell(i, q)
 	var budget := money + sell_value()
 	if shop_items().any(func(it): return it.cost <= budget):
 		wait_cur = 0.0
@@ -558,12 +546,11 @@ func _start_gen(i: int) -> bool:
 	return true
 
 
-## Instant sale from the warehouse at the market (Broker Bot, QUICK SELL at `f` of the fill).
-func _do_sell(i: int, q: int, auto: bool, f := 1.0) -> float:
+## Broker Bot: instant sale from the warehouse at the market.
+func _do_sell(i: int, q: int) -> void:
 	var quote := sell_quote(i, q)
 	inv[i] -= q
-	_book(i, q, quote.imp, quote.avg * f, "bot" if auto else "quick", auto)
-	return q * quote.avg * f
+	_book(i, q, quote.imp, quote.avg, "bot", true)
 
 
 ## Asks whose price the market has reached fill whole, at exactly their price.
@@ -827,28 +814,19 @@ func cancel_ask(id: int) -> void:
 			return
 
 
-## Sets the selected box's ask price; 0 or less goes back to following the last price.
-func set_ask(v: float) -> void:
-	ask_px[sel] = maxf(0.01, snappedf(v, 0.01)) if v > 0.0 else 0.0
-	notify_changed()
-
-
-## Nudges the ask price by `d` ticks ($0.01, or $0.10 from $10 up).
+## Nudges the selected box's ask by `d`%, freezing it at the current last price first.
 func ask_step(d: int) -> void:
-	var p := ask_price(sel)
-	set_ask(maxf(0.01, p + d * (0.01 if p < 10.0 else 0.1)))
-
-
-## QUICK SELL: every sellable box right now at Defs.QUICK_SELL of its market fill.
-func sell_surplus() -> bool:
-	var any := false
-	for i in Defs.BOXES.size():
-		var q := sellable(i)
-		if unlocked(i) and q > 0:
-			_do_sell(i, q, false, Defs.QUICK_SELL)
-			any = true
+	if ask_base[sel] == 0.0:
+		ask_base[sel] = market[sel].p
+	ask_pct[sel] = clampi(ask_pct[sel] + d, Defs.ASK_PCT[0], Defs.ASK_PCT[1])
 	notify_changed()
-	return any
+
+
+## The selected box's ask goes back to tracking the last price.
+func ask_follow() -> void:
+	ask_base[sel] = 0.0
+	ask_pct[sel] = 0
+	notify_changed()
 
 
 func select(i: int) -> bool:
@@ -859,7 +837,7 @@ func select(i: int) -> bool:
 	return true
 
 
-## View prefs (chart, quotes, rtab, buy_mode, reserve, mute).
+## View prefs (chart, quotes, rtab, buy_mode, mute).
 func set_pref(key: String, value: Variant) -> void:
 	set(key, value)
 	notify_changed()
@@ -874,8 +852,8 @@ func save() -> void:
 	var f := FileAccess.open(save_path, FileAccess.WRITE)
 	if f == null:
 		return
-	f.store_string(JSON.stringify({v = 1, money = money, inv = inv, own = own, sk = sk, trades = trades, orders = orders, ask_px = ask_px,
-		mute = mute, buy_mode = buy_mode, reserve = reserve, play = play, ms = ms, ev = ev, wait_max = wait_max,
+	f.store_string(JSON.stringify({v = 1, money = money, inv = inv, own = own, sk = sk, trades = trades, orders = orders, ask_base = ask_base, ask_pct = ask_pct,
+		mute = mute, buy_mode = buy_mode, play = play, ms = ms, ev = ev, wait_max = wait_max,
 		total_earned = total_earned, sel = sel, chart = chart, quotes = quotes, mx = mx, rtab = rtab, mail_seen = mail_seen}))
 	saved_at = now()
 
@@ -906,11 +884,12 @@ func load_save() -> void:
 				sk[Defs.GENS[i].id + "_" + k] = lvl
 	trades.assign(d.get("trades", []).map(func(t): t.i = int(t.i); t.q = int(t.q); return t))
 	orders.assign(d.get("orders", []).map(func(o): o.id = int(o.id); o.i = int(o.i); o.q = int(o.q); return o))
-	for i in 5:
-		ask_px[i] = float(d.get("ask_px", ask_px)[i])
+	if d.get("ask_pct") is Array:  # older saves had one global int: those follow again
+		for i in ask_pct.size():
+			ask_base[i] = float(d.ask_base[i])
+			ask_pct[i] = int(d.ask_pct[i])
 	mute = d.get("mute", false)
 	buy_mode = d.get("buy_mode", "x1")
-	reserve = d.get("reserve", true)
 	play = d.get("play", 0.0)
 	ms = d.get("ms", {})
 	ev = d.get("ev", {})

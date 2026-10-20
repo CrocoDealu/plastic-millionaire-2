@@ -5,11 +5,9 @@ extends PanelContainer
 
 const TRADE_ROW := preload("res://ui/trade_row.tscn")
 const ASK_ROW := preload("res://ui/ask_row.tscn")
-const KIND := {ask = "Ask filled", quick = "Quick sold", bot = "Bot sold"}
+const KIND := {ask = "Ask filled", bot = "Bot sold"}
 const SELL_MODES := {"Sell1": "1", "Sell10": "10", "SellHalf": "half", "SellAll": "all"}
 
-@export var check_on: StyleBox
-@export var check_off: StyleBox
 
 
 func _ready() -> void:
@@ -17,17 +15,13 @@ func _ready() -> void:
 	%Line.pressed.connect(func(): Game.set_pref("chart", "line"); Sfx.play("tick"))
 	%QuotesBtn.pressed.connect(_toggle_quotes)
 	%Close.pressed.connect(_toggle_quotes)
-	%Reserve.gui_input.connect(func(e: InputEvent):
-		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
-			Game.set_pref("reserve", not Game.reserve))
 	for n: String in SELL_MODES:
 		var b: Button = get_node("%" + n)
 		b.pressed.connect(_ask.bind(SELL_MODES[n], b))
 		Fx.hover_tip(b, "up", _ask_tip.bind(SELL_MODES[n]))
 	%AskDown.pressed.connect(func(): Game.ask_step(-1); Sfx.play("tick"))
 	%AskUp.pressed.connect(func(): Game.ask_step(1); Sfx.play("tick"))
-	%AskPx.text_submitted.connect(func(_t): %AskPx.release_focus())
-	%AskPx.focus_exited.connect(func(): Game.set_ask(%AskPx.text.lstrip("$ ").to_float()); _refresh())
+	%AskFollow.pressed.connect(func(): Game.ask_follow(); Sfx.play("tick"))
 	Game.changed.connect(_refresh)
 	_refresh()
 
@@ -75,27 +69,19 @@ func _refresh() -> void:
 	Defs.tint(%QuotesBtn, &"font_hover_color", Defs.GOLD if Game.quotes else Defs.TEXT)
 
 	# Sell bar
-	var res := Game.reserve_of(i)
-	var sellable := Game.sellable(i)
 	var book := Game.on_book(i)
 	var ap := Game.ask_price(i)
 	%Count.text = Defs.fmt(Game.inv[i])
 	%Tk.text = b.k
 	Defs.tint(%Tk, &"font_color", b.color)
-	%Sub.text = "%s%s sellable%s" % ["%s kept for machines · " % Defs.fmt(res) if res and Game.reserve else "",
-		Defs.fmt(sellable), " · %s on the book" % Defs.fmt(book) if book else ""]
-	if not %AskPx.has_focus():  # don't overwrite what's being typed
-		%AskPx.text = "$" + Defs.px(ap)
-	var d: float = (ap / m.p - 1.0) * 100.0
-	%AskRel.text = "AT LAST PRICE" if Game.ask_px[i] == 0.0 else "%s%.1f%% VS LAST" % ["+" if d >= 0.0 else "−", absf(d)]
-	Defs.tint(%AskRel, &"font_color", Defs.MUTED if Game.ask_px[i] == 0.0 else Defs.UP if d >= 0.0 else Defs.WARN)
-	if %Check.get_theme_stylebox(&"panel") != (check_on if Game.reserve else check_off):
-		%Check.add_theme_stylebox_override(&"panel", check_on if Game.reserve else check_off)
-	Defs.tint(%ResLabel, &"font_color", Defs.CAUTION if Game.reserve else Defs.FAINT)
+	%Sub.text = "· %s on the book" % Defs.fmt(book) if book else ""
+	%AskPx.text = "$" + Defs.px(ap)
+	var locked := Game.ask_base[i] > 0.0
+	%AskFollow.disabled = not locked
+	%AskFollow.theme_type_variation = &"BtnCGold" if locked else &"BtnCGrey"
 	for n: String in SELL_MODES:
 		var mode: String = SELL_MODES[n]
 		var btn: Button = get_node("%" + n)
-		btn.visible = mode == "1" or mode == "all" or sellable >= 10
 		var q := Game.sell_qty(mode, i)
 		var ok := q > 0
 		btn.theme_type_variation = (&"BtnGold" if mode == "all" else &"BtnOrange") if ok else &"BtnGrey"
@@ -176,7 +162,7 @@ func _ask_tip(mode: String) -> Array:
 	var b: Dictionary = Defs.BOXES[i]
 	var q := Game.sell_qty(mode, i)
 	if q == 0:
-		return ["ASK " + b.k, [["Nothing sellable. Machine reserve and open asks are held back.", Defs.WARN]]]
+		return ["ASK " + b.k, [["Not enough %s in the warehouse. Boxes on the book are held back." % b.k, Defs.WARN]]]
 	if Game.orders.size() >= Defs.MAX_ORDERS:
 		return ["ASK " + b.k, [["The book is full (%d open asks). Cancel one first." % Defs.MAX_ORDERS, Defs.WARN]]]
 	var ap := Game.ask_price(i)

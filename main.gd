@@ -15,8 +15,6 @@ func _ready() -> void:
 	%Scanlines.visible = scanlines
 	_shown = Game.money
 	%Settings.pressed.connect(open_settings)
-	%SellSurplus.pressed.connect(_sell_surplus)
-	Fx.hover_tip(%SellSurplus, "up", _quick_tip)
 	%Modals.gui_input.connect(_on_backdrop_input)
 	%MachinesPanel.open_machine.connect(open_machine)
 	%MachinesPanel.open_tree.connect(open_tree)
@@ -56,20 +54,6 @@ func _refresh() -> void:
 		%Title.text = title
 		Fx.bump(%Title)
 	%WhValue.text = Defs.cash(Game.warehouse_value())
-	%SellSurplus.theme_type_variation = &"BtnCGold" if Game.sell_value() > 0.0 else &"BtnCGrey"
-
-
-func _sell_surplus() -> void:
-	if Fx.button_fx(%SellSurplus, Game.sell_value() > 0.0, "", [Defs.GOLD, Defs.CAUTION, Color("#fff3c4")]):
-		Game.sell_surplus()
-		Sfx.play("sell")
-
-
-func _quick_tip() -> Array:
-	var full := Game.sell_value()
-	return ["QUICK SELL ALL SURPLUS", [["Sells every sellable box right now at %d%% of market value." % roundi(Defs.QUICK_SELL * 100.0)],
-		["You get %s instead of %s." % [Defs.cash(full * Defs.QUICK_SELL), Defs.cash(full)] if full > 0.0 else "Nothing sellable.", Defs.GOLD],
-		["Place asks on the market for full price.", Defs.MUTED]]]
 
 
 func _on_sold(_i: int, _q: int, total: float, auto: bool) -> void:

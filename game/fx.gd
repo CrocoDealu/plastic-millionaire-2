@@ -79,11 +79,6 @@ func float_text(at: Vector2, text: String, color: Color, font_size := 14) -> voi
 		_floats.pop_front()
 
 
-## Centre of a control in canvas coordinates.
-static func center(c: Control) -> Vector2:
-	return c.get_global_rect().get_center()
-
-
 ## Purchase bump: scale 1.1 -> 1 over 220ms.
 func bump(c: Control) -> void:
 	c.pivot_offset = c.size / 2.0

@@ -18,17 +18,17 @@ func _initialize() -> void:
 	# Heavy + Hydraulic: 4 drops per slam.
 	g.sk["heavy"] = 2
 	assert(g.press().size() == 4)
-	# Every unlocked colour drops; older ones are bundled x10 per tier behind the newest, up to
+	# Every unlocked colour drops; older ones are bundled xBUNDLE per tier behind the newest, up to
 	# the Press Die's reach.
 	g.own[2] = 1
 	g.mark("got1")
 	assert(g.top_colour() == 2 and g.bundle(0) == 1)
 	g.sk["die"] = 1
-	assert(g.bundle(0) == 10 and g.bundle(1) == 10 and g.bundle(2) == 1)
+	assert(g.bundle(0) == Defs.BUNDLE and g.bundle(1) == Defs.BUNDLE and g.bundle(2) == 1)
 	g.sk["die"] = 2
-	assert(g.bundle(0) == 100 and g.bundle(1) == 10 and g.bundle(2) == 1)
+	assert(g.bundle(0) == Defs.BUNDLE ** 2 and g.bundle(1) == Defs.BUNDLE and g.bundle(2) == 1)
 	var seen := {}
-	for k in 300: seen[g.press_pick()] = true
+	for k in 10000: seen[g.press_pick()] = true  # the top colour is 1 in ~PRESS_ODDS^2
 	assert(seen.size() == 3 and not seen.has(3))
 	# Combo: slams inside the window chain; press upgrades boost machines only while it lives.
 	g.combo = 0
@@ -36,11 +36,11 @@ func _initialize() -> void:
 	assert(g.combo == 10 and g.combo_live() == 10 and is_equal_approx(g.press_boost(), 1.0))
 	g.sk["overdrive"] = 1
 	assert(is_equal_approx(g.press_boost(), 1.2))
-	g.combo = 30
-	assert(is_equal_approx(g.press_boost(), 1.4))
+	g.combo = 40
+	assert(is_equal_approx(g.press_boost(), 1.6))  # Overdrive caps at +60%
 	g.sk["overtime"] = 1
 	g.sk["overdrive"] = 2
-	assert(is_equal_approx(g.press_boost(), 3.2))
+	assert(is_equal_approx(g.press_boost(), 3.6))  # (1 + 80%) x2
 	g.combo = 50
 	g.sk["overtime"] = 2
 	assert(is_equal_approx(g.press_boost(), 6.0))  # Double Shift x3 at 40+
@@ -61,10 +61,10 @@ func _initialize() -> void:
 	# Asks: boxes leave the warehouse onto the book and fill whole at exactly their price once
 	# the market reaches it; the price then drops by min(0.3, q/depth).
 	g.inv[0] = 300
-	g.set_ask(g.market[0].p * 3.0)  # any price, way above the market
+	g.ask_step(5)
 	var o: Dictionary = g.place_ask("all")
 	assert(g.inv[0] == 0 and g.orders.size() == 1 and g.on_book(0) == 300 and g.sell_qty("1", 0) == 0)
-	assert(is_equal_approx(o.px, snappedf(g.market[0].p * 3.0, 0.01)))
+	assert(is_equal_approx(o.px, snappedf(g.market[0].p * 1.05, Defs.tick(g.market[0].p * 1.05))))
 	g._fill_orders()
 	assert(g.orders.size() == 1 and g.trades.is_empty())  # not reached yet
 	g.cancel_ask(o.id)
@@ -74,22 +74,21 @@ func _initialize() -> void:
 	g._fill_orders()
 	assert(g.orders.is_empty() and is_equal_approx(g.market[0].p, o.px * 0.7))
 	assert(is_equal_approx(g.money, 300 * o.px) and g.trades[0].kind == "ask")
-	g.set_ask(0.12)
-	g.ask_step(1)
-	assert(is_equal_approx(g.ask_price(0), 0.13))
-	g.set_ask(0.0)
-	assert(g.ask_price(0) == snappedf(g.market[0].p, 0.01))  # cleared: follows the last price again
+	g.ask_step(-100)
+	assert(g.ask_pct[0] == Defs.ASK_PCT[0])
+	# A set ask stays put while the market moves; FOLLOW tracks it again.
+	var locked_px: float = g.ask_price(0)
+	g.market[0].p *= 2.0
+	assert(g.ask_price(0) == locked_px)
+	g.ask_follow()
+	assert(g.ask_price(0) == snappedf(g.market[0].p, Defs.tick(g.market[0].p)))
 	# Book holds at most MAX_ORDERS asks.
 	g.inv[0] = 100
 	for k in Defs.MAX_ORDERS: g.place_ask("1")
 	assert(g.orders.size() == Defs.MAX_ORDERS and g.place_ask("1").is_empty())
 	for x in g.orders.duplicate(): g.cancel_ask(x.id)
 	assert(g.inv[0] == 100)
-	# Quick sell: everything sellable now, at half the market fill.
-	var m0: float = g.money
-	var full: float = g.sell_quote(0, 100).total
-	assert(g.sell_surplus() and g.inv[0] == 0)
-	assert(is_equal_approx(g.money - m0, full * Defs.QUICK_SELL) and g.trades[0].kind == "quick")
+	g.inv[0] = 0
 	g.money = 0.0
 
 	# First sale: Accounting email, junior title, and the GRY event scheduled 30-90s out.
@@ -111,10 +110,9 @@ func _initialize() -> void:
 	assert(g.mx[0].held == 2 and g.inv[0] == 0)
 	assert(g.gen_act(0) == g.Act.COLLECTED and g.inv[0] == 2)
 
-	# Red Stacker consumes 3 GRY per batch; reserve keeps 2 cycles of input.
+	# Red Stacker consumes 3 GRY per batch.
 	assert(g.buy_gen(1))
 	g.inv[0] = 7
-	assert(g.reserve_of(0) == 6 and g.sellable(0) == 1)
 	assert(g.gen_act(1) == g.Act.STARTED and g.inv[0] == 4)
 
 	# Tree: Output Chute needs its parent and money; Chute + Self-Start run the arm unattended.
@@ -171,18 +169,19 @@ func _initialize() -> void:
 	# Save / load round trip.
 	g.quotes = true
 	g.sel = 0  # buying the first Stacker selected RED
-	g.inv[0] = 50  # above the machine reserve
+	g.inv[0] = 50
 	g.place_ask("1")
-	g.set_ask(7.5)
+	g.ask_step(7)
+	var base0: float = g.ask_base[0]
 	g.save()
 	var m: float = g.money
 	g._fresh()
 	g.load_save()
 	assert(is_equal_approx(g.money, m) and g.own[1] == 1 and g.mul(0) == 2 and g.mx[0].in_on == false and g.quotes)
-	assert(g.orders.size() == 1 and g.orders[0].q == 1 and is_equal_approx(g.ask_px[0], 7.5))
+	assert(g.orders.size() == 1 and g.orders[0].q == 1 and g.ask_pct[0] == 7 and is_equal_approx(g.ask_base[0], base0))
 	assert(g.sk_own("arm_in") == 1 and g.sk_own("press") == 1)
 	g.cancel_ask(g.orders[0].id)
-	g.set_ask(0.0)
+	g.ask_follow()
 
 	# Pre-tree save: flat upgrades and bought auto toggles become tree stages.
 	var tree_sk: Dictionary = g.sk.duplicate()
@@ -213,12 +212,13 @@ func _initialize() -> void:
 	g.own[4] = 1
 	g.mark("forge")
 	assert(mail.has("Unknown sender") and g.title() == Defs.TITLES.forge)
-	g.inv.assign([0, 0, 0, 2, 7])
+	var need: Dictionary = Defs.MYSTERY_INPUTS
+	g.inv.assign([0, 0, 0, need[3] - 1, need[4] + 4])
 	assert(g.mystery_shown() and not g.can_open())
 	g.toggle_arm()
-	assert(not g.armed)  # can't load without 3 VIO + 3 TEA
-	g.inv.assign([0, 0, 0, 7, 7])
-	assert(g.press().size() == 1 and g.inv[3] == 7)  # not loaded: a normal slam
+	assert(not g.armed)  # can't load without the whole recipe
+	g.inv.assign([0, 0, 0, need[3] + 4, need[4] + 4])
+	assert(g.press().size() == 1 and g.inv[3] == need[3] + 4)  # not loaded: a normal slam
 	g.toggle_arm()
 	assert(g.armed and g.press() == [] and g.inv[3] == 4 and g.inv[4] == 4 and g.ms.has("opened"))
 	assert(not g.mystery_shown() and not g.armed and g.opening and g.title() == Defs.TITLES.forge)

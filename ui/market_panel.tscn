@@ -8,38 +8,6 @@
 [ext_resource type="PackedScene" path="res://ui/quote_row.tscn" id="qrow"]
 [ext_resource type="Texture2D" path="res://assets/ui/x3/buttons_Orange_ButtonCloseA_Highlighted.png" id="close"]
 
-[sub_resource type="StyleBoxFlat" id="ask_px"]
-bg_color = Color(0.0784, 0.0784, 0.0863, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.2275, 0.2275, 0.2392, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-content_margin_left = 6.0
-content_margin_top = 4.0
-content_margin_right = 6.0
-content_margin_bottom = 4.0
-
-[sub_resource type="StyleBoxFlat" id="ask_px_focus"]
-bg_color = Color(0.0784, 0.0784, 0.0863, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 0.8196, 0.4, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-content_margin_left = 6.0
-content_margin_top = 4.0
-content_margin_right = 6.0
-content_margin_bottom = 4.0
-
 [sub_resource type="StyleBoxFlat" id="plot"]
 bg_color = Color(0.0784, 0.0784, 0.0863, 1)
 corner_radius_top_left = 6
@@ -50,37 +18,9 @@ bg_color = Color(0.1137, 0.1137, 0.1255, 1)
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 
-[sub_resource type="StyleBoxFlat" id="check_on"]
-bg_color = Color(0.9608, 0.7725, 0.0941, 1)
-anti_aliasing = false
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.9608, 0.7725, 0.0941, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxFlat" id="check_off"]
-bg_color = Color(0, 0, 0, 0)
-anti_aliasing = false
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.4667, 0.4549, 0.4235, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
 [node name="MarketPanel" type="PanelContainer"]
 theme_type_variation = &"PanelOutlined"
 script = ExtResource("1")
-check_on = SubResource("check_on")
-check_off = SubResource("check_off")
 
 [node name="VBox" type="VBoxContainer" parent="."]
 layout_mode = 2
@@ -125,6 +65,7 @@ dark = 5
 light = 4
 
 [node name="Info" type="VBoxContainer" parent="VBox/Head"]
+custom_minimum_size = Vector2(190, 0)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_constants/separation = 3
@@ -217,24 +158,30 @@ size_flags_horizontal = 3
 size_flags_vertical = 4
 theme_override_constants/separation = 4
 
-[node name="Hold" type="HBoxContainer" parent="VBox/SellBar/VBox/Row/Info"]
+[node name="Top" type="HBoxContainer" parent="VBox/SellBar/VBox/Row/Info"]
 layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Hold" type="HBoxContainer" parent="VBox/SellBar/VBox/Row/Info/Top"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
 theme_override_constants/separation = 8
 
-[node name="Label" type="Label" parent="VBox/SellBar/VBox/Row/Info/Hold"]
+[node name="Label" type="Label" parent="VBox/SellBar/VBox/Row/Info/Top/Hold"]
 layout_mode = 2
 size_flags_vertical = 8
 theme_type_variation = &"Silk"
 text = "YOU HOLD"
 
-[node name="Count" type="Label" parent="VBox/SellBar/VBox/Row/Info/Hold"]
+[node name="Count" type="Label" parent="VBox/SellBar/VBox/Row/Info/Top/Hold"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"SilkBold"
 theme_override_font_sizes/font_size = 18
 text = "0"
 
-[node name="Tk" type="Label" parent="VBox/SellBar/VBox/Row/Info/Hold"]
+[node name="Tk" type="Label" parent="VBox/SellBar/VBox/Row/Info/Top/Hold"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 8
@@ -242,66 +189,21 @@ theme_type_variation = &"Silk"
 theme_override_font_sizes/font_size = 11
 text = "GRY"
 
-[node name="Sub" type="Label" parent="VBox/SellBar/VBox/Row/Info"]
+[node name="Sub" type="Label" parent="VBox/SellBar/VBox/Row/Info/Top/Hold"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
 theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
-text = "0 sellable ≈ $0.00"
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="Reserve" type="HBoxContainer" parent="VBox/SellBar/VBox/Row/Info"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 0
-mouse_filter = 0
-mouse_default_cursor_shape = 2
-theme_override_constants/separation = 6
-
-[node name="Check" type="Panel" parent="VBox/SellBar/VBox/Row/Info/Reserve"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(10, 10)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_filter = 2
-theme_override_styles/panel = SubResource("check_on")
-
-[node name="ResLabel" type="Label" parent="VBox/SellBar/VBox/Row/Info/Reserve"]
-unique_name_in_owner = true
-layout_mode = 2
-mouse_filter = 2
-theme_type_variation = &"Silk"
-theme_override_font_sizes/font_size = 8
-text = "KEEP MACHINE RESERVE"
-
-[node name="Ask" type="HBoxContainer" parent="VBox/SellBar/VBox/Row"]
+[node name="Ask" type="HBoxContainer" parent="VBox/SellBar/VBox/Row/Info/Top"]
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_constants/separation = 8
 
-[node name="Labels" type="VBoxContainer" parent="VBox/SellBar/VBox/Row/Ask"]
-layout_mode = 2
-size_flags_vertical = 4
-theme_override_constants/separation = 3
-
-[node name="Label" type="Label" parent="VBox/SellBar/VBox/Row/Ask/Labels"]
-layout_mode = 2
-theme_type_variation = &"Silk"
-theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
-theme_override_font_sizes/font_size = 8
-text = "ASK PRICE"
-horizontal_alignment = 2
-
-[node name="AskRel" type="Label" parent="VBox/SellBar/VBox/Row/Ask/Labels"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Silk"
-theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
-theme_override_font_sizes/font_size = 8
-text = "AT LAST PRICE"
-horizontal_alignment = 2
-
-[node name="AskDown" type="Button" parent="VBox/SellBar/VBox/Row/Ask"]
+[node name="AskDown" type="Button" parent="VBox/SellBar/VBox/Row/Info/Top/Ask"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
@@ -313,24 +215,17 @@ theme_override_colors/font_pressed_color = Color(0.9255, 0.9098, 0.8745, 1)
 theme_override_font_sizes/font_size = 11
 text = "−"
 
-[node name="AskPx" type="LineEdit" parent="VBox/SellBar/VBox/Row/Ask"]
+[node name="AskPx" type="Label" parent="VBox/SellBar/VBox/Row/Info/Top/Ask"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(84, 0)
+custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
-size_flags_vertical = 4
-tooltip_text = "Type any ask price. Clear it to follow the last price."
 theme_type_variation = &"SilkBold"
 theme_override_colors/font_color = Color(1, 0.8196, 0.4, 1)
-theme_override_colors/caret_color = Color(1, 0.8196, 0.4, 1)
-theme_override_colors/font_placeholder_color = Color(0.4667, 0.4549, 0.4235, 1)
 theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("ask_px")
-theme_override_styles/focus = SubResource("ask_px_focus")
 text = "$1.00"
-alignment = 1
-select_all_on_focus = true
+horizontal_alignment = 1
 
-[node name="AskUp" type="Button" parent="VBox/SellBar/VBox/Row/Ask"]
+[node name="AskUp" type="Button" parent="VBox/SellBar/VBox/Row/Info/Top/Ask"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
@@ -341,6 +236,14 @@ theme_override_colors/font_hover_color = Color(0.9255, 0.9098, 0.8745, 1)
 theme_override_colors/font_pressed_color = Color(0.9255, 0.9098, 0.8745, 1)
 theme_override_font_sizes/font_size = 11
 text = "+"
+
+[node name="AskFollow" type="Button" parent="VBox/SellBar/VBox/Row/Info/Top/Ask"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_default_cursor_shape = 2
+tooltip_text = "Ask at the live last price again."
+theme_type_variation = &"BtnCGrey"
+text = "FOLLOW"
 
 [node name="Btns" type="HBoxContainer" parent="VBox/SellBar/VBox"]
 layout_mode = 2
@@ -503,7 +406,7 @@ custom_minimum_size = Vector2(340, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 12
 text = "Press the Box Press and collect your first grey box to open the market."
 horizontal_alignment = 1
 autowrap_mode = 3
@@ -727,7 +630,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 10
 text = "No open asks. An ask fills when the market trades at or above its price."
 autowrap_mode = 3
 

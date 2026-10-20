@@ -5,8 +5,8 @@ extends PanelContainer
 
 signal closed
 
-@onready var _lines: Array[Label] = [$VBox/Detail/HBox/Info/Line0, $VBox/Detail/HBox/Info/Line1,
-	$VBox/Detail/HBox/Info/Line2, $VBox/Detail/HBox/Info/Line3]
+@onready var _lines: Array[Label] = [$Pad/VBox/Detail/HBox/Info/Line0, $Pad/VBox/Detail/HBox/Info/Line1,
+	$Pad/VBox/Detail/HBox/Info/Line2, $Pad/VBox/Detail/HBox/Info/Line3]
 
 
 func _ready() -> void:
@@ -32,11 +32,6 @@ func _process(_delta: float) -> void:
 func _refresh() -> void:
 	if not visible:
 		return
-	var aff := Game.tree_affordable()
-	%Aff.text = "%d AFFORDABLE" % aff
-	Defs.tint(%Aff, &"font_color", Defs.CAUTION if aff else Defs.FAINT)
-	(%Pill.get_theme_stylebox(&"panel") as StyleBoxFlat).bg_color = Defs.LIT_BG if aff else Color("#1d1d20")
-	%Owned.text = "%d OWNED" % Defs.SK.filter(func(nd): return Game.sk_own(nd.id) > 0).size()  # no total: the tree is a mystery
 	%Money.text = Defs.cash(Game.money)
 	_refresh_detail()
 
