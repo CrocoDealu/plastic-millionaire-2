@@ -15,15 +15,22 @@ layout_mode = 2
 mouse_filter = 2
 color = Color(0.0784, 0.0784, 0.0863, 1)
 
-[node name="VBox" type="VBoxContainer" parent="."]
+[node name="Pad" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="Pad"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Head" type="HBoxContainer" parent="VBox"]
+[node name="Head" type="HBoxContainer" parent="Pad/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Chip" type="Control" parent="VBox/Head"]
+[node name="Chip" type="Control" parent="Pad/VBox/Head"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
@@ -32,34 +39,34 @@ script = ExtResource("chip")
 dark = 6
 light = 5
 
-[node name="Titles" type="VBoxContainer" parent="VBox/Head"]
+[node name="Titles" type="VBoxContainer" parent="Pad/VBox/Head"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
 theme_override_constants/separation = 3
 
-[node name="Kicker" type="Label" parent="VBox/Head/Titles"]
+[node name="Kicker" type="Label" parent="Pad/VBox/Head/Titles"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Silk"
 theme_override_colors/font_color = Color(0.9608, 0.7725, 0.0941, 1)
 text = "MACHINE 1 / 5 · ×1 OWNED"
 
-[node name="Name" type="Label" parent="VBox/Head/Titles"]
+[node name="Name" type="Label" parent="Pad/VBox/Head/Titles"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"SilkBold"
 theme_override_font_sizes/font_size = 18
 text = "PRESS ARM"
 
-[node name="Close" type="TextureButton" parent="VBox/Head"]
+[node name="Close" type="TextureButton" parent="Pad/VBox/Head"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 4
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("close")
 
-[node name="Summary" type="Label" parent="VBox"]
+[node name="Summary" type="Label" parent="Pad/VBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
@@ -68,7 +75,7 @@ theme_override_font_sizes/font_size = 12
 text = "No input → 1 GRY every 2.0s per machine."
 autowrap_mode = 3
 
-[node name="Flavour" type="Label" parent="VBox"]
+[node name="Flavour" type="Label" parent="Pad/VBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
@@ -77,15 +84,15 @@ theme_override_font_sizes/font_size = 11
 text = "Was here before you. Will be here after you."
 autowrap_mode = 3
 
-[node name="Ain" parent="VBox" instance=ExtResource("row")]
+[node name="Ain" parent="Pad/VBox" instance=ExtResource("row")]
 layout_mode = 2
 key = "ain"
 
-[node name="Aout" parent="VBox" instance=ExtResource("row")]
+[node name="Aout" parent="Pad/VBox" instance=ExtResource("row")]
 layout_mode = 2
 key = "aout"
 
-[node name="Note" type="Label" parent="VBox"]
+[node name="Note" type="Label" parent="Pad/VBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(500, 28)
 layout_mode = 2

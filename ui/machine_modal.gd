@@ -15,7 +15,7 @@ func _ready() -> void:
 
 func open(i: int) -> void:
 	machine = i
-	for r in [$VBox/Ain, $VBox/Aout]:
+	for r in [$Pad/VBox/Ain, $Pad/VBox/Aout]:
 		r.machine = i
 	visible = true
 	_refresh()
@@ -34,9 +34,9 @@ func _refresh() -> void:
 	%Summary.text = "%s → %d %s every %.1fs per machine. Skill tree upgrades apply to every %s you own." % [
 		recipe if recipe else "No input", Game.mul(i), ob.k, Game.cyc(i), g.name]
 	%Flavour.text = Defs.FLAVOUR[g.id]
-	for r in [$VBox/Ain, $VBox/Aout]:
+	for r in [$Pad/VBox/Ain, $Pad/VBox/Aout]:
 		r.refresh()
 	var x: Dictionary = Game.mx[i]
-	$VBox/Ain.visible = x.ain
-	$VBox/Aout.visible = x.aout
+	$Pad/VBox/Ain.visible = x.ain
+	$Pad/VBox/Aout.visible = x.aout
 	%Note.text = "Speed, Yield, Chute and Hopper for the %s are bought in the Skill Tree." % g.name
