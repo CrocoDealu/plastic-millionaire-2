@@ -91,8 +91,8 @@ func buy(id: String) -> void:
 	var at := get_global_transform() * (pos(f.nd) + _pan)
 	if Game.buy_sk(id):
 		_anim[id] = ["buy", _now()]
-		Fx.burst(at, 14, [Defs.CAUTION, Defs.sk_color(f.nd), Color.WHITE], 220.0, 500.0)
-		Fx.float_text(at - Vector2(0, HALF + 6.0), "-" + Defs.cash(f.nx.c), Defs.WARN, 13)
+		Fx.burst(at, 14, [Defs.CAUTION, Defs.sk_color(f.nd), Color.WHITE], 220.0, 500.0, true)
+		Fx.float_text(at - Vector2(0, HALF + 6.0), "-" + Defs.cash(f.nx.c), Defs.WARN, 13, true)
 		Sfx.play("buy")
 	else:
 		_anim[id] = ["deny", _now()]

@@ -232,7 +232,10 @@ theme_override_colors/font_color = Color(1, 0.8196, 0.4, 1)
 theme_override_font_sizes/font_size = 12
 text = "$0.00"
 
-[node name="Modals" type="ColorRect" parent="." unique_id=1317393748]
+[node name="ModalLayer" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="Modals" type="ColorRect" parent="ModalLayer" unique_id=1317393748]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -243,7 +246,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.0118, 0.0196, 0.0392, 0.55)
 
-[node name="Center" type="CenterContainer" parent="Modals" unique_id=1939600770]
+[node name="Center" type="CenterContainer" parent="ModalLayer/Modals" unique_id=1939600770]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -252,37 +255,37 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="MachineModal" parent="Modals/Center" unique_id=1844476215 instance=ExtResource("9")]
+[node name="MachineModal" parent="ModalLayer/Modals/Center" unique_id=1844476215 instance=ExtResource("9")]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 
-[node name="SettingsModal" parent="Modals/Center" unique_id=805889692 instance=ExtResource("10")]
+[node name="SettingsModal" parent="ModalLayer/Modals/Center" unique_id=805889692 instance=ExtResource("10")]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 
-[node name="EndCard" type="PanelContainer" parent="Modals/Center" unique_id=109669646]
+[node name="EndCard" type="PanelContainer" parent="ModalLayer/Modals/Center" unique_id=109669646]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(440, 0)
 layout_mode = 2
 theme_type_variation = &"PanelDigital"
 
-[node name="Body" type="ColorRect" parent="Modals/Center/EndCard" unique_id=1652926428]
+[node name="Body" type="ColorRect" parent="ModalLayer/Modals/Center/EndCard" unique_id=1652926428]
 layout_mode = 2
 mouse_filter = 2
 color = Color(0.0784, 0.0784, 0.0863, 1)
 
-[node name="VBox" type="VBoxContainer" parent="Modals/Center/EndCard" unique_id=318127512]
+[node name="VBox" type="VBoxContainer" parent="ModalLayer/Modals/Center/EndCard" unique_id=318127512]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Head" type="HBoxContainer" parent="Modals/Center/EndCard/VBox" unique_id=2049674375]
+[node name="Head" type="HBoxContainer" parent="ModalLayer/Modals/Center/EndCard/VBox" unique_id=2049674375]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="EndText" type="Label" parent="Modals/Center/EndCard/VBox/Head" unique_id=1201668003]
+[node name="EndText" type="Label" parent="ModalLayer/Modals/Center/EndCard/VBox/Head" unique_id=1201668003]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
@@ -292,14 +295,14 @@ theme_override_font_sizes/font_size = 16
 text = "End of demo."
 autowrap_mode = 3
 
-[node name="EndClose" type="TextureButton" parent="Modals/Center/EndCard/VBox/Head" unique_id=1642224183]
+[node name="EndClose" type="TextureButton" parent="ModalLayer/Modals/Center/EndCard/VBox/Head" unique_id=1642224183]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("close")
 
-[node name="Itch" type="LinkButton" parent="Modals/Center/EndCard/VBox" unique_id=1849977497]
+[node name="Itch" type="LinkButton" parent="ModalLayer/Modals/Center/EndCard/VBox" unique_id=1849977497]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 0
@@ -308,13 +311,13 @@ theme_override_colors/font_hover_color = Color(1, 0.8196, 0.4, 1)
 theme_override_font_sizes/font_size = 11
 text = "itch.io"
 
-[node name="SkillTree" parent="Modals" instance=ExtResource("11")]
+[node name="SkillTree" parent="ModalLayer/Modals" instance=ExtResource("11")]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
 
 [node name="Overlay" type="CanvasLayer" parent="." unique_id=230783759]
-layer = 2
+layer = 4
 
 [node name="Scanlines" type="ColorRect" parent="Overlay" unique_id=245978615]
 unique_name_in_owner = true

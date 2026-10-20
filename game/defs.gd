@@ -67,7 +67,7 @@ const SK_GLOBAL := [
 const TIER := [
 	["Output Chute", "A hole in the floor, formally recognised as infrastructure.", "Self-Start", "The Arm no longer waits for you. It never really did.",
 		"Bulk Procurement", "Arms now arrive in boxes. The boxes are grey. Nobody comments.", "Rated Capacity", "Re-rated by an inspector who was also, technically, a Press Arm."],
-	["Stacker Chute", "Reds leave the Stacker on their own now. They've earned it.", "Stacker Hopper", "Greys now arrive by conveyor. Your hands have been promoted to amber.",
+	["Stacker Chute", "Reds leave the Stacker on their own now. They've earned it.", "Stacker Hopper", "Greys now arrive by conveyor. Your hands have been promoted to red.",
 		"Stacker Bulk Deal", "The more Stackers you buy, the less each one respects you.", "Red Certification", "Every red now certified as at least three greys. Audit pending."],
 	["Laminator Chute", "Ambers exit single file. The Laminator insists.", "Laminator Hopper", "Facilities has asked it to stop laminating the hopper.",
 		"Amber Futures", "Laminators pre-ordered at today's prices. Today is very confident.", "Gold Standard", "Amber is now officially worth what amber is worth."],
@@ -177,9 +177,9 @@ const ITCH_URL := "https://example.itch.io/plastic-millionaire"
 const TITLES := {
 	start = "Unpaid Intern, Grey Department",
 	sell1 = "Junior Box Associate",
-	vat = "Amber Specialist",
-	kiln = "Director of Teal",
-	fuse = "Owner & Chief Box Officer",
+	vat = "Red Specialist",
+	kiln = "Amber Specialist",
+	fuse = "Director of Teal",
 	forge = "Last Human on the Floor",
 	opened = "Pending",
 }
@@ -187,7 +187,7 @@ const TITLES := {
 const EMAILS := {
 	start = ["HR", "Welcome! You run the press. The Press Arm also runs the press. Please don't speak to the Arm; it's senior to you."],
 	sell1 = ["Accounting", "Congratulations on your first sale. Please stop high-fiving the customer."],
-	vat = ["HR", "Your red-box duties now belong to the Red Stacker. You've been promoted to amber. Same pay."],
+	vat = ["HR", "Your grey-box duties now belong to the Red Stacker. You've been promoted to red. Same pay."],
 	kiln = ["Facilities", "Please stop laminating your lunch. The Laminator is doing your old job and needs to concentrate."],
 	broker = ["CEO", "Your bot outperformed the entire finance team. The finance team has been invited to a meeting with your bot."],
 	fuse = ["Former CEO", "I've sold you the company. One thing: never open a box. Also, please let me keep my parking spot."],

@@ -51,26 +51,20 @@ func _draw() -> void:
 	draw_dashed_line(Vector2(0, ay), Vector2(plot.size.x, ay), Defs.FAINT, 2.0, 2.0)
 	_text(Vector2(8, ay - 15.0), "AVG " + Defs.px(avg), Defs.FAINT)
 
-	if Game.chart == "candles":
-		for j in cs.size():
-			var c: Dictionary = cs[j]
-			var col := Defs.UP if c.c >= c.o else Defs.DOWN
-			if j == cs.size() - 1:
-				col.a = 0.75
-			var wx := roundf((j + 0.5) * slot)
-			var wt: float = y.call(c.h)
-			draw_rect(Rect2(wx - 1.0, wt, 2.0, maxf(1.0, y.call(c.l) - wt)), col)
-			var top: float = y.call(maxf(c.o, c.c))
-			var h := maxf(2.0, absf(y.call(c.o) - y.call(c.c)))
-			draw_rect(Rect2(roundf(j * slot + slot * 0.18), top, roundf(slot * 0.64), h), col)
-			if c.sold > 0:
-				var d := Vector2(wx, y.call(c.l) + 8.0)
-				draw_colored_polygon(PackedVector2Array([d + Vector2(0, -5.66), d + Vector2(5.66, 0), d + Vector2(0, 5.66), d + Vector2(-5.66, 0)]), Defs.CAUTION)
-	else:
-		var pts := PackedVector2Array()
-		for j in cs.size():
-			pts.append(Vector2((j + 0.5) * slot, y.call(cs[j].c)))
-		draw_polyline(pts, chg_c, 3.0)
+	for j in cs.size():
+		var c: Dictionary = cs[j]
+		var col := Defs.UP if c.c >= c.o else Defs.DOWN
+		if j == cs.size() - 1:
+			col.a = 0.75
+		var wx := roundf((j + 0.5) * slot)
+		var wt: float = y.call(c.h)
+		draw_rect(Rect2(wx - 1.0, wt, 2.0, maxf(1.0, y.call(c.l) - wt)), col)
+		var top: float = y.call(maxf(c.o, c.c))
+		var h := maxf(2.0, absf(y.call(c.o) - y.call(c.c)))
+		draw_rect(Rect2(roundf(j * slot + slot * 0.18), top, roundf(slot * 0.64), h), col)
+		if c.sold > 0:
+			var d := Vector2(wx, y.call(c.l) + 8.0)
+			draw_colored_polygon(PackedVector2Array([d + Vector2(0, -5.66), d + Vector2(5.66, 0), d + Vector2(0, 5.66), d + Vector2(-5.66, 0)]), Defs.CAUTION)
 
 	for o in asks:
 		var oy: float = y.call(o.px)

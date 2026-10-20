@@ -31,7 +31,6 @@ var ask_pct: Array[int] = [0, 0, 0, 0, 0]
 var total_earned := 0.0
 # Persisted view prefs.
 var sel := 0
-var chart := "candles"
 var quotes := false
 var rtab := "machines"
 var mail_seen := 0  # inbox size when the INBOX tab was last open
@@ -79,7 +78,6 @@ func _fresh() -> void:
 	ask_pct.fill(0)
 	total_earned = 0.0
 	sel = 0
-	chart = "candles"
 	quotes = false
 	rtab = "machines"
 	mail_seen = 0
@@ -837,7 +835,7 @@ func select(i: int) -> bool:
 	return true
 
 
-## View prefs (chart, quotes, rtab, buy_mode, mute).
+## View prefs (quotes, rtab, buy_mode, mute).
 func set_pref(key: String, value: Variant) -> void:
 	set(key, value)
 	notify_changed()
@@ -854,7 +852,7 @@ func save() -> void:
 		return
 	f.store_string(JSON.stringify({v = 1, money = money, inv = inv, own = own, sk = sk, trades = trades, orders = orders, ask_base = ask_base, ask_pct = ask_pct,
 		mute = mute, buy_mode = buy_mode, play = play, ms = ms, ev = ev, wait_max = wait_max,
-		total_earned = total_earned, sel = sel, chart = chart, quotes = quotes, mx = mx, rtab = rtab, mail_seen = mail_seen}))
+		total_earned = total_earned, sel = sel, quotes = quotes, mx = mx, rtab = rtab, mail_seen = mail_seen}))
 	saved_at = now()
 
 
@@ -896,7 +894,6 @@ func load_save() -> void:
 	wait_max = d.get("wait_max", 0.0)
 	total_earned = d.get("total_earned", 0.0)
 	sel = int(d.get("sel", 0))
-	chart = d.get("chart", "candles")
 	quotes = d.get("quotes", false)
 	rtab = d.get("rtab", "machines")
 	mail_seen = int(d.get("mail_seen", 0))

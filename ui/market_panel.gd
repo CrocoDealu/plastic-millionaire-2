@@ -11,8 +11,6 @@ const SELL_MODES := {"Sell1": "1", "Sell10": "10", "SellHalf": "half", "SellAll"
 
 
 func _ready() -> void:
-	%Candles.pressed.connect(func(): Game.set_pref("chart", "candles"); Sfx.play("tick"))
-	%Line.pressed.connect(func(): Game.set_pref("chart", "line"); Sfx.play("tick"))
 	%QuotesBtn.pressed.connect(_toggle_quotes)
 	%Close.pressed.connect(_toggle_quotes)
 	for n: String in SELL_MODES:
@@ -53,17 +51,11 @@ func _refresh() -> void:
 	var b: Dictionary = Defs.BOXES[i]
 	var m: Dictionary = Game.market[i]
 	var cs := Game.window(i)
-	var chg := Game.change_pct(i)
-	var chg_c := Defs.UP if chg >= 0.0 else Defs.DOWN
 
 	%Chip.color = b.color
 	%Name.text = b.name.to_upper()
 	%Price.text = "$" + Defs.px(m.p)
-	%Chg.text = Defs.pct(chg, 2)
-	Defs.tint(%Chg, &"font_color", chg_c)
 	%HL.text = "H %s · L %s" % [Defs.px(cs.map(func(c): return c.h).max()), Defs.px(cs.map(func(c): return c.l).min())]
-	%Candles.theme_type_variation = &"BtnCGold" if Game.chart == "candles" else &"BtnCGrey"
-	%Line.theme_type_variation = &"BtnCGold" if Game.chart == "line" else &"BtnCGrey"
 	%QuotesBtn.theme_type_variation = &"BtnGold" if Game.quotes else &"BtnGrey"
 	Defs.tint(%QuotesBtn, &"font_color", Defs.GOLD if Game.quotes else Defs.TEXT)
 	Defs.tint(%QuotesBtn, &"font_hover_color", Defs.GOLD if Game.quotes else Defs.TEXT)

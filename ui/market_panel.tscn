@@ -87,14 +87,6 @@ theme_type_variation = &"SilkBold"
 theme_override_font_sizes/font_size = 20
 text = "$1.00"
 
-[node name="Chg" type="Label" parent="VBox/Head/Info/Row"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 8
-theme_type_variation = &"Silk"
-theme_override_font_sizes/font_size = 11
-text = "+0.00%"
-
 [node name="HL" type="Label" parent="VBox/Head"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -102,25 +94,6 @@ size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
 text = "H 1.00 · L 1.00"
 clip_text = true
-
-[node name="Modes" type="HBoxContainer" parent="VBox/Head"]
-layout_mode = 2
-size_flags_vertical = 4
-theme_override_constants/separation = 4
-
-[node name="Candles" type="Button" parent="VBox/Head/Modes"]
-unique_name_in_owner = true
-layout_mode = 2
-mouse_default_cursor_shape = 2
-theme_type_variation = &"BtnCGold"
-text = "CANDLES"
-
-[node name="Line" type="Button" parent="VBox/Head/Modes"]
-unique_name_in_owner = true
-layout_mode = 2
-mouse_default_cursor_shape = 2
-theme_type_variation = &"BtnCGrey"
-text = "LINE"
 
 [node name="QuotesBtn" type="Button" parent="VBox/Head"]
 unique_name_in_owner = true

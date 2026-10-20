@@ -2,6 +2,7 @@ extends CanvasLayer
 
 ## Screen-space juice and overlays: square particles, rising number floats, bump / shake / pulse
 ## helpers for buttons, the hover tooltip and the unlock toast. Positions are canvas (1280x720) coords.
+## Layers: game 0, fx 1, popups 2 (main.tscn ModalLayer), then `_top` 3 for in-popup fx, toast and tooltip.
 
 const MAX_PARTS := 160
 const MAX_FLOATS := 30
@@ -14,6 +15,8 @@ const QUAKE_GAP := 0.25  # min seconds between kicks, so rapid presses don't blu
 var _parts: Array[Dictionary] = []
 var _floats: Array[Dictionary] = []
 var _canvas := Control.new()
+var _top := CanvasLayer.new()
+var _top_canvas := Control.new()
 var _font: Font = preload("res://assets/fonts/Silkscreen-Bold.ttf")
 var _tip: PanelContainer = preload("res://ui/tooltip.tscn").instantiate()
 var _tip_src: Control
@@ -31,12 +34,17 @@ var _quake_at := -10.0
 
 func _ready() -> void:
 	layer = 1
-	_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_canvas.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_canvas.draw.connect(_draw_fx)
+	_top.layer = 3
+	for c: Control in [_canvas, _top_canvas]:
+		c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		c.set_anchors_preset(Control.PRESET_FULL_RECT)
+		c.draw.connect(_draw_fx.bind(c, c == _top_canvas))
 	add_child(_canvas)
-	add_child(_toast)
-	add_child(_tip)
+	add_child(_top)
+	_top.add_child(_top_canvas)
+	_top.add_child(_toast)
+	_toast.get_node("%Close").pressed.connect(func(): _toast_dur = 0.0)  # next queued toast, if any
+	_top.add_child(_tip)
 
 
 func _process(delta: float) -> void:
@@ -53,6 +61,7 @@ func _process(delta: float) -> void:
 	for n: CanvasItem in get_tree().get_nodes_in_group(&"pulse"):
 		n.self_modulate = Color(k, k, k)
 	_canvas.queue_redraw()
+	_top_canvas.queue_redraw()
 	_step_quake(delta)
 	if _tip.visible:
 		if is_instance_valid(_tip_src) and _tip_src.is_visible_in_tree():
@@ -62,19 +71,20 @@ func _process(delta: float) -> void:
 	_step_toast()
 
 
-func burst(at: Vector2, count: int, colors: Array, spd := 180.0, g := 600.0) -> void:
+## `top`: draw above the popups (effects from inside one); otherwise popups cover it.
+func burst(at: Vector2, count: int, colors: Array, spd := 180.0, g := 600.0, top := false) -> void:
 	for i in count:
 		var a := randf() * TAU
 		var v := randf_range(0.35, 1.0) * spd
 		var life := randf_range(0.4, 0.8)
 		_parts.append({pos = at, vel = Vector2(cos(a) * v, sin(a) * v - spd * 0.4), g = g, life = life, max = life,
-			s = 3 + randi() % 4, c = colors.pick_random()})
+			s = 3 + randi() % 4, c = colors.pick_random(), top = top})
 	if _parts.size() > MAX_PARTS:
 		_parts = _parts.slice(-MAX_PARTS)
 
 
-func float_text(at: Vector2, text: String, color: Color, font_size := 14) -> void:
-	_floats.append({pos = at, text = text, c = color, size = font_size, age = 0.0})
+func float_text(at: Vector2, text: String, color: Color, font_size := 14, top := false) -> void:
+	_floats.append({pos = at, text = text, c = color, size = font_size, age = 0.0, top = top})
 	if _floats.size() > MAX_FLOATS:
 		_floats.pop_front()
 
@@ -136,12 +146,16 @@ func button_fx(c: Control, ok: bool, label := "", colors: Array = [Defs.CAUTION,
 	return true
 
 
-func _draw_fx() -> void:
+func _draw_fx(cv: Control, top: bool) -> void:
 	for p in _parts:
+		if p.top != top:
+			continue
 		var col: Color = p.c
 		col.a = maxf(0.0, p.life / p.max)
-		_canvas.draw_rect(Rect2(p.pos.round(), Vector2(p.s, p.s)), col)
+		cv.draw_rect(Rect2(p.pos.round(), Vector2(p.s, p.s)), col)
 	for f in _floats:
+		if f.top != top:
+			continue
 		var k: float = f.age / FLOAT_DUR
 		var y: float = f.pos.y - FLOAT_RISE * (1.0 - pow(1.0 - k, 2.0))
 		var sc: float = 0.6 + f.age * 4.0 if f.age < 0.1 else 1.0
@@ -150,8 +164,8 @@ func _draw_fx() -> void:
 		var pos := Vector2(f.pos.x - w / 2.0, y + fs).round()
 		var col: Color = f.c
 		col.a = maxf(0.0, 1.0 - k * k)
-		_canvas.draw_string(_font, pos + Vector2(2, 2), f.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Defs.INK, col.a))
-		_canvas.draw_string(_font, pos, f.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+		cv.draw_string(_font, pos + Vector2(2, 2), f.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Defs.INK, col.a))
+		cv.draw_string(_font, pos, f.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 
 # ---------------------------------------------------------------- tooltip
