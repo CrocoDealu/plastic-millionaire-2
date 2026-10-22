@@ -1,6 +1,6 @@
 extends Control
 
-## Box Exchange root: header money counter, warehouse summary, modals and the scrolling
+## Contents Classified root: header money counter, warehouse summary, modals and the scrolling
 ## background. Panels are self-contained scenes that bind to the Game autoload themselves.
 
 @export var scanlines := true

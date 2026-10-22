@@ -62,6 +62,6 @@ func _tip() -> Array:
 	var cnt: int = Game.inv[box]
 	return ["%s · $%s" % [b.name.to_upper(), Defs.px(Game.market[box].p)], [
 		["%s in stock · %s" % [Defs.fmt(cnt), Defs.cash(cnt * Game.market[box].p)], Defs.GOLD],
-		["Made +%s/s · used −%s/s" % [Defs.rt(f.x), Defs.rt(f.y)]] if f.y > 0.0 else ["Made +%s/s" % Defs.rt(f.x)],
+		["Made +%s/s · machines want −%s/s" % [Defs.rt(f.x), Defs.rt(f.y)]] if f.y > 0.0 else ["Made +%s/s" % Defs.rt(f.x)],
 		["Net %s%s/s" % ["+" if r >= 0.0 else "", Defs.rt(r)], Defs.UP if r >= 0.0 else Defs.WARN],
 		["Click to open its market."]]]

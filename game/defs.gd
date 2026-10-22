@@ -1,7 +1,7 @@
 class_name Defs
 extends RefCounted
 
-## Economy constants and number formatting from the Box Exchange v6 handoff.
+## Economy constants and number formatting from the Contents Classified v6 handoff.
 
 const BOXES := [
 	{k = "GRY", name = "Grey Box", color = Color("#b9b5aa"), base = 0.02, depth = 300.0},
@@ -196,36 +196,59 @@ const EMAILS := {
 }
 ## Ticker pools by stage (Game.stage()). [headline, clue]: clue lines weigh more each stage.
 const NEWS := {
+	# Pool lines never quote a box's price move: only market events (EVENTS) move prices, and
+	# a fake "AMB up 30%" would read as live market data.
 	early = [
 		["Local box company reports \"a normal amount of boxes\" this quarter.", false],
 		["Intern seen pressing boxes. Supervisors confirm this is the job.", false],
-		["GRY closes flat for 14th straight session. Analysts: \"Good.\"", false],
+		["Grey analysts describe the outlook as \"grey.\" Clients relieved.", false],
 		["Breakroom coffee machine replaced with a box. Nobody has noticed.", false],
 		["Red Box debuts. Marketing: \"Three greys, one vision.\"", false],
-		["RED up 6% as consumers rediscover ambition.", false],
+		["Consumers rediscover ambition. Ambition, it turns out, is red.", false],
 		["HR reminds staff that boxes are not a personality.", false],
 		["Survey: 0% of box owners have opened their box. \"Why would we?\"", true],
 		["Press Arm named Employee of the Month for the 40th month running.", false],
 		["GRY: the only box no human has touched in years.", false],
+		["\"Nobody ever got fired for buying grey,\" says man buying grey.", false],
+		["Pension funds confirm they are \"mostly grey, by volume.\"", false],
+		["Red Box owners describe themselves as \"grey, but driven.\"", false],
+		["Press Arm requests no meetings before 9. Request granted.", false],
+		["Company picnic cancelled. Too many boxes on the lawn.", false],
+		["New hire asks what the boxes are for. Is moved to a different floor.", true],
 	],
 	mid = [
-		["AMB up 30% after influencer unboxes amber box, finds nothing, calls it \"life-changing.\"", false],
+		["Influencer reviews amber box without opening it. Calls it \"life-changing.\"", false],
 		["Analysts upgrade Amber from \"Buy\" to \"Glow.\"", false],
 		["First Box ETF launches. It is a box made of smaller boxes.", false],
-		["RED falls 12% after audit finds it is \"basically three greys.\"", false],
+		["Auditors count the greys in a Red Box. Get three. Recount. Still three.", false],
 		["Company policy update: \"Boxes are for selling, not for looking in.\"", true],
 		["Teal IPO oversubscribed 400x. Nobody can explain what a Teal Box is for.", false],
-		["TEA slides 8% after short seller counts the boxes it's made of.", false],
+		["Short seller tries to count the boxes in a Teal. Gives up at nine.", false],
 		["Central bank cuts rates \"to support the box.\"", false],
 		["Philosophers ask: if a Red is three Greys, what is a Grey?", true],
 		["Man who opened a box declines to discuss it. Moves to the countryside.", true],
+		["Amber hoarders move their bunkers into bigger bunkers.", false],
+		["Teal startup raises another round to work out what it does.", false],
+		["Teal Box is built from eleven boxes. Investors call it \"synergy.\"", false],
+		["Amber fans insist the glow is \"a feeling, not a light.\"", false],
+		["Laminator requests a coffee break between layers. Denied.", false],
+		["Grey holders unbothered. Grey holders are always unbothered.", false],
+		["Leaked HR memo: \"Do not shake the boxes either.\"", true],
 	],
 	late = [
-		["VIO up 900% on no news. Volume described as \"spiritual.\"", false],
+		["Violet trades on no news. Volume described as \"spiritual.\"", false],
 		["Scientists confirm the Violet Box is \"mostly vibe.\"", false],
 		["Poll: 71% want someone to open a box. 0% volunteer.", true],
 		["Experts warn opening a box \"could affect prices.\"", true],
 		["All eyes turn to the owner of the box company.", true],
+		["Purple Hands forum declares Violet \"the last box you'll ever need.\"", false],
+		["Violet holders refuse to sell, explain, or blink.", false],
+		["Grey Box quietly remains the backbone of the economy. Nobody thanks it.", false],
+		["Factory floor fully automated except one person, who is asked to stop helping.", false],
+		["Nobody can count the boxes in a Violet. Nobody is allowed to try.", true],
+		["Box company owner seen staring at a box for six hours.", true],
+		["Regulators propose boxes stay closed \"for everyone's sake.\"", true],
+		["Insurers refuse to cover \"whatever is in the box.\"", true],
 	],
 	after = [["Contents: still classified.", false]],
 }
@@ -252,15 +275,13 @@ const ENDING := {
 	removed = "[This headline has been removed at the request of the Global Box Standard]",
 	card = "End of demo. Follow to find out what's inside.",
 }
-## Keyed by machine id or machine-upgrade key (ain / aout). Tree flavour lives in SK.
+## Keyed by machine id. Tree flavour lives in SK.
 const FLAVOUR := {
 	arm = "Was here before you. Will be here after you.",
 	vat = "Stacks three greys until they become red. Nobody knows when it happens.",
 	kiln = "Layers boxes onto boxes. The boxes were not consulted.",
 	fuse = "Took your job. Was very gracious about it.",
 	forge = "There is nothing left for your hands to make.",
-	ain = "Feeds the machine. Lately the machine says thank you.",
-	aout = "Empties the machine so it can go back to feeling nothing.",
 }
 ## Market tab tooltips, by box index.
 const REPS := [
@@ -341,6 +362,10 @@ static func px(p: float) -> String:
 
 static func rt(r: float) -> String:
 	return "%.2f" % r if absf(r) < 1.0 else "%.1f" % r if absf(r) < 10.0 else fmt(r)
+
+## A per-second rate as whole boxes; a trickle under half a box a second reads "<1", not 0.
+static func whole(r: float) -> String:
+	return "<1" if r > 0.0 and r < 0.5 else fmt(roundi(r))
 
 static func pct(v: float, digits := 1) -> String:
 	return ("+" if v >= 0.0 else "") + ("%." + str(digits) + "f%%") % v

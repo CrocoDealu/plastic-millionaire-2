@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" path="res://ui/machine_modal.gd" id="1"]
 [ext_resource type="Script" path="res://ui/box_chip.gd" id="chip"]
-[ext_resource type="PackedScene" path="res://ui/upgrade_row.tscn" id="row"]
 [ext_resource type="Texture2D" path="res://assets/ui/x3/buttons_Orange_ButtonCloseA_Highlighted.png" id="close"]
 
 [node name="MachineModal" type="PanelContainer"]
@@ -75,6 +74,70 @@ theme_override_font_sizes/font_size = 12
 text = "No input → 1 GRY every 2.0s per machine."
 autowrap_mode = 3
 
+[node name="Flow" type="Label" parent="Pad/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7412, 0.7216, 0.6784, 1)
+theme_override_font_sizes/font_size = 11
+text = "Makes +3.0 GRY/s. Where it goes, per second:"
+autowrap_mode = 3
+
+[node name="Uses" type="VBoxContainer" parent="Pad/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Use" type="HBoxContainer" parent="Pad/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Name" type="Label" parent="Pad/VBox/Use"]
+layout_mode = 2
+custom_minimum_size = Vector2(190, 0)
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.7412, 0.7216, 0.6784, 1)
+text = "RED STACKER"
+
+[node name="In" type="Label" parent="Pad/VBox/Use"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9255, 0.9098, 0.8745, 1)
+theme_override_font_sizes/font_size = 11
+text = "12"
+
+[node name="InChip" type="Control" parent="Pad/VBox/Use"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("chip")
+dark = 2
+light = 2
+
+[node name="Arrow" type="Label" parent="Pad/VBox/Use"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
+text = "→"
+
+[node name="Out" type="Label" parent="Pad/VBox/Use"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9255, 0.9098, 0.8745, 1)
+theme_override_font_sizes/font_size = 11
+text = "4.0"
+
+[node name="OutChip" type="Control" parent="Pad/VBox/Use"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("chip")
+dark = 2
+light = 2
+
+
 [node name="Flavour" type="Label" parent="Pad/VBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(500, 0)
@@ -83,14 +146,6 @@ theme_override_colors/font_color = Color(0.4667, 0.4549, 0.4235, 1)
 theme_override_font_sizes/font_size = 11
 text = "Was here before you. Will be here after you."
 autowrap_mode = 3
-
-[node name="Ain" parent="Pad/VBox" instance=ExtResource("row")]
-layout_mode = 2
-key = "ain"
-
-[node name="Aout" parent="Pad/VBox" instance=ExtResource("row")]
-layout_mode = 2
-key = "aout"
 
 [node name="Note" type="Label" parent="Pad/VBox"]
 unique_name_in_owner = true

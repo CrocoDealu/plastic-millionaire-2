@@ -3,7 +3,7 @@ extends PanelContainer
 ## Box Press: click the upper stage to slam the piston; boxes in every unlocked colour fly out
 ## and settle on the floor; click or drag across them to collect. Once you own a Forge, the
 ## OPEN ??? button loads the box-opening slam.
-## Below it, the news ticker. Layout lives in press_panel.tscn.
+## Below it, the news roll: headlines rise like movie credits. Layout lives in press_panel.tscn.
 
 const FLOOR := 320.0
 const GRAV := 1400.0
@@ -22,8 +22,7 @@ const DIE_TOP := 178.0
 const DIE_W := 150.0
 const BLANK := Vector2(40, 36)
 const SPARKS := [Color("#77746c"), Color("#9a968c"), Color("#f5c518")]
-const NEWS_SPEED := 45.0  # px/s
-const NEWS_HOLD := 2.0  # priority headlines sit still at the left edge first
+const NEWS_SPEED := 12.0  # px/s
 
 var _drops: Array[Dictionary] = []
 var _press_at := -10.0
@@ -39,8 +38,7 @@ var _sweep_dir := 1.0  # alternates each pass: 1 = left to right
 var _sweeping := false
 var _train: Array[Dictionary] = []  # boxes being pushed ahead of the sweeper, nearest first
 var _blank_cols: Array = []
-var _news_x := 0.0
-var _news_hold := 0.0
+var _news_y := 0.0
 
 @onready var stage: Control = %Stage
 @onready var boxes: Control = %Boxes
@@ -55,7 +53,6 @@ func _ready() -> void:
 	%Open.pressed.connect(Game.toggle_arm)
 	Game.changed.connect(_refresh)
 	Game.news.connect(_show_news.bind(true))
-	_show_news(Game.news_line(), false)
 	_refresh()
 
 
@@ -68,12 +65,16 @@ func _open_tip() -> Array:
 	return ["???", lines]
 
 
-## Pool headlines scroll in from the right; priority ones replace the current line at the left edge.
+## Shows one headline, rising from the bottom; a priority one replaces whatever is up.
 func _show_news(text: String, priority: bool) -> void:
-	%Headline.text = text
-	%Headline.reset_size()
-	_news_x = 0.0 if priority else %Strip.size.x
-	_news_hold = NEWS_HOLD if priority else 0.0
+	if priority:
+		for l in %Roll.get_children():
+			l.free()
+		_news_y = %Strip.size.y
+	var l: Label = %Headline.duplicate()
+	l.text = text
+	l.visible = true
+	%Roll.add_child(l)
 
 
 static func _now() -> float:
@@ -175,13 +176,7 @@ func _credit(ds: Array) -> void:
 func _process(delta: float) -> void:
 	var dt := minf(0.1, delta)
 	_step_drops(dt)
-	if _news_hold > 0.0:
-		_news_hold -= dt
-	else:
-		_news_x -= NEWS_SPEED * dt
-	if _news_x < -%Headline.size.x:
-		_show_news(Game.news_line(), false)
-	%Headline.position.x = roundf(_news_x)
+	_step_news(dt)
 	# Piston accelerates down to the die over _slam, holds, then eases back up over RETURN.
 	var pa := _now() - _press_at
 	_f = 0.0
@@ -225,6 +220,19 @@ func _process(delta: float) -> void:
 			_sweep_t = 0.0
 			_start_sweep()
 	boxes.queue_redraw()
+
+
+func _step_news(dt: float) -> void:
+	_news_y -= NEWS_SPEED * dt
+	# One headline at a time: the next starts just below the bottom edge once this one is off the top.
+	var cur: Control = %Roll.get_child(0) if %Roll.get_child_count() > 0 else null
+	if cur and _news_y + cur.size.y < 0.0:
+		cur.free()
+		cur = null
+	if not cur:
+		_news_y = %Strip.size.y
+		_show_news(Game.news_line(), false)
+	%Roll.position.y = roundf(_news_y)
 
 
 func _step_drops(dt: float) -> void:

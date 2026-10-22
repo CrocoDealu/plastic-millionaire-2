@@ -45,6 +45,7 @@ func _refresh() -> void:
 	_tab(%InboxTab, Game.rtab == "inbox")
 	_refresh_inbox()
 	%ModeRow.visible = on_m and Game.modes_on()
+	%Legend.visible = on_m
 	for n: String in MODES:
 		get_node("%" + n).theme_type_variation = &"BtnCGold" if Game.buy_mode == MODES[n] else &"BtnCGrey"
 	var ti := range(Defs.GENS.size()).filter(func(i): return not Game.visible_tier(i))

@@ -1,6 +1,6 @@
 extends Node
 
-## Single source of truth for Box Exchange: money, inventory, machines, the skill tree and the
+## Single source of truth for Contents Classified: money, inventory, machines, the skill tree and the
 ## simulated market. UI reads state and calls the action methods; it never writes state.
 
 signal changed
@@ -53,6 +53,7 @@ var combo := 0
 var _last_slam := -10.0
 var _ending_on := false
 var _news_seen := {}
+var _last_news := ""
 
 var _acc := 0.0
 var _save_t := 0.0
@@ -144,11 +145,36 @@ func title() -> String:
 	return t
 
 
-## Next pooled headline: this stage's lines weigh 3x earlier stages', clue lines weigh more each
-## stage, and nothing repeats until the pool is used up.
+## Next ticker headline. A live market event's headline comes back every other line until it plays
+## out or a newer event fires, then never again; pool lines make no price claims, so they cycle.
 func news_line() -> String:
 	if stage() == "after":
 		return Defs.NEWS.after[0][0]
+	var live := live_event()
+	if live and _last_news != Defs.EVENTS[live].head:
+		_last_news = Defs.EVENTS[live].head
+	else:
+		_last_news = _pool_line()
+	return _last_news
+
+
+## The newest fired market event while its price effect is still playing out, else "".
+func live_event() -> String:
+	var k := ""
+	for e: String in ev:
+		if play >= ev[e] and (k == "" or ev[e] > ev[k]):
+			k = e
+	if k == "":
+		return ""
+	var end := 0.0
+	for pts: Array in Defs.EVENTS[k].fx.values():
+		end = maxf(end, pts[-1][0])
+	return k if play - ev[k] < end else ""
+
+
+## This stage's lines weigh 3x earlier stages', clue lines weigh more each stage, and nothing
+## repeats until the pool is used up.
+func _pool_line() -> String:
 	var keys: Array = Defs.NEWS.keys()
 	var s := keys.find(stage())
 	var pool := []
@@ -161,7 +187,7 @@ func news_line() -> String:
 				total += w
 	if pool.is_empty():
 		_news_seen.clear()
-		return news_line()
+		return _pool_line()
 	var roll := randf() * total
 	for n: Array in pool:
 		roll -= n[1]
@@ -283,18 +309,55 @@ func net_rates() -> Array[float]:
 	return r
 
 
-## Per box: x = made per second, y = used per second by the machines that eat it.
+## Per box: x = made per second at each machine's sustained speed (duty), y = wanted per second
+## by the machines that eat it at full speed. Once a box runs dry, x - y is the shortfall, so
+## another machine eating it still shows. The press isn't counted: that's your clicks.
 func flows() -> Array[Vector2]:
 	var r: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]
+	var d := duty()
 	for i in Defs.GENS.size():
-		if own[i] == 0:
-			continue
 		var g: Dictionary = Defs.GENS[i]
 		var c := cyc(i)
-		r[g.out].x += own[i] * mul(i) / c
+		r[g.out].x += own[i] * mul(i) / c * d[i]
 		for k: int in g.inputs:
-			r[k].y += own[i] * g.inputs[k] / c
+			r[k].y += want(i, k)
 	return r
+
+
+## Box `k` machine `i` eats per second at full speed; 0 unless it runs on its own (see duty()).
+func want(i: int, k: int) -> float:
+	var on := own[i] > 0 and ai(i) and ao(i)
+	return own[i] * Defs.GENS[i].inputs.get(k, 0) / cyc(i) if on else 0.0
+
+
+## Per machine: the share of full speed it keeps up on its own, 0..1. It needs Auto-In and Auto-Out
+## both on (otherwise it stops after one batch), and once an input box has run dry (under a second
+## of what its users eat) it only gets that box as fast as it's made, higher tiers first like _econ.
+func duty() -> Array[float]:
+	var n := Defs.GENS.size()
+	var need: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0]
+	var d: Array[float] = []
+	for i in n:
+		d.append(1.0 if own[i] > 0 and ai(i) and ao(i) else 0.0)
+		for k: int in Defs.GENS[i].inputs:
+			need[k] += want(i, k)
+	# Supply flows up the tiers and priority flows down, so settle it over a few passes.
+	for p in n:
+		var left: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0]
+		for i in n:
+			left[Defs.GENS[i].out] += own[i] * mul(i) / cyc(i) * d[i]
+		for i in range(n - 1, -1, -1):
+			if not (own[i] > 0 and ai(i) and ao(i)):
+				continue
+			var u := 1.0
+			for k: int in Defs.GENS[i].inputs:
+				if inv[k] < need[k]:
+					u = minf(u, left[k] / want(i, k))
+			for k: int in Defs.GENS[i].inputs:
+				if inv[k] < need[k]:
+					left[k] -= want(i, k) * u
+			d[i] = maxf(0.0, u)
+	return d
 
 
 func gen_cost(i: int, q: int) -> float:
@@ -459,8 +522,11 @@ func _econ(dt: float) -> void:
 			mark("ev_" + k)
 			for i: int in Defs.EVENTS[k].fx:
 				market[i].p *= Defs.EVENTS[k].fx[i][0][1]
-			news.emit(Defs.EVENTS[k].head)
-	for i in Defs.GENS.size():
+			_last_news = Defs.EVENTS[k].head  # the pool line goes next, not a repeat
+			news.emit(_last_news)
+	# Higher tiers first: when a box is scarce they take it before the cheaper machines that also
+	# eat it (a fast Red Stacker would otherwise grab every grey and starve the Laminator).
+	for i in range(Defs.GENS.size() - 1, -1, -1):
 		if own[i] == 0:
 			continue
 		var x := mx[i]
@@ -473,20 +539,21 @@ func _econ(dt: float) -> void:
 		if not x.run:
 			continue
 		x.t += dt
-		if x.t < cyc(i):
-			continue
-		x.run = false
-		x.t = 0.0
-		var boost := press_boost()
-		var f: float = x.batch * mul(i) * boost + x.frac  # fractions carry so small boosts aren't lost
-		var q := floori(f)
-		x.frac = f - q
-		if ao(i):
-			_land(out, q)
-		else:
-			x.held += q
-		if ai(i) and (ao(i) or x.held == 0):
-			_start_gen(i)  # same tick, so an auto machine never shows a stopped frame
+		# Leftover time carries into the next batch, so a cycle shorter than a tick runs several
+		# batches per tick instead of being capped at one.
+		while x.run and x.t >= cyc(i):
+			var left: float = x.t - cyc(i)
+			x.run = false
+			x.t = 0.0
+			var f: float = x.batch * mul(i) * press_boost() + x.frac  # fractions carry so small boosts aren't lost
+			var q := floori(f)
+			x.frac = f - q
+			if ao(i):
+				_land(out, q)
+			else:
+				x.held += q
+			if ai(i) and (ao(i) or x.held == 0) and _start_gen(i):  # same tick, so an auto machine never shows a stopped frame
+				x.t = left
 	if sk_own("broker"):
 		_broker_t += dt
 		if _broker_t >= skv("desk", "every", Defs.BROKER_EVERY):

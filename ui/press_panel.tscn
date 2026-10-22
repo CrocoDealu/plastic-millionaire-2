@@ -171,35 +171,45 @@ vertical_alignment = 1
 
 [node name="News" type="PanelContainer" parent="VBox"]
 layout_mode = 2
+size_flags_vertical = 3
 theme_type_variation = &"Inset"
 
-[node name="HBox" type="HBoxContainer" parent="VBox/News"]
+[node name="VBox" type="VBoxContainer" parent="VBox/News"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Kicker" type="Label" parent="VBox/News/HBox"]
+[node name="Kicker" type="Label" parent="VBox/News/VBox"]
 layout_mode = 2
 theme_type_variation = &"Silk"
 theme_override_colors/font_color = Color(0.9608, 0.7725, 0.0941, 1)
 theme_override_font_sizes/font_size = 8
 text = "NEWS"
+horizontal_alignment = 1
 
-[node name="Strip" type="Control" parent="VBox/News/HBox"]
+[node name="Strip" type="Control" parent="VBox/News/VBox"]
 unique_name_in_owner = true
 clip_contents = true
-custom_minimum_size = Vector2(0, 16)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_vertical = 3
 mouse_filter = 2
 
-[node name="Headline" type="Label" parent="VBox/News/HBox/Strip"]
+[node name="Roll" type="VBoxContainer" parent="VBox/News/VBox/Strip"]
 unique_name_in_owner = true
+layout_mode = 1
+anchor_right = 1.0
+mouse_filter = 2
+
+[node name="Headline" type="Label" parent="VBox/News/VBox/Strip"]
+unique_name_in_owner = true
+visible = false
 layout_mode = 0
 offset_right = 200.0
 offset_bottom = 16.0
 theme_override_colors/font_color = Color(0.7412, 0.7216, 0.6784, 1)
 text = "Headline"
-vertical_alignment = 1
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="Title" type="HBoxContainer" parent="VBox"]
 layout_mode = 2

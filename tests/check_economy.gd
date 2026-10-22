@@ -98,8 +98,13 @@ func _initialize() -> void:
 	var play0: float = g.play
 	g.play = g.ev.sell1 + 60.0
 	assert(is_equal_approx(g.ev_mul(0), 0.6) and is_equal_approx(g.ev_mul(1), 1.0))
+	# Ticker: a live event's headline comes back every other line, and never once it's over.
+	var lines := []
+	for n in 6: lines.append(g.news_line())
+	assert(g.live_event() == "sell1" and lines.count(Defs.EVENTS.sell1.head) == 3 and lines[0] != lines[1])
 	g.play = g.ev.sell1 + 1000.0
 	assert(is_equal_approx(g.ev_mul(0), 1.0))
+	assert(g.live_event() == "" and not range(30).map(func(_n): return g.news_line()).has(Defs.EVENTS.sell1.head))
 	g.play = play0
 
 	# Manual machine: RUN consumes nothing for the arm, output is held until COLLECT.
@@ -245,6 +250,42 @@ func _initialize() -> void:
 	assert(g.ms.has("opened") and g.ms.has("end") and g.ms.has("ev_opened") and g.ev.has("opened"))
 	assert(g.ms.has("sell1") and g.ev.has("sell1") and not g.mystery_shown() and g.title() == "Pending")
 
+	g.reset()
+	# Rates: only fully-auto machines count, and a dry input feeds its users only as fast as it's made.
+	g.own.assign([2, 1, 0, 0, 0])  # 2 arms: +1 GRY/s; 1 stacker wants 6 GRY/s for +2 RED/s
+	for i in 2:
+		g.mx[i].ain = true
+		g.mx[i].aout = true
+	g.inv.assign([100, 0, 0, 0, 0])
+	assert(g.duty().slice(0, 2) == [1.0, 1.0] and is_equal_approx(g.net_rates()[0], -5.0) and is_equal_approx(g.net_rates()[1], 2.0))
+	g.inv[0] = 0  # grey ran dry: the stacker only gets the arms' 1/s
+	assert(is_equal_approx(g.duty()[1], 1.0 / 6.0) and is_equal_approx(g.net_rates()[0], -5.0) and is_equal_approx(g.net_rates()[1], 1.0 / 3.0))
+	g.own[1] = 2  # another stacker: grey's shortfall grows, red stays capped by the grey that exists
+	assert(is_equal_approx(g.net_rates()[0], -11.0) and is_equal_approx(g.net_rates()[1], 1.0 / 3.0))
+	g.own[1] = 1
+	g.toggle_auto(0, "ain")  # arms stop: nothing left for the stacker either
+	assert(g.duty().slice(0, 2) == [0.0, 0.0] and g.net_rates()[1] == 0.0 and is_equal_approx(g.net_rates()[0], -6.0))
+	g.toggle_auto(0, "ain")
+	g.inv[0] = 100
+	g.toggle_auto(1, "aout")  # output held after one batch: no sustained rate
+	assert(g.duty()[1] == 0.0 and is_equal_approx(g.net_rates()[0], 1.0))
+	# Scarce grey goes to the higher tier first, and a cycle shorter than a tick still runs at full
+	# speed: a 0.05s stacker does two batches per 0.1s tick.
+	g.reset()
+	g.own.assign([2, 1, 1, 0, 0])  # arms 1 GRY/s; Laminator wants 1.5 GRY/s, stacker 6
+	g.sk["vat_spd"] = 8  # 0.5s * 0.8^8 = 0.084s
+	for i in 3:
+		g.mx[i].ain = true
+		g.mx[i].aout = true
+	g.inv.assign([0, 1000, 0, 0, 0])
+	var got := [0, 0, 0, 0, 0]
+	g.produced.connect(func(i, q): got[i] += q)
+	for k in 200: g._econ(0.1)  # 20s
+	assert(got[2] >= 6 and is_equal_approx(g.duty()[2], 2.0 / 3.0) and g.duty()[1] == 0.0)  # all ~20 grey went to amber
+	g.inv.assign([1000, 0, 0, 0, 0])
+	got[1] = 0
+	for k in 10: g._econ(0.1)
+	assert(got[1] >= 11)  # 1s at 0.084s per batch, not capped at one batch per tick (10)
 	g.reset()
 	print("economy OK")
 	quit()

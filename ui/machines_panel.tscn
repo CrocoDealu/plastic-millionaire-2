@@ -167,6 +167,64 @@ mouse_default_cursor_shape = 2
 theme_type_variation = &"BtnCGrey"
 text = "MAX"
 
+[node name="Legend" type="HBoxContainer" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Machine output colours: full speed; short of input (waiting on the boxes it eats; its popup shows what it could make); stopped (Auto-In or Auto-Out off, or nothing to eat)."
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="Full" type="HBoxContainer" parent="VBox/Legend"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Dot" type="ColorRect" parent="VBox/Legend/Full"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0.4824, 0.7882, 0.4353, 1)
+
+[node name="Label" type="Label" parent="VBox/Legend/Full"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
+text = "FULL SPEED"
+
+[node name="Short" type="HBoxContainer" parent="VBox/Legend"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Dot" type="ColorRect" parent="VBox/Legend/Short"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0.8863, 0.4392, 0.1647, 1)
+
+[node name="Label" type="Label" parent="VBox/Legend/Short"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
+text = "SHORT OF INPUT"
+
+[node name="Stopped" type="HBoxContainer" parent="VBox/Legend"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Dot" type="ColorRect" parent="VBox/Legend/Stopped"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(1, 0.6039, 0.5412, 1)
+
+[node name="Label" type="Label" parent="VBox/Legend/Stopped"]
+layout_mode = 2
+theme_type_variation = &"Silk"
+theme_override_colors/font_color = Color(0.6039, 0.5882, 0.549, 1)
+text = "STOPPED"
+
 [node name="Scroll" type="ScrollContainer" parent="VBox"]
 layout_mode = 2
 size_flags_vertical = 3

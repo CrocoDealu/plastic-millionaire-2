@@ -9,7 +9,10 @@ signal open_requested(i: int)
 @export var tag_on: StyleBox
 @export var tag_off: StyleBox
 
+const FLOW_HOLD_MS := 1000  # ponytail: starved gaps up to 1s still read as constant flow; raise if it still blinks
+
 var _hover := false
+var _flow_ms := -FLOW_HOLD_MS
 
 
 func _ready() -> void:
@@ -59,12 +62,19 @@ func _refresh() -> void:
 	%Every.text = "EVERY %.1fS" % c
 
 	# Maxed speed: the bar would just flicker, so it sits full under scrolling chevrons instead.
-	%Flow.visible = x.run and Game.node_info(g.id + "_spd").done
+	# A maxed auto-fed machine outruns its inputs and idles between batches; ride out short gaps.
+	var maxed: bool = Game.node_info(g.id + "_spd").done
+	if maxed and x.run:
+		_flow_ms = Time.get_ticks_msec()
+	%Flow.visible = maxed and (x.run or Game.ai(index) and Time.get_ticks_msec() - _flow_ms < FLOW_HOLD_MS)
 	%Flow.material.set_shader_parameter(&"color", ob.color)
 	%Bar.value = 100.0 if %Flow.visible else minf(100.0, x.t / c * 100.0) if x.run else (100.0 if x.held > 0 else 0.0)
 	%Bar.get_theme_stylebox(&"fill").bg_color = Defs.GOLD if x.held > 0 else ob.color
-	%Rate.text = "+%s %s/s" % [Defs.rt(maxi(own, 1) * mul / c), ob.k]
-	Defs.tint(%Rate, &"font_color", Defs.SOFT if own else Defs.MUTED)
+	# Owned: what it keeps up on its own (the popup shows what it could make); the colour matches the
+	# panel's legend (full speed / short of input / stopped). Not owned: what one would make.
+	var d: float = Game.duty()[index] if own else 1.0
+	%Rate.text = "+%s %s/s" % [Defs.whole(maxi(own, 1) * mul / c * d), ob.k]
+	Defs.tint(%Rate, &"font_color", Defs.MUTED if not own else Defs.UP if d >= 1.0 else Defs.ORANGE if d > 0.0 else Defs.WARN)
 
 	%Autos.visible = x.ain or x.aout
 	_tag(%InTag, x.ain, Game.ai(index))

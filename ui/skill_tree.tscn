@@ -65,7 +65,7 @@ layout_mode = 2
 theme_type_variation = &"Silk"
 theme_override_colors/font_color = Color(0.9608, 0.7725, 0.0941, 1)
 theme_override_font_sizes/font_size = 9
-text = "BOX EXCHANGE · R&D"
+text = "CONTENTS CLASSIFIED · R&D"
 
 [node name="Title" type="Label" parent="Pad/VBox/Head/Titles"]
 layout_mode = 2
