@@ -1,0 +1,140 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://boot.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/press/Housing.png" id="tHousing"]
+[ext_resource type="Texture2D" path="res://assets/press/Rod.png" id="tRod"]
+[ext_resource type="Shader" path="res://ui/rainbow.gdshader" id="2"]
+[ext_resource type="Texture2D" path="res://assets/press/Head.png" id="tHead"]
+[ext_resource type="Texture2D" path="res://assets/press/Die.png" id="tDie"]
+[ext_resource type="Texture2D" path="res://assets/press/Blank.png" id="tBlank"]
+
+[sub_resource type="ShaderMaterial" id="rainbow"]
+shader = ExtResource("2")
+
+[sub_resource type="StyleBoxFlat" id="bar_bg"]
+bg_color = Color(0.0784, 0.0784, 0.0863, 1)
+corner_radius_top_left = 99
+corner_radius_top_right = 99
+corner_radius_bottom_right = 99
+corner_radius_bottom_left = 99
+
+[sub_resource type="StyleBoxFlat" id="bar_fill"]
+bg_color = Color(0.9608, 0.7725, 0.0941, 1)
+corner_radius_top_left = 99
+corner_radius_top_right = 99
+corner_radius_bottom_right = 99
+corner_radius_bottom_left = 99
+
+[node name="Boot" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Bg" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.149, 0.149, 0.1647, 1)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_type_variation = &"SilkBold"
+theme_override_colors/font_color = Color(0.9608, 0.7725, 0.0941, 1)
+theme_override_colors/font_shadow_color = Color(0.0235, 0.0314, 0.0588, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 16
+text = "CONTENTS CLASSIFIED"
+horizontal_alignment = 1
+
+[node name="Press" type="Control" parent="Center/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(256, 200)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Housing" type="TextureRect" parent="Center/VBox/Press"]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 16.0
+offset_right = 208.0
+offset_bottom = 64.0
+mouse_filter = 2
+texture = ExtResource("tHousing")
+expand_mode = 1
+
+[node name="Rod" type="TextureRect" parent="Center/VBox/Press"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 118.0
+offset_top = 64.0
+offset_right = 138.0
+offset_bottom = 118.0
+mouse_filter = 2
+texture = ExtResource("tRod")
+expand_mode = 1
+
+[node name="Head" type="TextureRect" parent="Center/VBox/Press"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 72.0
+offset_top = 118.0
+offset_right = 184.0
+offset_bottom = 142.0
+mouse_filter = 2
+texture = ExtResource("tHead")
+expand_mode = 1
+
+[node name="Die" type="TextureRect" parent="Center/VBox/Press"]
+layout_mode = 0
+offset_left = 53.0
+offset_top = 178.0
+offset_right = 203.0
+offset_bottom = 196.0
+mouse_filter = 2
+texture = ExtResource("tDie")
+expand_mode = 1
+
+[node name="Blank" type="TextureRect" parent="Center/VBox/Press"]
+unique_name_in_owner = true
+material = SubResource("rainbow")
+layout_mode = 0
+offset_left = 108.0
+offset_top = 142.0
+offset_right = 148.0
+offset_bottom = 178.0
+mouse_filter = 2
+texture = ExtResource("tBlank")
+expand_mode = 1
+
+[node name="Bar" type="ProgressBar" parent="Center/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(256, 8)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/background = SubResource("bar_bg")
+theme_override_styles/fill = SubResource("bar_fill")
+max_value = 1.0
+step = 0.0
+show_percentage = false
