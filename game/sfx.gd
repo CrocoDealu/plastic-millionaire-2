@@ -22,7 +22,7 @@ func _ready() -> void:
 		_stream("collect", k)
 
 
-## type: press | collect | sell | buy | deny | unlock | tick. `p` is the combo/streak step.
+## type: press | break | collect | sell | buy | deny | unlock | tick. `p` is the combo/streak step.
 func play(type: String, p := 0) -> void:
 	if Game.mute:
 		return
@@ -45,6 +45,7 @@ func _stream(type: String, p: int) -> AudioStreamWAV:
 func _tones(type: String, p: int) -> Array:
 	match type:
 		"press": return [[150.0 + mini(p, 20) * 6.0, 0.09, "square", 0.05, 0.0, 55.0]]
+		"break": return [[300.0, 0.22, "square", 0.06, 0.0, 40.0], [600.0, 0.1, "triangle", 0.04, 0.0, 150.0]]  # press, longer and doubled an octave up
 		"collect": return [[520.0 * pow(2.0, mini(p, 24) / 12.0), 0.07, "triangle", 0.08, 0.0, 0.0]]
 		"sell": return [[988.0, 0.07, "square", 0.035, 0.0, 0.0], [1319.0, 0.2, "square", 0.035, 0.06, 0.0]]
 		"buy": return [523.0, 659.0, 784.0].map(func(f): return [f, 0.1, "square", 0.04, [523.0, 659.0, 784.0].find(f) * 0.05, 0.0])

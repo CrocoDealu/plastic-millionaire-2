@@ -15,6 +15,7 @@ func _ready() -> void:
 	%Sfx.pressed.connect(func(): Game.set_pref("mute", not Game.mute); Game.save(); Sfx.play("tick"))
 	%Save.pressed.connect(func(): Game.save(); _saved_flash = _now(); Sfx.play("tick"))
 	%Reset.pressed.connect(_reset)
+	$VBox/SaveRow.visible = Game.autosave
 
 
 static func _now() -> float:

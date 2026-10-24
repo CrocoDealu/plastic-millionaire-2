@@ -45,7 +45,7 @@ var wait_max := 0.0
 # Transient.
 var new_mk := {}
 var saved_at := 0.0
-var autosave := true
+var autosave := not OS.has_feature("template")  # exported builds never load or save: every run starts fresh
 var last_collected := 0
 var opening := false  # the ending is running and hasn't reached the HR email yet
 var armed := false  # the ??? slot is loaded: the next slam opens the box
@@ -62,7 +62,8 @@ var _broker_t := 0.0
 
 func _ready() -> void:
 	_fresh()
-	load_save()
+	if autosave:
+		load_save()
 
 
 func _fresh() -> void:

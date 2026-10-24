@@ -9,11 +9,8 @@ const POP := 0.92  # progress at which the blank pops
 const DIE_TOP := 178.0
 const DIE_W := 150.0
 const BLANK := Vector2(40, 36)
-const THUD_SLOW := 0.35  # seconds between thuds at the start of the press
-const THUD_FAST := 0.06  # ... and just before the pop
 
 var _t := 0.0
-var _next_thud := 0.0
 var _popped := false
 
 
@@ -43,9 +40,6 @@ func _process(delta: float) -> void:
 	%Rod.size.y = head_top - 64.0
 	if p >= POP and not _popped:
 		_pop()
-	elif not _popped and _t >= _next_thud:  # thuds speed up and climb in pitch, like a building combo
-		Sfx.play("press", int(20.0 * p / POP))
-		_next_thud = _t + lerpf(THUD_SLOW, THUD_FAST, p / POP)
 	if not _popped:
 		var bh := roundf(minf(BLANK.y, DIE_TOP - head_top - 24.0))
 		var bw := minf(DIE_W, roundf(BLANK.x * BLANK.y / bh))
@@ -59,4 +53,4 @@ func _pop() -> void:
 	var c: Vector2 = %Press.global_position + Vector2(%Press.size.x / 2.0, DIE_TOP - 4.0)
 	Fx.burst(c, 24, Defs.BOXES.map(func(b): return b.color), 260.0, 700.0)
 	Fx.quake(%Press, 7.0)
-	Sfx.play("press", 20)
+	Sfx.play("break")
