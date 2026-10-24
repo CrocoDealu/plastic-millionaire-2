@@ -11,3 +11,5 @@ design_ref/
 *.swp
 
 tools/
+# exports
+build/

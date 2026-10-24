@@ -232,13 +232,12 @@ theme_override_colors/font_color = Color(1, 0.8196, 0.4, 1)
 theme_override_font_sizes/font_size = 12
 text = "$0.00"
 
-[node name="ModalLayer" type="CanvasLayer" parent="."]
+[node name="ModalLayer" type="CanvasLayer" parent="." unique_id=462208779]
 layer = 2
 
 [node name="Modals" type="ColorRect" parent="ModalLayer" unique_id=1317393748]
 unique_name_in_owner = true
 visible = false
-layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -311,7 +310,7 @@ theme_override_colors/font_hover_color = Color(1, 0.8196, 0.4, 1)
 theme_override_font_sizes/font_size = 11
 text = "itch.io"
 
-[node name="SkillTree" parent="ModalLayer/Modals" instance=ExtResource("11")]
+[node name="SkillTree" parent="ModalLayer/Modals" unique_id=535887925 instance=ExtResource("11")]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
